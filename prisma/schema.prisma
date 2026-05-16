@@ -1,0 +1,349 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USER MODEL
+// ============================================================
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  phone        String?  @unique
+  passwordHash String
+  role         Role     @default(USER)
+  status       UserStatus @default(ACTIVE)
+  referralCode String   @unique @default(cuid())
+  referredById String?
+
+  // Relations
+  referredBy    User?    @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals     User[]   @relation("UserReferrals")
+  wallet        Wallet?
+  investments   Investment[]
+  transactions  Transaction[]
+  deposits      Deposit[]
+  withdrawals   Withdrawal[]
+  referralsMade Referral[]   @relation("ReferrerRelation")
+  referralsReceived Referral[] @relation("ReferredRelation")
+  kyc           KYC?
+  notifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([referralCode])
+  @@index([referredById])
+}
+
+// ============================================================
+// ADMIN MODEL
+// ============================================================
+model Admin {
+  id           String @id @default(cuid())
+  username     String @unique
+  email        String @unique
+  passwordHash String
+  role         String @default("SUPER_ADMIN")
+
+  // Actions performed by this admin
+  approvedDeposits   Deposit[]    @relation("AdminDepositApproval")
+  approvedWithdrawals Withdrawal[] @relation("AdminWithdrawalApproval")
+  approvedKYCs       KYC[]        @relation("AdminKYCApproval")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([username])
+}
+
+// ============================================================
+// INVESTMENT PLAN MODEL
+// ============================================================
+model InvestmentPlan {
+  id          String      @id @default(cuid())
+  name        String
+  description String
+  minAmount   Float
+  maxAmount   Float
+  roiPercent  Float       // Daily ROI percentage
+  durationDays Int
+  status      PlanStatus  @default(ACTIVE)
+  features    String[]    // Array of feature strings
+  color       String      @default("#3B82F6") // UI accent color
+  
+  investments Investment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+// ============================================================
+// INVESTMENT MODEL
+// ============================================================
+model Investment {
+  id        String           @id @default(cuid())
+  userId    String
+  planId    String
+  amount    Float
+  status    InvestmentStatus @default(ACTIVE)
+  profit    Float            @default(0)
+  startDate DateTime         @default(now())
+  endDate   DateTime
+
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan InvestmentPlan @relation(fields: [planId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+}
+
+// ============================================================
+// WALLET MODEL
+// ============================================================
+model Wallet {
+  id              String @id @default(cuid())
+  userId          String @unique
+  mainBalance     Float  @default(0)
+  bonusBalance    Float  @default(0)
+  referralBalance Float  @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================================
+// TRANSACTION MODEL
+// ============================================================
+model Transaction {
+  id          String            @id @default(cuid())
+  userId      String
+  type        TransactionType
+  amount      Float
+  status      TransactionStatus @default(PENDING)
+  reference   String?
+  description String?
+  walletType  WalletType        @default(MAIN)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================================
+// DEPOSIT MODEL
+// ============================================================
+model Deposit {
+  id          String        @id @default(cuid())
+  userId      String
+  amount      Float
+  method      DepositMethod
+  proofUrl    String?       // Uploaded payment screenshot
+  utrNumber   String?       // UTR/transaction reference
+  status      DepositStatus @default(PENDING)
+  remarks     String?
+  approvedById String?
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy Admin? @relation("AdminDepositApproval", fields: [approvedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================
+// WITHDRAWAL MODEL
+// ============================================================
+model Withdrawal {
+  id           String           @id @default(cuid())
+  userId       String
+  amount       Float
+  walletType   WalletType       @default(MAIN)
+  status       WithdrawalStatus @default(PENDING)
+  bankDetails  Json             // { bankName, accountNo, ifsc, accountName }
+  upiId        String?
+  remarks      String?
+  approvedById String?
+  processedAt  DateTime?
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy Admin? @relation("AdminWithdrawalApproval", fields: [approvedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================
+// REFERRAL MODEL
+// ============================================================
+model Referral {
+  id          String @id @default(cuid())
+  referrerId  String
+  referredId  String
+  commission  Float  @default(0)
+  level       Int    @default(1) // For multi-level referrals
+
+  referrer User @relation("ReferrerRelation", fields: [referrerId], references: [id])
+  referred User @relation("ReferredRelation", fields: [referredId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([referrerId])
+  @@index([referredId])
+}
+
+// ============================================================
+// KYC MODEL
+// ============================================================
+model KYC {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  aadhaarUrl   String?
+  aadhaarNo    String?
+  panUrl       String?
+  panNo        String?
+  selfieUrl    String?
+  status       KYCStatus @default(PENDING)
+  remarks      String?
+  reviewedById String?
+  reviewedAt   DateTime?
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy Admin? @relation("AdminKYCApproval", fields: [reviewedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================
+// NOTIFICATION MODEL
+// ============================================================
+model Notification {
+  id      String           @id @default(cuid())
+  userId  String
+  title   String
+  message String
+  type    NotificationType @default(INFO)
+  isRead  Boolean          @default(false)
+  link    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum PlanStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  INVESTMENT
+  PROFIT
+  REFERRAL_BONUS
+  BONUS
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum WalletType {
+  MAIN
+  BONUS
+  REFERRAL
+}
+
+enum DepositMethod {
+  UPI
+  BANK_TRANSFER
+  QR_CODE
+}
+
+enum DepositStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  APPROVED
+  REJECTED
+}
+
+enum KYCStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
