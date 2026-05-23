@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
 import { FloatingMoneyBackground } from '@/components/common/FloatingMoneyBackground'
+import { WhatsAppButton } from '@/components/common/WhatsAppButton'
 import './globals.css'
 
 const inter = Inter({
@@ -83,6 +84,7 @@ export default async function RootLayout({
             disableTransitionOnChange={false}
           >
             <FloatingMoneyBackground />
+            <WhatsAppButton />
             {children}
             <Toaster />
           </ThemeProvider>
