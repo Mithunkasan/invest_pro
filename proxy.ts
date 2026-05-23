@@ -10,7 +10,7 @@ const protectedAdminRoutes = ['/admin/dashboard']
 // Auth pages (redirect to dashboard if already logged in)
 const authRoutes = ['/login', '/register', '/forgot-password']
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // ── Check Admin Routes ─────────────────────────────────────

@@ -18,18 +18,87 @@ async function main() {
   await prisma.user.deleteMany()
   await prisma.admin.deleteMany()
   await prisma.investmentPlan.deleteMany()
+  await prisma.systemSettings.deleteMany()
+  await prisma.membershipPlan.deleteMany()
 
   // ── Admin ─────────────────────────────────────────────────
-  const adminHash = await bcrypt.hash('Admin', 10)
+  const adminHash = await bcrypt.hash('Vrgalaxy@4321admin', 10)
   const admin = await prisma.admin.create({
     data: {
-      username: 'Admin',
-      email: 'admin@investpro.com',
+      username: 'admin@vrgalaxy.com',
+      email: 'admin@vrgalaxy.com',
       passwordHash: adminHash,
       role: 'SUPER_ADMIN',
     },
   })
   console.log('✅ Admin created:', admin.username)
+
+  // ── System Settings ──────────────────────────────────────
+  const settings = await prisma.systemSettings.create({
+    data: {
+      id: 'default',
+      referralPercent: 10.0,
+      level1Percent: 10.0,
+      level2Percent: 5.0,
+      level3Percent: 2.0,
+      levelIncomeEnabled: true,
+      starPerformerThreshold: 5000.0,
+      starPerformerEnabled: true,
+      tlRankRequiredReferrals: 5,
+      tlRankMaxUsers: 25,
+      tlRankEnabled: true,
+    }
+  })
+  console.log('✅ System Settings seeded')
+
+  // ── Membership Plans ──────────────────────────────────────
+  const membershipPlans = await Promise.all([
+    prisma.membershipPlan.create({
+      data: {
+        name: 'Free Membership',
+        price: 0,
+        durationDays: -1,
+        depositBonus: 0,
+        referralLevel1: 10,
+        referralLevel2: 0,
+        referralLevel3: 0,
+        withdrawalTime: '24-48 Hours',
+        support: 'Standard Email',
+        features: [
+          'Standard 1x Referral Commission (10%)',
+          'Access to Standard Investment Plans',
+          'Full Wallet Overview & Reports',
+          'Daily Dividend Accrual & Payouts',
+          'Basic Account Support (2-3 business days)',
+        ],
+        color: '#3B82F6',
+        isActive: true,
+      },
+    }),
+    prisma.membershipPlan.create({
+      data: {
+        name: 'Premium Membership',
+        price: 1999,
+        durationDays: 365,
+        depositBonus: 5,
+        referralLevel1: 10,
+        referralLevel2: 5,
+        referralLevel3: 2,
+        withdrawalTime: 'Under 2 Hours',
+        support: '24/7 Priority VIP Chat Group',
+        features: [
+          'Unlock Level 2 (5%) and Level 3 (2%) referral payouts',
+          'Instant +5.0% yield multiplier on all deposit approvals',
+          'Priority express withdrawal queue (processed in under 2 hours)',
+          'Full access to VIP compounding algorithms & investment plans',
+          'Direct account access to Dedicated Support Chat Manager',
+        ],
+        color: '#F59E0B',
+        isActive: true,
+      },
+    }),
+  ])
+  console.log('✅ Membership plans seeded:', membershipPlans.length)
 
   // ── Investment Plans ──────────────────────────────────────
   const plans = await Promise.all([
@@ -138,10 +207,10 @@ async function main() {
   // ── Wallets ───────────────────────────────────────────────
   await prisma.wallet.createMany({
     data: [
-      { userId: user1.id, mainBalance: 45000, bonusBalance: 2500, referralBalance: 5000 },
-      { userId: user2.id, mainBalance: 18000, bonusBalance: 500, referralBalance: 1000 },
-      { userId: user3.id, mainBalance: 32000, bonusBalance: 1200, referralBalance: 800 },
-      { userId: user4.id, mainBalance: 8000, bonusBalance: 200, referralBalance: 0 },
+      { userId: user1.id, mainBalance: 45000, bonusBalance: 2500, referralBalance: 5000, rewardBalance: 1500, levelBalance: 2500, shareBalance: 0 },
+      { userId: user2.id, mainBalance: 18000, bonusBalance: 500, referralBalance: 1000, rewardBalance: 200, levelBalance: 500, shareBalance: 0 },
+      { userId: user3.id, mainBalance: 32000, bonusBalance: 1200, referralBalance: 800, rewardBalance: 0, levelBalance: 200, shareBalance: 0 },
+      { userId: user4.id, mainBalance: 8000, bonusBalance: 200, referralBalance: 0, rewardBalance: 0, levelBalance: 0, shareBalance: 0 },
     ],
   })
 
@@ -280,7 +349,7 @@ async function main() {
 
   console.log('✅ Sample data seeded successfully!')
   console.log('─────────────────────────────────────')
-  console.log('📧 Admin Login: admin@investpro.com / Admin')
+  console.log('📧 Admin Login: admin@vrgalaxy.com / Vrgalaxy@4321admin')
   console.log('📧 User Login: arjun@example.com / User@123')
   console.log('─────────────────────────────────────')
 }

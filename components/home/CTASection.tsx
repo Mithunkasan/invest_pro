@@ -36,7 +36,7 @@ export function CTASection() {
             </span>
           </h2>
           <p className="text-white/70 text-lg mb-8 max-w-2xl mx-auto">
-            Join 10,000+ investors who are already growing their wealth with InvestPro. Start with just ₹1,000 today.
+            Join 10,000+ investors who are already growing their wealth with VR Galaxy. Start with just ₹1,000 today.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

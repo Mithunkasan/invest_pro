@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "InvestPro",
+    "appName": "VR Galaxy",
     "tagline": "Grow Your Wealth with Smart Investments",
     "loading": "Loading...",
     "save": "Save",
@@ -63,9 +63,9 @@
   "auth": {
     "login": "Login",
     "loginTitle": "Welcome Back",
-    "loginSubtitle": "Sign in to your InvestPro account",
+    "loginSubtitle": "Sign in to your VR Galaxy account",
     "register": "Create Account",
-    "registerTitle": "Join InvestPro",
+    "registerTitle": "Join VR Galaxy",
     "registerSubtitle": "Start your investment journey today",
     "email": "Email Address",
     "password": "Password",
@@ -110,7 +110,7 @@
   },
   "deposit": {
     "title": "Deposit Funds",
-    "subtitle": "Add funds to your InvestPro wallet",
+    "subtitle": "Add funds to your VR Galaxy wallet",
     "amount": "Deposit Amount",
     "method": "Payment Method",
     "upi": "UPI Transfer",
@@ -173,7 +173,7 @@
     "suspended": "Suspended"
   },
   "footer": {
-    "description": "InvestPro is a trusted investment platform helping thousands grow their wealth through smart, transparent investments.",
+    "description": "VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments.",
     "quickLinks": "Quick Links",
     "legal": "Legal",
     "contact": "Contact Us",

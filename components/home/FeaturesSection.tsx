@@ -61,7 +61,7 @@ export function FeaturesSection() {
   return (
     <section className="section-container bg-muted/20">
       <div className="text-center mb-16">
-        <h2 className="section-heading">Why Choose InvestPro?</h2>
+        <h2 className="section-heading">Why Choose VR Galaxy?</h2>
         <p className="section-subheading">
           We combine cutting-edge technology with smart investment strategies to provide the best platform for our users.
         </p>

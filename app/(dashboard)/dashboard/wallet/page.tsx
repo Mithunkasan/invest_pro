@@ -20,12 +20,12 @@ export default async function WalletPage() {
     take: 5,
   })
 
-  const total = (wallet?.mainBalance || 0) + (wallet?.bonusBalance || 0) + (wallet?.referralBalance || 0)
+  const total = (wallet?.mainBalance || 0) + (wallet?.bonusBalance || 0) + (wallet?.referralBalance || 0) + (wallet?.rewardBalance || 0) + (wallet?.levelBalance || 0) + (wallet?.shareBalance || 0)
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">My Wallet</h1>
-
+ 
       {/* Total Balance */}
       <div className="premium-card p-6 bg-gradient-to-r from-brand-900 to-brand-800 border-0">
         <p className="text-white/60 text-sm">Total Balance</p>
@@ -37,11 +37,14 @@ export default async function WalletPage() {
       </div>
 
       {/* Wallet Breakdown */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { label: 'Main Wallet', value: wallet?.mainBalance || 0, icon: Wallet, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Available for withdrawal and investment' },
-          { label: 'Bonus Wallet', value: wallet?.bonusBalance || 0, icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10', desc: 'Bonus rewards from platform' },
-          { label: 'Referral Wallet', value: wallet?.referralBalance || 0, icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Commission from referrals' },
+          { label: 'Reward Wallet', value: wallet?.rewardBalance || 0, icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-500/10', desc: 'Rewards managed by admin' },
+          { label: 'Referral Wallet', value: wallet?.referralBalance || 0, icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Commission from direct referrals' },
+          { label: 'Level Wallet', value: wallet?.levelBalance || 0, icon: ArrowDownToLine, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Commission from multi-level referrals' },
+          { label: 'Share Wallet', value: wallet?.shareBalance || 0, icon: TrendingUp, color: 'text-cyan-500', bg: 'bg-cyan-500/10', desc: 'Income as active member TL Rank' },
+          { label: 'Bonus Wallet', value: wallet?.bonusBalance || 0, icon: Wallet, color: 'text-orange-500', bg: 'bg-orange-500/10', desc: 'Platform bonus credits' },
         ].map((w) => (
           <div key={w.label} className="premium-card p-5">
             <div className={`w-10 h-10 rounded-xl ${w.bg} flex items-center justify-center mb-3`}>

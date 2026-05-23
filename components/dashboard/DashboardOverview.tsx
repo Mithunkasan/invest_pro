@@ -14,14 +14,21 @@ import { formatCurrency, formatDate, getStatusColor } from '@/utils/formatters'
 import type { UserTokenPayload } from '@/lib/auth'
 
 interface DashboardOverviewProps {
-  user: UserTokenPayload
+  user: UserTokenPayload & { starPerformer?: boolean; tlRank?: boolean }
   stats: {
     totalInvestment: number
     currentBalance: number
     totalProfit: number
     referralIncome: number
     activePlans: number
-    wallet: { mainBalance: number; bonusBalance: number; referralBalance: number }
+    wallet: {
+      mainBalance: number
+      bonusBalance: number
+      referralBalance: number
+      rewardBalance: number
+      levelBalance: number
+      shareBalance: number
+    }
   }
   investments: Array<{ id: string; amount: number; profit: number; status: string; startDate: string; endDate: string; plan: { name: string; roiPercent: number } }>
   transactions: Array<{ id: string; type: string; amount: number; status: string; description: string | null; createdAt: string }>
@@ -50,46 +57,108 @@ export function DashboardOverview({ user, stats, investments, transactions, char
   return (
     <div className="space-y-6">
       {/* Welcome */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-bold">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold flex flex-wrap items-center gap-2">
           Welcome back, <span className="text-primary">{user.name.split(' ')[0]}</span> 👋
+          {user.starPerformer && (
+            <span className="text-xs font-bold px-2 py-0.5 bg-gradient-to-r from-amber-400 to-amber-500 text-black rounded-lg shadow-sm flex items-center gap-1 border border-amber-300">
+              ⭐ Star Performer
+            </span>
+          )}
+          {user.tlRank && (
+            <span className="text-xs font-bold px-2 py-0.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg shadow-sm flex items-center gap-1 border border-indigo-400">
+              🏆 TL Rank
+            </span>
+          )}
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">Here&apos;s your investment summary</p>
+        <p className="text-muted-foreground text-sm">Here&apos;s your investment summary</p>
       </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatsCard
-          title="Total Investment"
-          value={stats.totalInvestment}
-          icon={<DollarSign className="w-5 h-5 text-primary" />}
-          iconBg="bg-primary/10"
-          change={12.5}
+          title="Main Wallet"
+          value={stats.wallet.mainBalance}
+          icon={
+            <div className="relative flex items-center justify-center">
+              <span className="absolute w-8 h-8 rounded-full bg-blue-500/20 animate-ping" />
+              <Wallet className="w-5 h-5 text-blue-500 relative z-10" />
+            </div>
+          }
+          iconBg="bg-blue-500/10"
           delay={0}
         />
         <StatsCard
-          title="Current Balance"
-          value={stats.currentBalance}
-          icon={<Wallet className="w-5 h-5 text-green-500" />}
-          iconBg="bg-green-500/10"
-          change={8.2}
-          delay={0.1}
-        />
-        <StatsCard
-          title="Total Profit"
-          value={stats.totalProfit}
-          icon={<TrendingUp className="w-5 h-5 text-gold-500" />}
-          iconBg="bg-gold-500/10"
-          change={15.3}
-          delay={0.2}
+          title="Reward"
+          value={stats.wallet.rewardBalance}
+          icon={
+            <div className="relative flex items-center justify-center">
+              <span className="absolute w-8 h-8 rounded-full bg-amber-500/20 animate-pulse" />
+              <TrendingUp className="w-5 h-5 text-amber-500 relative z-10" />
+            </div>
+          }
+          iconBg="bg-amber-500/10"
+          delay={0.05}
         />
         <StatsCard
           title="Referral Income"
-          value={stats.referralIncome}
-          icon={<Users className="w-5 h-5 text-purple-500" />}
+          value={stats.wallet.referralBalance}
+          icon={
+            <div className="relative flex items-center justify-center">
+              <span className="absolute w-8 h-8 rounded-full bg-purple-500/20 animate-ping" />
+              <Users className="w-5 h-5 text-purple-500 relative z-10" />
+            </div>
+          }
           iconBg="bg-purple-500/10"
-          change={5.1}
-          delay={0.3}
+          delay={0.1}
+        />
+        <StatsCard
+          title="Level Income"
+          value={stats.wallet.levelBalance}
+          icon={
+            <div className="relative flex items-center justify-center">
+              <span className="absolute w-8 h-8 rounded-full bg-emerald-500/20 animate-pulse" />
+              <Activity className="w-5 h-5 text-emerald-500 relative z-10 animate-pulse" />
+            </div>
+          }
+          iconBg="bg-emerald-500/10"
+          delay={0.15}
+        />
+        <StatsCard
+          title="Share Wallet"
+          value={stats.wallet.shareBalance}
+          icon={
+            <div className="relative flex items-center justify-center">
+              <span className="absolute w-8 h-8 rounded-full bg-cyan-400/30 animate-ping" />
+              <motion.div
+                animate={{
+                  rotateY: 360,
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 3,
+                  ease: "linear"
+                }}
+                className="relative z-10"
+              >
+                <DollarSign className="w-5 h-5 text-cyan-400 filter drop-shadow-[0_0_8px_rgba(34,211,238,0.7)]" />
+              </motion.div>
+            </div>
+          }
+          iconBg="bg-cyan-500/15"
+          delay={0.2}
+        />
+        <StatsCard
+          title="Bonus Wallet"
+          value={stats.wallet.bonusBalance}
+          icon={
+            <div className="relative flex items-center justify-center">
+              <span className="absolute w-8 h-8 rounded-full bg-orange-500/20 animate-ping" style={{ animationDelay: '0.5s' }} />
+              <TrendingUp className="w-5 h-5 text-orange-500 relative z-10" />
+            </div>
+          }
+          iconBg="bg-orange-500/10"
+          delay={0.25}
         />
       </div>
 
@@ -179,19 +248,22 @@ export function DashboardOverview({ user, stats, investments, transactions, char
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+        className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4"
       >
         {[
           { label: 'Main Wallet', value: stats.wallet.mainBalance, color: 'from-blue-500 to-blue-600', icon: '💼' },
-          { label: 'Bonus Wallet', value: stats.wallet.bonusBalance, color: 'from-green-500 to-green-600', icon: '🎁' },
+          { label: 'Reward Wallet', value: stats.wallet.rewardBalance, color: 'from-amber-500 to-amber-600', icon: '🎁' },
           { label: 'Referral Wallet', value: stats.wallet.referralBalance, color: 'from-purple-500 to-purple-600', icon: '👥' },
+          { label: 'Level Wallet', value: stats.wallet.levelBalance, color: 'from-emerald-500 to-emerald-600', icon: '📈' },
+          { label: 'Share Wallet', value: stats.wallet.shareBalance, color: 'from-cyan-500 to-cyan-600', icon: '📊' },
+          { label: 'Bonus Wallet', value: stats.wallet.bonusBalance, color: 'from-orange-500 to-orange-600', icon: '⭐' },
         ].map((w) => (
-          <div key={w.label} className={`rounded-2xl bg-gradient-to-br ${w.color} p-5 text-white`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-white/80">{w.label}</span>
-              <span className="text-xl">{w.icon}</span>
+          <div key={w.label} className={`rounded-2xl bg-gradient-to-br ${w.color} p-4 text-white shadow-md hover:shadow-lg transition-shadow`}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-white/80 font-medium">{w.label}</span>
+              <span className="text-lg">{w.icon}</span>
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(w.value)}</p>
+            <p className="text-lg font-black tracking-tight">{formatCurrency(w.value)}</p>
           </div>
         ))}
       </motion.div>

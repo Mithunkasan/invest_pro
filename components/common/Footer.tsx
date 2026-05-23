@@ -10,14 +10,14 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           {/* Company Info */}
           <div className="space-y-6">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white">
-                <Wallet size={22} />
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-12 h-12 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-115">
+                <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
               </div>
-              <span className="text-xl font-black tracking-tight">Invest<span className="text-primary">Pro</span></span>
+              <span className="text-2xl font-black tracking-wider bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent">VR Galaxy</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
-              InvestPro is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.
+              VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.
             </p>
             <div className="flex gap-4">
               {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
@@ -62,7 +62,7 @@ export function Footer() {
             <ul className="space-y-4">
               <li className="flex gap-3 text-sm text-muted-foreground">
                 <Mail size={18} className="text-primary flex-shrink-0" />
-                <span>support@investpro.com</span>
+                <span>support@vrgalaxy.com</span>
               </li>
               <li className="flex gap-3 text-sm text-muted-foreground">
                 <Phone size={18} className="text-primary flex-shrink-0" />
@@ -79,7 +79,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted-foreground font-medium">
-            © {currentYear} InvestPro Financial Services. All rights reserved.
+            © {currentYear} VR Galaxy Financial Services. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link href="/terms" className="text-xs text-muted-foreground hover:text-primary">Terms</Link>

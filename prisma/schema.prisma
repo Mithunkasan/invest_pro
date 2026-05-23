@@ -37,6 +37,11 @@ model User {
   kyc           KYC?
   notifications Notification[]
 
+  // Badges & Rank
+  starPerformer Boolean @default(false)
+  tlRank        Boolean @default(false)
+  tlRankEarnedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -122,6 +127,9 @@ model Wallet {
   mainBalance     Float  @default(0)
   bonusBalance    Float  @default(0)
   referralBalance Float  @default(0)
+  rewardBalance   Float  @default(0)
+  levelBalance    Float  @default(0)
+  shareBalance    Float  @default(0)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -301,6 +309,9 @@ enum TransactionType {
   PROFIT
   REFERRAL_BONUS
   BONUS
+  LEVEL_INCOME
+  REWARD
+  SHARE_BONUS
 }
 
 enum TransactionStatus {
@@ -314,6 +325,9 @@ enum WalletType {
   MAIN
   BONUS
   REFERRAL
+  LEVEL
+  REWARD
+  SHARE
 }
 
 enum DepositMethod {
@@ -346,4 +360,46 @@ enum NotificationType {
   SUCCESS
   WARNING
   ERROR
+}
+
+// ============================================================
+// SYSTEM SETTINGS MODEL
+// ============================================================
+model SystemSettings {
+  id                      String   @id @default("default")
+  referralPercent         Float    @default(10.0)
+  level1Percent           Float    @default(10.0)
+  level2Percent           Float    @default(5.0)
+  level3Percent           Float    @default(2.0)
+  levelIncomeEnabled      Boolean  @default(true)
+  starPerformerThreshold  Float    @default(5000.0)
+  starPerformerEnabled    Boolean  @default(true)
+  tlRankRequiredReferrals Int      @default(5)
+  tlRankMaxUsers          Int      @default(25)
+  tlRankEnabled           Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+// ============================================================
+// MEMBERSHIP PLAN MODEL
+// ============================================================
+model MembershipPlan {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  price           Float
+  durationDays    Int      // duration in days, e.g. 365, or -1 for lifetime
+  depositBonus    Float    @default(0.0) // deposit yield bonus %
+  referralLevel1  Float    @default(10.0) // L1 referral commission %
+  referralLevel2  Float    @default(0.0)  // L2 referral commission %
+  referralLevel3  Float    @default(0.0)  // L3 referral commission %
+  withdrawalTime  String   @default("24-48 Hours")
+  support         String   @default("Standard Email")
+  features        String[] // Features list array
+  color           String   @default("#3B82F6") // UI accent hex color
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isActive])
 }

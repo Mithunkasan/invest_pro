@@ -84,9 +84,10 @@ export function PlansSection() {
             key={plan.name}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
+            whileHover={{ y: -8, scale: 1.02 }}
+            transition={{ delay: i * 0.1, type: "spring", stiffness: 300, damping: 20 }}
             viewport={{ once: true }}
-            className={`premium-card relative overflow-hidden group ${plan.popular ? 'border-primary shadow-2xl shadow-primary/10 ring-1 ring-primary/20' : ''}`}
+            className={`premium-card relative overflow-hidden group transition-all duration-300 ${plan.popular ? 'border-primary shadow-2xl shadow-primary/20 ring-1 ring-primary/30' : 'hover:border-primary/30 hover:shadow-lg'}`}
           >
             {plan.popular && (
               <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-xl z-20">
