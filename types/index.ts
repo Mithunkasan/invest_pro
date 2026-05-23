@@ -7,9 +7,9 @@ export type Role = 'USER' | 'ADMIN'
 export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'PENDING'
 export type PlanStatus = 'ACTIVE' | 'INACTIVE'
 export type InvestmentStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED'
-export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL' | 'INVESTMENT' | 'PROFIT' | 'REFERRAL_BONUS' | 'BONUS'
+export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL' | 'INVESTMENT' | 'PROFIT' | 'REFERRAL_BONUS' | 'BONUS' | 'LEVEL_INCOME' | 'REWARD' | 'SHARE_BONUS'
 export type TransactionStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
-export type WalletType = 'MAIN' | 'BONUS' | 'REFERRAL'
+export type WalletType = 'MAIN' | 'BONUS' | 'REFERRAL' | 'LEVEL' | 'REWARD' | 'SHARE'
 export type DepositMethod = 'UPI' | 'BANK_TRANSFER' | 'QR_CODE'
 export type DepositStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type WithdrawalStatus = 'PENDING' | 'PROCESSING' | 'APPROVED' | 'REJECTED'
@@ -26,6 +26,9 @@ export interface User {
   status: UserStatus
   referralCode: string
   referredById?: string | null
+  starPerformer?: boolean
+  tlRank?: boolean
+  tlRankEarnedAt?: Date | null
   createdAt: Date
   updatedAt: Date
 }
@@ -64,6 +67,9 @@ export interface Wallet {
   mainBalance: number
   bonusBalance: number
   referralBalance: number
+  rewardBalance: number
+  levelBalance: number
+  shareBalance: number
   updatedAt: Date
 }
 
@@ -156,6 +162,22 @@ export interface Admin {
   email: string
   role: string
   createdAt: Date
+}
+
+export interface SystemSettings {
+  id: string
+  referralPercent: number
+  level1Percent: number
+  level2Percent: number
+  level3Percent: number
+  levelIncomeEnabled: boolean
+  starPerformerThreshold: number
+  starPerformerEnabled: boolean
+  tlRankRequiredReferrals: number
+  tlRankMaxUsers: number
+  tlRankEnabled: boolean
+  createdAt: Date
+  updatedAt: Date
 }
 
 // ── API Response Types ────────────────────────────────────────────────────────

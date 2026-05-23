@@ -1,19 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, TrendingUp, Wallet, ArrowDownToLine, ArrowUpFromLine,
-  History, Users, Bell, ShieldCheck, Settings, TrendingUpIcon, X, ChevronRight
+  History, Users, Bell, ShieldCheck, Settings, X, ChevronRight, Crown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const navItems = [
+interface SubItem {
+  href: string
+  label: string
+}
+
+interface NavItem {
+  href?: string
+  label: string
+  icon: any
+  subItems?: SubItem[]
+}
+
+const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
+  {
+    label: 'Membership',
+    icon: Crown,
+    subItems: [
+      { href: '/dashboard/membership/free', label: 'Free Membership' },
+      { href: '/dashboard/membership/premium', label: 'Premium Membership' },
+    ],
+  },
   { href: '/dashboard/deposit', label: 'Deposit', icon: ArrowDownToLine },
   { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowUpFromLine },
   { href: '/dashboard/transactions', label: 'Transactions', icon: History },
@@ -26,24 +46,113 @@ const navItems = [
 interface DashboardSidebarProps {
   mobileOpen: boolean
   onClose: () => void
+  isKycApproved: boolean
 }
 
-export function DashboardSidebar({ mobileOpen, onClose }: DashboardSidebarProps) {
+export function DashboardSidebar({ mobileOpen, onClose, isKycApproved }: DashboardSidebarProps) {
   const pathname = usePathname()
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
+
+  // Automatically expand folders if their child routes are currently active
+  useEffect(() => {
+    navItems.forEach((item) => {
+      if (item.subItems && item.subItems.some((sub) => pathname === sub.href)) {
+        setExpandedItems((prev) => ({ ...prev, [item.label]: true }))
+      }
+    })
+  }, [pathname])
+
+  const toggleExpand = (label: string) => {
+    setExpandedItems((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }))
+  }
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-sidebar-border">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center">
-          <TrendingUpIcon className="w-4 h-4 text-white" />
+      <div className="flex items-center gap-2.5 px-6 py-4 border-b border-sidebar-border">
+        <div className="w-11 h-11 flex items-center justify-center overflow-hidden">
+          <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
         </div>
-        <span className="font-bold text-lg text-sidebar-foreground">InvestPro</span>
+        <span className="font-black tracking-wider text-xl bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">VR Galaxy</span>
       </div>
 
       {/* Nav Items */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto no-scrollbar">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {(isKycApproved
+          ? navItems
+          : navItems.filter((item) => item.label === 'KYC' || item.label === 'Profile')
+        ).map((item) => {
+          const Icon = item.icon
+
+          // Render collapsible section
+          if (item.subItems) {
+            const isExpanded = !!expandedItems[item.label]
+            const hasActiveChild = item.subItems.some((sub) => pathname === sub.href)
+
+            return (
+              <div key={item.label} className="space-y-0.5">
+                <button
+                  onClick={() => toggleExpand(item.label)}
+                  className={cn(
+                    'sidebar-link w-full text-left justify-between cursor-pointer focus:outline-none',
+                    (isExpanded || hasActiveChild) && 'text-sidebar-foreground bg-sidebar-accent/50'
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-4 h-4 shrink-0 text-amber-400 filter drop-shadow-[0_0_4px_rgba(245,158,11,0.3)]" />
+                    <span>{item.label}</span>
+                  </div>
+                  <ChevronRight
+                    className={cn(
+                      'ml-auto w-3 h-3 text-sidebar-foreground/50 transition-transform duration-200',
+                      isExpanded && 'rotate-90 text-primary'
+                    )}
+                  />
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: 'easeInOut' }}
+                      className="overflow-hidden pl-7 space-y-0.5"
+                    >
+                      {item.subItems.map((sub) => {
+                        const isSubActive = pathname === sub.href
+                        return (
+                          <Link
+                            key={sub.href}
+                            href={sub.href}
+                            onClick={onClose}
+                            className={cn(
+                              'flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60',
+                              isSubActive && 'text-primary bg-primary/10 font-bold'
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                'w-1.5 h-1.5 rounded-full bg-sidebar-foreground/20 transition-colors',
+                                isSubActive && 'bg-primary scale-125 shadow-[0_0_6px_rgba(59,130,246,0.5)]'
+                              )}
+                            />
+                            <span>{sub.label}</span>
+                          </Link>
+                        )
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )
+          }
+
+          // Render standard link
+          const href = item.href || '/dashboard'
           const isActive = href === '/dashboard'
             ? pathname === '/dashboard'
             : pathname.startsWith(href)
@@ -55,11 +164,11 @@ export function DashboardSidebar({ mobileOpen, onClose }: DashboardSidebarProps)
               onClick={onClose}
               className={cn(
                 'sidebar-link',
-                isActive && 'active text-primary bg-primary/10'
+                isActive && 'active text-primary bg-primary/10 font-semibold'
               )}
             >
               <Icon className="w-4 h-4 shrink-0" />
-              <span>{label}</span>
+              <span>{item.label}</span>
               {isActive && <ChevronRight className="ml-auto w-3 h-3 text-primary" />}
             </Link>
           )
@@ -69,8 +178,8 @@ export function DashboardSidebar({ mobileOpen, onClose }: DashboardSidebarProps)
       {/* Footer */}
       <div className="px-4 py-4 border-t border-sidebar-border">
         <div className="flex items-center gap-2 text-xs text-sidebar-foreground/40">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span>InvestPro v1.0.0</span>
+          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span>VR Galaxy v1.0.0</span>
         </div>
       </div>
     </div>

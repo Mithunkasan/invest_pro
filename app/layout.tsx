@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { Toaster } from '@/components/ui/toaster'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
+import { FloatingMoneyBackground } from '@/components/common/FloatingMoneyBackground'
 import './globals.css'
 
 const inter = Inter({
@@ -15,33 +16,33 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: {
-    default: 'InvestPro — Smart Investment Platform',
-    template: '%s | InvestPro',
+    default: 'VR Galaxy — Smart Investment Platform',
+    template: '%s | VR Galaxy',
   },
   description:
-    'InvestPro is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.',
+    'VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.',
   keywords: ['investment', 'mutual funds', 'ROI', 'wealth management', 'fintech', 'India'],
-  authors: [{ name: 'InvestPro Team' }],
-  creator: 'InvestPro',
+  authors: [{ name: 'VR Galaxy Team' }],
+  creator: 'VR Galaxy',
   openGraph: {
     type: 'website',
     locale: 'en_IN',
     url: process.env.NEXT_PUBLIC_APP_URL,
-    title: 'InvestPro — Smart Investment Platform',
+    title: 'VR Galaxy — Smart Investment Platform',
     description: 'Grow your wealth with daily ROI. Join 10,000+ investors.',
-    siteName: 'InvestPro',
+    siteName: 'VR Galaxy',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'InvestPro Investment Platform',
+        alt: 'VR Galaxy Investment Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'InvestPro — Smart Investment Platform',
+    title: 'VR Galaxy — Smart Investment Platform',
     description: 'Grow your wealth with daily ROI. Join 10,000+ investors.',
     images: ['/og-image.png'],
   },
@@ -81,6 +82,7 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange={false}
           >
+            <FloatingMoneyBackground />
             {children}
             <Toaster />
           </ThemeProvider>

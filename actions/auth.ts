@@ -129,7 +129,14 @@ export async function adminLoginAction(
     return { success: false, message: 'Validation failed' }
   }
 
-  const admin = await prisma.admin.findUnique({ where: { username: parsed.data.username } })
+  const admin = await prisma.admin.findFirst({
+    where: {
+      OR: [
+        { username: parsed.data.username },
+        { email: parsed.data.username },
+      ],
+    },
+  })
   if (!admin) {
     return { success: false, message: 'Invalid credentials' }
   }

@@ -53,15 +53,15 @@ export default function AdminLoginPage() {
 
           <form action={handleAction} className="space-y-4">
             <div>
-              <label className="text-sm text-white/70 font-medium block mb-1.5">Username</label>
+              <label className="text-sm text-white/70 font-medium block mb-1.5">Email Address</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <input
                   name="username"
                   type="text"
                   required
-                  defaultValue="Admin"
-                  placeholder="Admin"
+                  defaultValue="admin@vrgalaxy.com"
+                  placeholder="admin@vrgalaxy.com"
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
               </div>
@@ -75,7 +75,7 @@ export default function AdminLoginPage() {
                   name="password"
                   type="password"
                   required
-                  defaultValue="Admin"
+                  defaultValue="Vrgalaxy@4321admin"
                   placeholder="••••••••"
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
@@ -87,7 +87,7 @@ export default function AdminLoginPage() {
 
           <div className="mt-6 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
             <p className="text-xs text-yellow-400 text-center">
-              🔒 Default credentials: Admin / Admin
+              🔒 Default credentials: admin@vrgalaxy.com / Vrgalaxy@4321admin
             </p>
           </div>
 

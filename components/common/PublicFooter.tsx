@@ -29,16 +29,16 @@ export function PublicFooter() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Brand */}
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-white" />
+            <Link href="/" className="flex items-center gap-2.5 font-black text-2xl group">
+              <div className="w-10 h-10 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-115">
+                <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
               </div>
-              <span className="bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
-                InvestPro
+              <span className="bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent font-black tracking-wider">
+                VR Galaxy
               </span>
             </Link>
             <p className="text-sm text-white/60 leading-relaxed">
-              InvestPro is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.
+              VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.
             </p>
             <div className="flex gap-3">
               {socialLinks.map(({ icon: Icon, href, label }) => (
@@ -94,7 +94,7 @@ export function PublicFooter() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-sm text-white/60">
                 <Mail className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-                <span>support@investpro.com</span>
+                <span>support@vrgalaxy.com</span>
               </li>
               <li className="flex items-start gap-3 text-sm text-white/60">
                 <Phone className="w-4 h-4 mt-0.5 text-primary shrink-0" />
@@ -110,7 +110,7 @@ export function PublicFooter() {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/40">
-          <p>© {new Date().getFullYear()} InvestPro. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} VR Galaxy. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />

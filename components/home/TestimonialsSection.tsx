@@ -11,7 +11,7 @@ const testimonials = [
     profit: '₹37,500',
     invested: '₹50,000',
     rating: 5,
-    text: 'InvestPro has completely changed my financial life. The daily returns are consistent and the withdrawal process is smooth. Highly recommended!',
+    text: 'VR Galaxy has completely changed my financial life. The daily returns are consistent and the withdrawal process is smooth. Highly recommended!',
     initials: 'RK',
   },
   {
@@ -77,7 +77,7 @@ export function TestimonialsSection() {
       >
         <h2 className="section-heading">What Our Investors Say</h2>
         <p className="section-subheading">
-          Join thousands of satisfied investors who are growing their wealth with InvestPro.
+          Join thousands of satisfied investors who are growing their wealth with VR Galaxy.
         </p>
       </motion.div>
 

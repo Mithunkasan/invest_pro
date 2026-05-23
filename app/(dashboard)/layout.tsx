@@ -11,10 +11,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
     where: { userId: session.id, isRead: false },
   })
 
+  const kyc = await prisma.kYC.findUnique({
+    where: { userId: session.id },
+    select: { status: true },
+  })
+
+  const isKycApproved = kyc?.status === 'APPROVED'
+
   return (
     <DashboardLayoutClient
       user={{ name: session.name, email: session.email }}
       notificationCount={unreadCount}
+      isKycApproved={isKycApproved}
     >
       {children}
     </DashboardLayoutClient>

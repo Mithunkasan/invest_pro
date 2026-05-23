@@ -109,6 +109,8 @@
     --sidebar-accent-foreground: 210 40% 96%;
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 221 83% 53%;
+    /* Theme-specific opacity multiplier for background animations (higher in light mode for visibility) */
+    --theme-opacity-multiplier: 1.6;
   }
 
   .dark {
@@ -144,6 +146,8 @@
     --sidebar-accent-foreground: 210 40% 96%;
     --sidebar-border: 217 33% 12%;
     --sidebar-ring: 221 83% 53%;
+    /* Theme-specific opacity multiplier for background animations (softer in dark mode) */
+    --theme-opacity-multiplier: 1.0;
   }
 }
 
@@ -284,4 +288,70 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+}
+
+/* ── Floating Money Symbols Background Animations ── */
+@keyframes floatUp {
+  0% {
+    transform: translate3d(0, 105vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: var(--float-opacity, 0.06);
+  }
+  85% {
+    opacity: var(--float-opacity, 0.06);
+  }
+  100% {
+    transform: translate3d(var(--drift-x, 40px), -10vh, 0) rotate(var(--rotate-to, 360deg));
+    opacity: 0;
+  }
+}
+
+@keyframes floatDown {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: var(--float-opacity, 0.06);
+  }
+  85% {
+    opacity: var(--float-opacity, 0.06);
+  }
+  100% {
+    transform: translate3d(var(--drift-x, -40px), 105vh, 0) rotate(var(--rotate-to, -360deg));
+    opacity: 0;
+  }
+}
+
+.animate-float-up {
+  animation: floatUp var(--duration, 25s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  will-change: transform, opacity;
+}
+
+.animate-float-down {
+  animation: floatDown var(--duration, 25s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  will-change: transform, opacity;
+}
+
+/* Organic swaying animation for currency bills and symbols */
+@keyframes sway {
+  0% {
+    transform: translateX(calc(-1 * var(--sway-amount, 20px))) rotate(var(--sway-rotate-start, -15deg));
+  }
+  50% {
+    transform: translateX(var(--sway-amount, 20px)) rotate(var(--sway-rotate-end, 15deg));
+  }
+  100% {
+    transform: translateX(calc(-1 * var(--sway-amount, 20px))) rotate(var(--sway-rotate-start, -15deg));
+  }
+}
+
+.animate-sway {
+  animation: sway var(--sway-duration, 5s) ease-in-out infinite alternate;
+  animation-delay: var(--sway-delay, 0s);
+  will-change: transform;
 }

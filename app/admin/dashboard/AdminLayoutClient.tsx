@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpFromLine, TrendingUp, ShieldCheck,
   GitBranch, Wallet, Bell, BarChart3, Lock, Settings, X, TrendingUpIcon,
-  LogOut, Menu, ChevronRight,
+  LogOut, Menu, ChevronRight, Crown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ThemeSwitcher } from '@/components/common/ThemeSwitcher'
@@ -19,8 +19,9 @@ const adminNavItems = [
   { href: '/admin/dashboard/deposits', label: 'Deposits', icon: ArrowDownToLine },
   { href: '/admin/dashboard/withdrawals', label: 'Withdrawals', icon: ArrowUpFromLine },
   { href: '/admin/dashboard/plans', label: 'Investment Plans', icon: TrendingUp },
+  { href: '/admin/dashboard/memberships', label: 'Membership Plans', icon: Crown },
   { href: '/admin/dashboard/kyc', label: 'KYC Management', icon: ShieldCheck },
-  { href: '/admin/dashboard/referrals', label: 'Referral Settings', icon: GitBranch },
+  { href: '/admin/dashboard/settings', label: 'System Settings', icon: Settings },
   { href: '/admin/dashboard/wallet', label: 'Wallet Management', icon: Wallet },
   { href: '/admin/dashboard/notifications', label: 'Notifications', icon: Bell },
   { href: '/admin/dashboard/reports', label: 'Reports & Analytics', icon: BarChart3 },
@@ -31,13 +32,13 @@ function AdminSidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-sidebar-border">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
-          <TrendingUpIcon className="w-4 h-4 text-white" />
+      <div className="flex items-center gap-2.5 px-6 py-4 border-b border-sidebar-border">
+        <div className="w-11 h-11 flex items-center justify-center overflow-hidden">
+          <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(239,68,68,0.3)]" alt="VR Galaxy Logo" />
         </div>
         <div>
-          <span className="font-bold text-sidebar-foreground">InvestPro</span>
-          <span className="text-xs text-red-400 block">Admin Panel</span>
+          <span className="font-black tracking-wider text-base bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent block">VR Galaxy</span>
+          <span className="text-[10px] text-muted-foreground block font-bold uppercase tracking-widest">Admin Portal</span>
         </div>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto no-scrollbar">
@@ -119,7 +120,7 @@ export function AdminLayoutClient({ children, admin }: AdminLayoutClientProps) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative z-10">
           {children}
         </main>
       </div>

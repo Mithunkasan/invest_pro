@@ -69,18 +69,27 @@ export default async function DashboardPage() {
     _sum: { commission: true },
   })
 
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: { starPerformer: true, tlRank: true }
+  })
+
   const stats = {
     totalInvestment: totalInvestment._sum.amount || 0,
-    currentBalance: (wallet?.mainBalance || 0) + (wallet?.bonusBalance || 0) + (wallet?.referralBalance || 0),
+    currentBalance: (wallet?.mainBalance || 0) + (wallet?.bonusBalance || 0) + (wallet?.referralBalance || 0) + (wallet?.rewardBalance || 0) + (wallet?.levelBalance || 0) + (wallet?.shareBalance || 0),
     totalProfit: totalProfit._sum.profit || 0,
     referralIncome: referralIncome._sum.commission || 0,
     activePlans: investments.length,
-    wallet: wallet || { mainBalance: 0, bonusBalance: 0, referralBalance: 0 },
+    wallet: wallet || { mainBalance: 0, bonusBalance: 0, referralBalance: 0, rewardBalance: 0, levelBalance: 0, shareBalance: 0 },
   }
 
   return (
     <DashboardOverview
-      user={session}
+      user={{
+        ...session,
+        starPerformer: dbUser?.starPerformer || false,
+        tlRank: dbUser?.tlRank || false,
+      } as any}
       stats={stats}
       investments={JSON.parse(JSON.stringify(investments))}
       transactions={JSON.parse(JSON.stringify(transactions))}

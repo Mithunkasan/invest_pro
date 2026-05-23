@@ -39,7 +39,7 @@ export function HowItWorks() {
       <div className="text-center mb-20">
         <h2 className="section-heading">How It Works</h2>
         <p className="section-subheading">
-          Get started with InvestPro in four simple steps and start earning daily returns.
+          Get started with VR Galaxy in four simple steps and start earning daily returns.
         </p>
       </div>
 
