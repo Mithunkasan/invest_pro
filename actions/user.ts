@@ -256,16 +256,16 @@ export async function submitKYC(formData: FormData): Promise<ApiResponse> {
   }
 }
 
-// ── Buy Premium Membership ─────────────────────────────────────────────────────
-export async function buyPremiumMembershipAction(): Promise<ApiResponse> {
+// ── Buy Membership Plan ────────────────────────────────────────────────────────
+export async function buyMembershipPlanAction(planId: string): Promise<ApiResponse> {
   const session = await getSession()
   if (!session) return { success: false, message: 'Unauthorized' }
 
   try {
-    const dbPremiumPlan = await prisma.membershipPlan.findFirst({
-      where: { name: 'Premium Membership', isActive: true }
+    const plan = await prisma.membershipPlan.findUnique({
+      where: { id: planId, isActive: true }
     })
-    const upgradePrice = dbPremiumPlan ? dbPremiumPlan.price : 1999
+    if (!plan) return { success: false, message: 'Membership plan not found or inactive' }
 
     const [user, wallet] = await Promise.all([
       prisma.user.findUnique({ where: { id: session.id } }),
@@ -275,55 +275,59 @@ export async function buyPremiumMembershipAction(): Promise<ApiResponse> {
     if (!user) return { success: false, message: 'User not found' }
     if (!wallet) return { success: false, message: 'Wallet not found' }
 
-    if (user.starPerformer || user.tlRank) {
-      return { success: false, message: 'You are already a Premium Member!' }
+    if (user.membershipPlanId === plan.id) {
+      return { success: false, message: `You are already subscribed to ${plan.name}!` }
     }
 
-    if (wallet.mainBalance < upgradePrice) {
+    if (wallet.mainBalance < plan.price) {
       return { success: false, message: 'Insufficient balance in main wallet' }
     }
 
-    await prisma.$transaction([
-      // Deduct from wallet
-      prisma.wallet.update({
-        where: { userId: session.id },
-        data: { mainBalance: { decrement: upgradePrice } },
-      }),
-      // Grant Premium badge (starPerformer = true)
-      prisma.user.update({
+    await prisma.$transaction(async (tx) => {
+      // Deduct from wallet if price > 0
+      if (plan.price > 0) {
+        await tx.wallet.update({
+          where: { userId: session.id },
+          data: { mainBalance: { decrement: plan.price } },
+        })
+        
+        // Create transaction
+        await tx.transaction.create({
+          data: {
+            userId: session.id,
+            type: 'INVESTMENT',
+            amount: plan.price,
+            status: 'COMPLETED',
+            description: `Upgraded to ${plan.name}`,
+            walletType: 'MAIN',
+          },
+        })
+      }
+
+      // Update user plan
+      await tx.user.update({
         where: { id: session.id },
-        data: { starPerformer: true },
-      }),
-      // Create transaction
-      prisma.transaction.create({
-        data: {
-          userId: session.id,
-          type: 'INVESTMENT',
-          amount: upgradePrice,
-          status: 'COMPLETED',
-          description: `Upgraded to Premium Membership`,
-          walletType: 'MAIN',
-        },
-      }),
+        data: { membershipPlanId: plan.id },
+      })
+
       // Send notification
-      prisma.notification.create({
+      await tx.notification.create({
         data: {
           userId: session.id,
-          title: 'Premium Activated! 👑',
-          message: `Congratulations! You have successfully upgraded to Premium Membership.`,
+          title: `${plan.name} Activated! 👑`,
+          message: `Congratulations! You have successfully upgraded to ${plan.name}.`,
           type: 'SUCCESS',
         },
-      }),
-    ])
+      })
+    })
 
     revalidatePath('/dashboard')
-    revalidatePath('/dashboard/membership/free')
-    revalidatePath('/dashboard/membership/premium')
+    revalidatePath('/dashboard/membership')
     revalidatePath('/dashboard/wallet')
 
-    return { success: true, message: 'Successfully upgraded to Premium Membership!' }
+    return { success: true, message: `Successfully upgraded to ${plan.name}!` }
   } catch (error) {
-    console.error('Error purchasing premium membership:', error)
+    console.error('Error purchasing membership plan:', error)
     return { success: false, message: 'Failed to process upgrade' }
   }
 }

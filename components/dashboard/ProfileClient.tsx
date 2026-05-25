@@ -1,11 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useTheme } from 'next-themes'
-import { User, Lock, Globe, Palette, Shield, Calendar } from 'lucide-react'
+import { User, Lock, Shield, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ThemeSwitcher } from '@/components/common/ThemeSwitcher'
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
 import { formatDate } from '@/utils/formatters'
 import { logoutAction } from '@/actions/auth'
 
@@ -109,29 +106,6 @@ export function ProfileClient({ user }: ProfileClientProps) {
         </div>
       </div>
 
-      {/* Appearance */}
-      <div className="premium-card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Palette className="w-4 h-4 text-muted-foreground" />
-          <h2 className="font-semibold">Appearance & Language</h2>
-        </div>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
-            <div>
-              <p className="text-sm font-medium">Theme</p>
-              <p className="text-xs text-muted-foreground">Dark or Light mode</p>
-            </div>
-            <ThemeSwitcher />
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
-            <div>
-              <p className="text-sm font-medium">Language</p>
-              <p className="text-xs text-muted-foreground">English / தமிழ்</p>
-            </div>
-            <LanguageSwitcher />
-          </div>
-        </div>
-      </div>
 
       {/* Danger Zone */}
       <div className="premium-card p-6 border-red-500/20">

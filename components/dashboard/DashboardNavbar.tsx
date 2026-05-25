@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import { Menu, Bell, Search, LogOut, User } from 'lucide-react'
-import { ThemeSwitcher } from '@/components/common/ThemeSwitcher'
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,8 +55,6 @@ export function DashboardNavbar({
       <div className="flex-1 lg:flex-none" />
 
       <div className="flex items-center gap-2">
-        <LanguageSwitcher />
-        <ThemeSwitcher />
 
         {/* Notifications */}
         <Link href="/dashboard/notifications">

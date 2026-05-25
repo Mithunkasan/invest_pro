@@ -4,23 +4,25 @@ import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
-import { buyPremiumMembershipAction } from '@/actions/user'
-import { Crown, Loader2 } from 'lucide-react'
+import { buyMembershipPlanAction } from '@/actions/user'
+import { Crown, Loader2, Check } from 'lucide-react'
 
 interface UpgradeButtonProps {
-  upgradePrice: number
+  planId: string
+  planName: string
+  price: number
   mainBalance: number
-  isPremium: boolean
+  isActivePlan: boolean
   color: string
 }
 
-export function MembershipUpgradeButton({ upgradePrice, mainBalance, isPremium, color }: UpgradeButtonProps) {
+export function MembershipUpgradeButton({ planId, planName, price, mainBalance, isActivePlan, color }: UpgradeButtonProps) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   const handleUpgrade = () => {
-    if (isPremium) return
-    if (mainBalance < upgradePrice) {
+    if (isActivePlan) return
+    if (mainBalance < price) {
       toast({
         title: 'Insufficient Balance',
         description: 'Please deposit funds into your main wallet first.',
@@ -31,7 +33,7 @@ export function MembershipUpgradeButton({ upgradePrice, mainBalance, isPremium, 
 
     startTransition(async () => {
       try {
-        const res = await buyPremiumMembershipAction()
+        const res = await buyMembershipPlanAction(planId)
         if (res.success) {
           toast({
             title: 'Upgrade Successful! 👑',
@@ -55,18 +57,19 @@ export function MembershipUpgradeButton({ upgradePrice, mainBalance, isPremium, 
     })
   }
 
-  if (isPremium) {
+  if (isActivePlan) {
     return (
-      <Button disabled className="w-full bg-green-600 hover:bg-green-700 text-white font-bold cursor-not-allowed">
-        Already Subscribed
+      <Button disabled className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-not-allowed flex items-center justify-center gap-1.5 rounded-xl h-10.5">
+        <Check className="w-4.5 h-4.5" />
+        Current Plan
       </Button>
     )
   }
 
-  if (mainBalance < upgradePrice) {
+  if (mainBalance < price) {
     return (
       <div className="space-y-3">
-        <Button disabled className="w-full bg-white/10 text-white/40 font-bold cursor-not-allowed border border-white/5">
+        <Button disabled className="w-full bg-white/10 text-white/40 font-bold cursor-not-allowed border border-white/5 rounded-xl h-10.5">
           Insufficient Balance
         </Button>
       </div>
@@ -77,21 +80,21 @@ export function MembershipUpgradeButton({ upgradePrice, mainBalance, isPremium, 
     <Button
       onClick={handleUpgrade}
       disabled={isPending}
-      className="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-black font-bold border border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-80"
+      className="w-full text-black font-extrabold border border-white/10 shadow-[0_0_15px_rgba(245,158,11,0.2)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-80 rounded-xl h-10.5 cursor-pointer"
       style={{
         backgroundImage: `linear-gradient(to right, ${color}, ${color}dd)`,
-        boxShadow: `0 0 15px ${color}40`,
+        boxShadow: `0 4px 15px ${color}30`,
       }}
     >
       {isPending ? (
         <>
-          <Loader2 className="w-4 h-4 animate-spin text-black" />
-          Upgrading...
+          <Loader2 className="w-4.5 h-4.5 animate-spin text-black" />
+          Activating...
         </>
       ) : (
         <>
-          <Crown className="w-4 h-4 text-black shrink-0" />
-          Upgrade Instantly
+          <Crown className="w-4.5 h-4.5 text-black shrink-0" />
+          Subscribe Now
         </>
       )}
     </Button>

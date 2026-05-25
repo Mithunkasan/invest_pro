@@ -40,23 +40,37 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
     if (!deposit || deposit.status !== 'PENDING') return { success: false, message: 'Invalid deposit request' }
 
     if (action === 'APPROVE') {
-      await prisma.$transaction([
+      // Fetch user's membership plan to calculate potential yield bonus
+      const user = await prisma.user.findUnique({
+        where: { id: deposit.userId },
+        include: { membershipPlan: true }
+      })
+
+      const depositAmount = deposit.amount
+      let bonusAmount = 0
+      if (user?.membershipPlan && user.membershipPlan.depositBonus > 0) {
+        bonusAmount = (depositAmount * user.membershipPlan.depositBonus) / 100
+      }
+
+      const totalIncrement = depositAmount + bonusAmount
+
+      const dbOps = [
         // Update deposit status
         prisma.deposit.update({
           where: { id: depositId },
           data: { status: 'APPROVED', approvedById: admin.id, remarks },
         }),
-        // Update user wallet
+        // Update user wallet with total increment (deposit + yield bonus)
         prisma.wallet.update({
           where: { userId: deposit.userId },
-          data: { mainBalance: { increment: deposit.amount } },
+          data: { mainBalance: { increment: totalIncrement } },
         }),
-        // Create transaction record
+        // Create transaction record for deposit
         prisma.transaction.create({
           data: {
             userId: deposit.userId,
             type: 'DEPOSIT',
-            amount: deposit.amount,
+            amount: depositAmount,
             status: 'COMPLETED',
             description: `Deposit via ${deposit.method} approved`,
             reference: deposit.utrNumber || depositId,
@@ -67,11 +81,29 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
           data: {
             userId: deposit.userId,
             title: 'Deposit Approved ✅',
-            message: `Your deposit of ₹${deposit.amount.toLocaleString()} has been approved.`,
+            message: `Your deposit of ₹${depositAmount.toLocaleString('en-IN')} has been approved.${bonusAmount > 0 ? ` An additional ₹${bonusAmount.toLocaleString('en-IN')} has been credited as a ${user?.membershipPlan?.name || 'Membership'} yield bonus!` : ''}`,
             type: 'SUCCESS',
           },
         }),
-      ])
+      ]
+
+      // Add a bonus transaction record if a membership bonus was applied
+      if (bonusAmount > 0) {
+        dbOps.push(
+          prisma.transaction.create({
+            data: {
+              userId: deposit.userId,
+              type: 'BONUS',
+              amount: bonusAmount,
+              status: 'COMPLETED',
+              description: `${user?.membershipPlan?.name || 'Membership'} +${user?.membershipPlan?.depositBonus || 0}% Deposit Yield Bonus`,
+              reference: deposit.utrNumber || depositId,
+            },
+          })
+        )
+      }
+
+      await prisma.$transaction(dbOps)
     } else {
       await prisma.deposit.update({
         where: { id: depositId },
@@ -81,7 +113,7 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
         data: {
           userId: deposit.userId,
           title: 'Deposit Rejected ❌',
-          message: `Your deposit of ₹${deposit.amount.toLocaleString()} was rejected. ${remarks || ''}`,
+          message: `Your deposit of ₹${deposit.amount.toLocaleString('en-IN')} was rejected. ${remarks || ''}`,
           type: 'ERROR',
         },
       })
@@ -91,6 +123,7 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
     revalidatePath('/admin/dashboard')
     return { success: true, message: `Deposit ${action.toLowerCase()}d successfully` }
   } catch (error) {
+    console.error('Error processing deposit:', error)
     return { success: false, message: 'Failed to process deposit' }
   }
 }
@@ -451,8 +484,7 @@ export async function upsertMembershipPlanAction(data: any): Promise<ApiResponse
     }
 
     revalidatePath('/admin/dashboard/memberships')
-    revalidatePath('/dashboard/membership/free')
-    revalidatePath('/dashboard/membership/premium')
+    revalidatePath('/dashboard/membership')
     return { success: true, message: `Membership plan ${id ? 'updated' : 'created'} successfully` }
   } catch (error) {
     console.error('Error saving membership plan:', error)
@@ -470,8 +502,7 @@ export async function deleteMembershipPlanAction(id: string): Promise<ApiRespons
     })
 
     revalidatePath('/admin/dashboard/memberships')
-    revalidatePath('/dashboard/membership/free')
-    revalidatePath('/dashboard/membership/premium')
+    revalidatePath('/dashboard/membership')
     return { success: true, message: 'Membership plan deleted successfully' }
   } catch (error) {
     console.error('Error deleting membership plan:', error)

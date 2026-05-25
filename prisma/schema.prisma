@@ -42,12 +42,17 @@ model User {
   tlRank        Boolean @default(false)
   tlRankEarnedAt DateTime?
 
+  // Active Membership Plan
+  membershipPlanId String?
+  membershipPlan   MembershipPlan? @relation("UserMembershipPlan", fields: [membershipPlanId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([email])
   @@index([referralCode])
   @@index([referredById])
+  @@index([membershipPlanId])
 }
 
 // ============================================================
@@ -400,6 +405,9 @@ model MembershipPlan {
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  // Relation to users on this plan
+  users           User[]   @relation("UserMembershipPlan")
 
   @@index([isActive])
 }

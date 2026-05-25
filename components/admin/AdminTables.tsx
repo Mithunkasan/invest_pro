@@ -380,10 +380,8 @@ export function WalletsTable({ data }: TableProps) {
       {/* Adjust Balance Glassmorphic Dialog Modal */}
       {selectedWallet && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <motion.div 
-            initial={{ scale: 0.95, opacity: 0 }} 
-            animate={{ scale: 1, opacity: 1 }}
-            className="premium-card p-6 w-full max-w-md bg-card/95 border border-border shadow-2xl relative space-y-4"
+          <div 
+            className="premium-card p-6 w-full max-w-md bg-card/95 border border-border shadow-2xl relative space-y-4 animate-in fade-in zoom-in-95 duration-300"
           >
             <h3 className="text-lg font-bold text-white/90">Adjust Wallet Balance</h3>
             <p className="text-xs text-muted-foreground">Adjusting wallets for <span className="text-primary font-bold">{selectedWallet.name}</span></p>
@@ -460,7 +458,7 @@ export function WalletsTable({ data }: TableProps) {
                 </Button>
               </div>
             </form>
-          </motion.div>
+          </div>
         </div>
       )}
     </>
@@ -693,10 +691,8 @@ export function MembershipsTable({ data }: TableProps) {
       {/* Add / Edit Glassmorphic Dialog Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 overflow-y-auto animate-in fade-in duration-200">
-          <motion.div 
-            initial={{ scale: 0.95, opacity: 0 }} 
-            animate={{ scale: 1, opacity: 1 }}
-            className="premium-card p-6 w-full max-w-2xl bg-brand-950 border border-brand-800 shadow-2xl relative space-y-4 my-8"
+          <div 
+            className="premium-card p-6 w-full max-w-2xl bg-brand-950 border border-brand-800 shadow-2xl relative space-y-4 my-8 animate-in fade-in zoom-in-95 duration-300"
           >
             <button 
               onClick={() => setModalOpen(false)}
@@ -966,7 +962,7 @@ export function MembershipsTable({ data }: TableProps) {
                 </Button>
               </div>
             </form>
-          </motion.div>
+          </div>
         </div>
       )}
     </>

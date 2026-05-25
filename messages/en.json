@@ -37,16 +37,59 @@
     "dashboard": "Dashboard"
   },
   "hero": {
-    "title": "Grow Your Wealth with",
-    "titleHighlight": "Smart Investments",
-    "subtitle": "Join thousands of investors earning consistent daily returns. Start with as little as ₹1,000 and watch your money grow.",
-    "cta": "Start Investing Now",
-    "ctaSecondary": "View Investment Plans",
+    "welcome": "WELCOME TO VR GALAXY NETWORKS",
+    "welcomePrefix": "WELCOME TO ",
+    "welcomeSuffix": "VR GALAXY NETWORKS",
+    "title1": "CONNECT.",
+    "title2": "PROMOTE.",
+    "title3": "EARN.",
+    "subtitle": "Join the future of decentralized opportunities. Promote, earn and grow with a global network.",
+    "cta": "Join Now",
+    "ctaSecondary": "Explore More",
+    "liveStats": "LIVE STATS",
     "stats": {
       "aum": "Total AUM",
       "users": "Active Investors",
       "returns": "Avg. Daily Returns",
-      "experience": "Years Experience"
+      "experience": "Years Experience",
+      "members": "Total Members",
+      "membersVal": "25,689+",
+      "active": "Active Today",
+      "activeVal": "8,932+",
+      "paid": "Total Paid",
+      "paidVal": "₹12.45 Cr+",
+      "rate": "Success Rate",
+      "rateVal": "99.8%"
+    }
+  },
+  "whyUs": {
+    "label": "WHY VR GALAXY NETWORKS?",
+    "heading": "Empowering People. Creating Opportunities.",
+    "features": {
+      "globalNetwork": {
+        "title": "Global Network",
+        "desc": "Connect with a global community and grow together."
+      },
+      "partTime": {
+        "title": "Part-Time Jobs",
+        "desc": "Access simple and flexible part-time opportunities."
+      },
+      "earnRewards": {
+        "title": "Earn Rewards",
+        "desc": "Complete tasks, refer and earn exciting rewards."
+      },
+      "membership": {
+        "title": "Membership Benefits",
+        "desc": "Unlock premium benefits with our membership plans."
+      },
+      "secure": {
+        "title": "Secure & Transparent",
+        "desc": "100% secure platform with transparent transactions."
+      },
+      "web3": {
+        "title": "Web3 Future",
+        "desc": "Built for the future with blockchain technology."
+      }
     }
   },
   "plans": {
