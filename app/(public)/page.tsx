@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import { HeroSection } from '@/components/home/HeroSection'
+import { WhyUsSection } from '@/components/home/WhyUsSection'
 import { StatsSection } from '@/components/home/StatsSection'
 import { PlansSection } from '@/components/home/PlansSection'
 import { FeaturesSection } from '@/components/home/FeaturesSection'
-import { HowItWorks } from '@/components/home/HowItWorks'
+import { HowItWorksLeaderboard } from '@/components/home/HowItWorksLeaderboard'
 import { Testimonials } from '@/components/home/Testimonials'
 import { FAQSection } from '@/components/home/FAQSection'
 import { prisma } from '@/lib/prisma'
@@ -30,10 +31,11 @@ export default async function HomePage() {
   return (
     <>
       <HeroSection />
-      <StatsSection stats={stats} />
+      <WhyUsSection />
+      {/* <StatsSection stats={stats} /> */}
       <PlansSection />
+      <HowItWorksLeaderboard />
       <FeaturesSection />
-      <HowItWorks />
       <Testimonials />
       <FAQSection />
     </>

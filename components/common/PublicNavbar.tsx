@@ -6,8 +6,7 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ThemeSwitcher } from '@/components/common/ThemeSwitcher'
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
+
 import { cn } from '@/lib/utils'
 
 const navLinks = [
@@ -70,8 +69,6 @@ export function PublicNavbar() {
 
           {/* Actions */}
           <div className="hidden md:flex items-center gap-2">
-            <LanguageSwitcher />
-            <ThemeSwitcher />
             <Link href="/login">
               <Button variant="ghost" size="sm">Login</Button>
             </Link>
@@ -84,7 +81,6 @@ export function PublicNavbar() {
 
           {/* Mobile Menu Toggle */}
           <div className="md:hidden flex items-center gap-2">
-            <ThemeSwitcher />
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className="p-2 rounded-xl hover:bg-accent transition-colors"

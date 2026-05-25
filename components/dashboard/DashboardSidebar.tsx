@@ -26,14 +26,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
-  {
-    label: 'Membership',
-    icon: Crown,
-    subItems: [
-      { href: '/dashboard/membership/free', label: 'Free Membership' },
-      { href: '/dashboard/membership/premium', label: 'Premium Membership' },
-    ],
-  },
+  { href: '/dashboard/membership', label: 'Membership', icon: Crown },
   { href: '/dashboard/deposit', label: 'Deposit', icon: ArrowDownToLine },
   { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowUpFromLine },
   { href: '/dashboard/transactions', label: 'Transactions', icon: History },

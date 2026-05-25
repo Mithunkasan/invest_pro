@@ -10,7 +10,6 @@ import {
   LogOut, Menu, ChevronRight, Crown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ThemeSwitcher } from '@/components/common/ThemeSwitcher'
 import { adminLogoutAction } from '@/actions/auth'
 
 const adminNavItems = [
@@ -109,7 +108,6 @@ export function AdminLayoutClient({ children, admin }: AdminLayoutClientProps) {
             <span className="text-sm text-muted-foreground">Admin Console</span>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeSwitcher />
             <div className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-accent">
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white text-xs font-bold">{initials}</div>
               <div className="hidden sm:block">

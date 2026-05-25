@@ -147,13 +147,30 @@ export async function distributeReferralAndLevelCommissions(
       for (let level = 1; level <= 3; level++) {
         if (!currentReferrerId) break
 
-        const parentReferrer: { id: string; name: string; referredById: string | null } | null = await prisma.user.findUnique({
+        const parentReferrer = (await prisma.user.findUnique({
           where: { id: currentReferrerId },
-          select: { id: true, name: true, referredById: true }
-        })
+          include: { membershipPlan: true }
+        })) as any
         if (!parentReferrer) break
 
-        const commissionPercent = levelPercentages[level - 1]
+        // Determine Level Commission based on Referrer's active membership plan
+        let commissionPercent = 0
+        if (parentReferrer.membershipPlan) {
+          if (level === 1) commissionPercent = parentReferrer.membershipPlan.referralLevel1
+          else if (level === 2) commissionPercent = parentReferrer.membershipPlan.referralLevel2
+          else if (level === 3) commissionPercent = parentReferrer.membershipPlan.referralLevel3
+        } else {
+          // Fallback to system settings for Level 1, but Level 2 & 3 require an active membership plan by default
+          if (level === 1) commissionPercent = settings.referralPercent || 10
+          else commissionPercent = 0
+        }
+
+        // If the percentage is 0 or less, they are ineligible for this level's commission
+        if (commissionPercent <= 0) {
+          currentReferrerId = parentReferrer.referredById || null
+          continue
+        }
+
         const levelCommission = (investmentAmount * commissionPercent) / 100
 
         await prisma.$transaction([

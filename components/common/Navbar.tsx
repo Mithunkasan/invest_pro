@@ -5,8 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Wallet, ChevronRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { ThemeSwitcher } from '@/components/common/ThemeSwitcher'
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
+
 import { Button } from '@/components/ui/button'
 
 export function Navbar() {
@@ -58,8 +57,6 @@ export function Navbar() {
 
         {/* Desktop Actions */}
         <div className="hidden lg:flex items-center gap-4">
-          <LanguageSwitcher />
-          <ThemeSwitcher />
           <Link href="/login">
             <Button variant="ghost" className="font-semibold">{t('login')}</Button>
           </Link>
@@ -72,7 +69,6 @@ export function Navbar() {
 
         {/* Mobile Menu Button */}
         <div className="flex lg:hidden items-center gap-3">
-          <ThemeSwitcher />
           <button 
             className="p-2 text-foreground"
             onClick={() => setIsOpen(!isOpen)}
@@ -109,9 +105,7 @@ export function Navbar() {
                 <Link href="/register" className="w-full">
                   <Button className="w-full py-6 text-lg">{t('register')}</Button>
                 </Link>
-                <div className="flex justify-center pt-2">
-                  <LanguageSwitcher />
-                </div>
+
               </div>
             </div>
           </motion.div>
