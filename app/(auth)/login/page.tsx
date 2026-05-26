@@ -102,9 +102,7 @@ export default function LoginPage() {
         </Link>
       </p>
 
-      <p className="text-center text-xs text-white/30 mt-4">
-        Demo: arjun@example.com / User@123
-      </p>
+
     </div>
   )
 }
