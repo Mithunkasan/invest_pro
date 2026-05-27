@@ -59,7 +59,7 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section className="section-container bg-muted/20">
+    <section className="section-container bg-transparent">
       <div className="text-center mb-16">
         <h2 className="section-heading">Why Choose VR Galaxy?</h2>
         <p className="section-subheading">
