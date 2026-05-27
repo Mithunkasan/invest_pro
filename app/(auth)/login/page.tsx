@@ -11,7 +11,13 @@ import type { Metadata } from 'next'
 function SubmitButton() {
   const { pending } = useFormStatus()
   return (
-    <Button type="submit" size="lg" className="w-full" loading={pending}>
+    <Button
+      type="submit"
+      size="lg"
+      className="w-full rounded-full font-extrabold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 hover:from-purple-500 hover:to-blue-400 transition-all duration-300 shadow-[0_0_25px_rgba(168,85,247,0.5)] hover:shadow-[0_0_35px_rgba(59,130,246,0.65)] border border-white/10 gap-2 cursor-pointer flex items-center justify-center"
+      style={{ height: 'clamp(2.75rem,5.5vh,3.5rem)', fontSize: 'clamp(0.85rem,1.3vw,1rem)' }}
+      loading={pending}
+    >
       {pending ? 'Signing in...' : 'Sign In'}
     </Button>
   )
@@ -34,7 +40,7 @@ export default function LoginPage() {
       {/* Logo */}
       <div className="text-center mb-8">
         <Link href="/" className="inline-flex items-center gap-2 font-bold text-xl mb-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 flex items-center justify-center">
             <TrendingUp className="w-5 h-5 text-white" />
           </div>
           <span className="text-white text-2xl">InvestPro</span>
@@ -60,7 +66,7 @@ export default function LoginPage() {
               type="email"
               required
               placeholder="arjun@example.com"
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400 transition-all"
             />
           </div>
         </div>
@@ -69,7 +75,7 @@ export default function LoginPage() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-sm text-white/70 font-medium">Password</label>
-            <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+            <Link href="/forgot-password" className="text-xs text-indigo-400 hover:text-indigo-300 hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -80,7 +86,7 @@ export default function LoginPage() {
               type={showPassword ? 'text' : 'password'}
               required
               placeholder="••••••••"
-              className="w-full pl-10 pr-10 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+              className="w-full pl-10 pr-10 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400 transition-all"
             />
             <button
               type="button"
@@ -97,7 +103,7 @@ export default function LoginPage() {
 
       <p className="text-center text-sm text-white/50 mt-6">
         Don&apos;t have an account?{' '}
-        <Link href="/register" className="text-primary font-medium hover:underline">
+        <Link href="/register" className="text-indigo-400 hover:text-indigo-300 font-medium hover:underline">
           Create Account
         </Link>
       </p>
