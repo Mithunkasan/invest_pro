@@ -30,20 +30,9 @@ export function HeroSection() {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-[#02040a] flex flex-col min-h-[100svh] lg:h-[100svh] lg:max-h-[100svh]"
-      aria-label="Hero Section"
+      className="relative w-full overflow-hidden bg-[#02040a] flex flex-col min-h-[100svh] lg:h-[100svh] lg:max-h-[100svh] bg-cover bg-center bg-no-repeat bg-[url('/bg1.jpeg')] lg:bg-[url('/bg.jpeg')]"
+      aria-label="VR Galaxy Networks Hero Section"
     >
-      {/* ── Responsive Cosmic Background ── */}
-      <picture className="absolute inset-0 w-full h-full pointer-events-none select-none z-0">
-        <source media="(max-width: 768px)" srcSet="/bg1.jpeg" />
-        <source media="(min-width: 769px)" srcSet="/bg.jpeg" />
-        <img
-          src="/bg.jpeg"
-          alt="Cosmic Background"
-          className="w-full h-full object-cover"
-        />
-      </picture>
-
       {/* Subtle Dark Overlay for Higher Text Contrast */}
       <div className="absolute inset-0 bg-black/15 pointer-events-none select-none z-10" />
 
@@ -90,8 +79,20 @@ export function HeroSection() {
                 </span>
               </motion.div>
 
-              {/* Giant stacked headings */}
-              <div className="flex flex-col gap-1 mb-5 font-black tracking-tight leading-[0.9] w-full min-w-0">
+              {/* Giant stacked headings (semantic h1 for SEO) */}
+              <motion.h1
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: { staggerChildren: 0.12 }
+                  }
+                }}
+                className="flex flex-col gap-1 mb-5 font-black tracking-tight leading-[0.9] w-full min-w-0"
+                style={{ fontSize: 'clamp(2.4rem, 6.2vw, 4.8rem)' }}
+              >
                 {[
                   { key: 'title1', className: 'text-white' },
                   { key: 'title2', className: 'text-white' },
@@ -100,30 +101,30 @@ export function HeroSection() {
                     className:
                       'bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(168,85,247,0.55)]',
                   },
-                ].map(({ key, className }, idx) => (
-                  <motion.h1
+                ].map(({ key, className }) => (
+                  <motion.span
                     key={key}
-                    initial={{ opacity: 0, x: -25 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.65, delay: 0.1 + idx * 0.12 }}
+                    variants={{
+                      hidden: { opacity: 0, x: -25 },
+                      visible: { opacity: 1, x: 0, transition: { duration: 0.65 } }
+                    }}
                     className={className}
-                    style={{ fontSize: 'clamp(2.4rem, 6.2vw, 4.8rem)' }}
                   >
                     {t(key as 'title1' | 'title2' | 'title3')}
-                  </motion.h1>
+                  </motion.span>
                 ))}
-              </div>
+              </motion.h1>
 
-              {/* Subtitle */}
-              <motion.p
+              {/* Subtitle (semantic h2 for SEO) */}
+              <motion.h2
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.42 }}
-                className="text-slate-300 leading-relaxed font-semibold mb-6 max-w-xl"
+                className="text-slate-300 leading-relaxed font-semibold mb-6 max-w-xl text-balance"
                 style={{ fontSize: 'clamp(0.85rem,1.5vw,1.1rem)' }}
               >
                 {t('subtitle')}
-              </motion.p>
+              </motion.h2>
 
               {/* CTA Buttons */}
               <motion.div
@@ -226,40 +227,8 @@ export function HeroSection() {
               </div>
             </div>
 
-            {/* ── RIGHT COLUMN (Floating 3D Logo Badge) ── */}
-            <div className="lg:col-span-5 flex items-center justify-center relative w-full min-w-0 overflow-visible py-8 lg:py-0">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.85, y: 15 }}
-                animate={{ 
-                  opacity: 1, 
-                  scale: 1, 
-                  y: [0, -15, 0] 
-                }}
-                transition={{
-                  opacity: { duration: 0.8, delay: 0.2 },
-                  scale: { duration: 0.8, delay: 0.2 },
-                  y: { 
-                    duration: 6, 
-                    repeat: Infinity, 
-                    ease: 'easeInOut' 
-                  }
-                }}
-                whileHover={{ scale: 1.05, rotateY: 8, rotateX: -4 }}
-                className="relative flex items-center justify-center cursor-pointer select-none"
-                style={{
-                  width: 'clamp(220px, 38vw, 440px)',
-                  height: 'clamp(220px, 38vw, 440px)',
-                  transformStyle: 'preserve-3d',
-                  perspective: '1000px',
-                }}
-              >
-                <img
-                  src="/logo.png"
-                  alt="VR Galaxy Networks"
-                  className="w-full h-full object-contain filter drop-shadow-[0_0_35px_rgba(59,130,246,0.4)]"
-                />
-              </motion.div>
-            </div>
+            {/* ── RIGHT COLUMN (Empty Spacer to reveal the background image pedestal/logo) ── */}
+            <div className="lg:col-span-5 hidden lg:block w-full min-w-0" />
 
           </div>
         </div>
