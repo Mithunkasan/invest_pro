@@ -42,7 +42,7 @@ export function PublicNavbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 font-black text-2xl group">
             <div className="w-11 h-11 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-115">
-              <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
+              <img src="/logo3.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
             </div>
             <span className="bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent font-black tracking-wider">
               VR Galaxy
@@ -56,10 +56,10 @@ export function PublicNavbar() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  'px-4 py-2 rounded-xl text-sm font-medium transition-colors',
+                  'px-4 py-2 rounded-xl text-sm font-semibold transition-colors',
                   pathname === link.href
-                    ? 'text-primary bg-primary/10'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    ? 'text-white bg-white/10'
+                    : 'text-white/80 hover:text-white hover:bg-white/5'
                 )}
               >
                 {link.label}
@@ -70,10 +70,10 @@ export function PublicNavbar() {
           {/* Actions */}
           <div className="hidden md:flex items-center gap-2">
             <Link href="/login">
-              <Button variant="ghost" size="sm">Login</Button>
+              <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/5">Login</Button>
             </Link>
             <Link href="/register">
-              <Button size="sm" className="bg-gradient-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-primary">
+              <Button size="sm" className="rounded-full font-extrabold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 hover:from-purple-500 hover:to-blue-400 transition-all duration-300 shadow-[0_0_18px_rgba(168,85,247,0.45)] hover:shadow-[0_0_28px_rgba(59,130,246,0.6)] border border-white/10 px-5 cursor-pointer">
                 Get Started
               </Button>
             </Link>
@@ -109,10 +109,10 @@ export function PublicNavbar() {
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    'block px-4 py-3 rounded-xl text-sm font-medium transition-colors',
+                    'block px-4 py-3 rounded-xl text-sm font-bold transition-colors',
                     pathname === link.href
-                      ? 'text-primary bg-primary/10'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                      ? 'text-white bg-white/10'
+                      : 'text-white/80 hover:text-white hover:bg-white/5'
                   )}
                 >
                   {link.label}
@@ -123,7 +123,7 @@ export function PublicNavbar() {
                   <Button variant="outline" className="w-full">Login</Button>
                 </Link>
                 <Link href="/register" onClick={() => setMobileOpen(false)}>
-                  <Button className="w-full">Get Started</Button>
+                  <Button className="w-full rounded-full font-extrabold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 hover:from-purple-500 hover:to-blue-400 transition-all duration-300 shadow-[0_0_18px_rgba(168,85,247,0.45)] hover:shadow-[0_0_28px_rgba(59,130,246,0.6)] border border-white/10 py-3.5 cursor-pointer">Get Started</Button>
                 </Link>
               </div>
             </div>

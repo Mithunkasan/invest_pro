@@ -319,14 +319,11 @@ export function PlansSection() {
   return (
     <section
       id="membership-plans"
-      className="relative w-full overflow-hidden bg-[#020714] py-16 sm:py-20 lg:py-24"
+      className="relative w-full overflow-hidden bg-transparent py-16 sm:py-20 lg:py-24"
       aria-labelledby="plans-heading"
     >
-      {/* Background glows */}
+      {/* Subtle grid lines */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <div className="absolute top-[10%] left-[15%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] bg-blue-700/8 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[10%] w-[35vw] h-[35vw] max-w-[450px] max-h-[450px] bg-purple-700/10 rounded-full blur-[100px]" />
-        {/* Subtle grid */}
         <div
           className="absolute inset-0 opacity-[0.025]"
           style={{

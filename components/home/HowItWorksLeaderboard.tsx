@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, ChevronRight } from 'lucide-react'
+import { ArrowRight, ChevronRight, CheckCircle2 } from 'lucide-react'
 
 // Custom SVGs for Avatars & Badges
 const PriyaBadge = () => (
@@ -19,18 +19,15 @@ const PriyaBadge = () => (
         <stop offset="100%" stopColor="#fef08a" />
       </linearGradient>
     </defs>
-    {/* Shield outer border */}
     <path
       d="M24 4L8 10v14c0 9.8 6.8 19 16 20 9.2-1 16-10.2 16-20V10L24 4z"
       fill="url(#badgeGrad)"
     />
-    {/* Inner Shield */}
     <path
       d="M24 8L12 12.5v11.5c0 7.8 5.1 15 12 16 6.9-1 12-8.2 12-16V12.5L24 8z"
       fill="#0d153b"
       opacity="0.9"
     />
-    {/* Star inside shield */}
     <polygon
       points="24,14 27,20 34,20 28.5,24 31,30 24,26 17,30 19.5,24 14,20 21,20"
       fill="url(#innerGrad)"
@@ -64,17 +61,55 @@ export function HowItWorksLeaderboard() {
   ]
 
   return (
-    <section className="relative w-full bg-[#020714] py-16 sm:py-20 overflow-hidden" aria-label="How It Works and Leaderboard">
-      {/* Background radial glowing effects */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <div className="absolute top-[10%] left-[5%] w-[45vw] h-[45vw] max-w-[600px] max-h-[600px] bg-blue-900/10 rounded-full blur-[140px]" />
-        <div className="absolute bottom-[10%] right-[5%] w-[45vw] h-[45vw] max-w-[600px] max-h-[600px] bg-purple-900/15 rounded-full blur-[140px]" />
+    <section className="relative w-full bg-transparent py-16 sm:py-20 overflow-hidden" aria-label="Decentralized Yield Generation and Top Earners Leaderboard">
+      {/* Background container grid lines */}
+      <div className="absolute inset-0 pointer-events-none select-none z-0" aria-hidden="true">
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.5) 1px,transparent 1px)`,
+            backgroundSize: '60px 60px',
+          }}
+        />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Row 1: Grid of 3 columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 items-stretch">
+        {/* ── Overarching Section Header for SEO & Aesthetics ── */}
+        <div className="text-center mb-16">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-xs sm:text-sm font-black tracking-[0.22em] uppercase mb-3 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+          >
+            DECENTRALIZED COMMUNITY & HIGH-YIELD ROI
+          </motion.p>
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.55, delay: 0.08 }}
+            className="text-white font-extrabold tracking-tight mb-4"
+            style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}
+          >
+            How to Build Passive Income & Track Your Ranks
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.12 }}
+            className="text-slate-400 max-w-2xl mx-auto font-semibold leading-relaxed"
+            style={{ fontSize: 'clamp(0.85rem, 1.5vw, 1.05rem)' }}
+          >
+            Setup your account, invite your peer network, generate consistent high-frequency daily rewards, and rise to the top of our real-time investor leaderboard.
+          </motion.p>
+        </div>
+
+        {/* ── Row 1: Fully Responsive Grid ── */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch mb-10">
           
           {/* Card 1: How It Works */}
           <motion.div
@@ -82,62 +117,62 @@ export function HowItWorksLeaderboard() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="md:col-span-2 lg:col-span-5 rounded-3xl border border-blue-500/20 bg-[#04081c]/60 backdrop-blur-xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden"
+            className="col-span-1 md:col-span-12 lg:col-span-5 rounded-3xl border border-blue-500/20 bg-[#04081c]/60 backdrop-blur-xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden"
           >
             {/* Top lighting effect */}
             <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
             <div>
               <p className="text-xs sm:text-sm font-bold tracking-[0.2em] uppercase text-purple-400 mb-2">
-                HOW IT WORKS
+                HOW TO EARN
               </p>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-8 tracking-tight">
                 3 Simple Steps
               </h3>
 
               {/* Steps Layout */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-2 mt-4 relative z-10">
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-8 sm:gap-4 mt-4 relative z-10">
                 
                 {/* Step 1 */}
-                <div className="flex flex-col items-center text-center flex-1">
-                  <div className="w-16 h-16 rounded-full border border-blue-500/40 bg-[#081235]/50 flex items-center justify-center text-2xl font-black text-white shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-transform hover:scale-105 duration-300">
+                <div className="flex flex-col items-center sm:items-start text-center sm:text-left flex-1 min-w-0">
+                  <div className="w-16 h-16 rounded-full border border-blue-500/40 bg-[#081235]/50 flex items-center justify-center text-2xl font-black text-white shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-transform hover:scale-105 duration-300 shrink-0">
                     1
                   </div>
-                  <p className="text-base font-extrabold text-white mt-4">Join</p>
-                  <p className="text-xs text-slate-400 mt-1 max-w-[120px]">
-                    Create your account
+                  <h4 className="text-base font-extrabold text-white mt-4">Join</h4>
+                  <p className="text-xs text-slate-400 mt-1 max-w-[150px] leading-relaxed">
+                    Create a secure wallet and activate your plan.
                   </p>
                 </div>
 
                 {/* Arrow 1-2 */}
-                <div className="text-blue-500/40 font-bold text-xl sm:rotate-0 rotate-90 shrink-0">
+                <div className="text-blue-500/40 font-bold text-xl sm:rotate-0 rotate-90 shrink-0 self-center hidden sm:block">
                   →
                 </div>
 
                 {/* Step 2 */}
-                <div className="flex flex-col items-center text-center flex-1">
-                  <div className="w-16 h-16 rounded-full border border-blue-500/40 bg-[#081235]/50 flex items-center justify-center text-2xl font-black text-white shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-transform hover:scale-105 duration-300">
+                <div className="flex flex-col items-center sm:items-start text-center sm:text-left flex-1 min-w-0">
+                  <div className="w-16 h-16 rounded-full border border-blue-500/40 bg-[#081235]/50 flex items-center justify-center text-2xl font-black text-white shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-transform hover:scale-105 duration-300 shrink-0">
                     2
                   </div>
-                  <p className="text-base font-extrabold text-white mt-4">Promote</p>
-                  <p className="text-xs text-slate-400 mt-1 max-w-[120px]">
-                    Share & invite your network
+                  <h4 className="text-base font-extrabold text-white mt-4">Promote</h4>
+                  <p className="text-xs text-slate-400 mt-1 max-w-[150px] leading-relaxed">
+                    Share your high-yield referral link with peers.
                   </p>
                 </div>
 
                 {/* Arrow 2-3 */}
-                <div className="text-blue-500/40 font-bold text-xl sm:rotate-0 rotate-90 shrink-0">
+                <div className="text-blue-500/40 font-bold text-xl sm:rotate-0 rotate-90 shrink-0 self-center hidden sm:block">
                   →
                 </div>
 
                 {/* Step 3 */}
-                <div className="flex flex-col items-center text-center flex-1">
-                  <div className="w-16 h-16 rounded-full border border-purple-500/40 bg-[#160a2d]/50 flex items-center justify-center text-2xl font-black text-white shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-transform hover:scale-105 duration-300">
+                <div className="flex flex-col items-center sm:items-start text-center sm:text-left flex-1 min-w-0">
+                  <div className="w-16 h-16 rounded-full border border-purple-500/40 bg-[#160a2d]/50 flex items-center justify-center text-2xl font-black text-white shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-transform hover:scale-105 duration-300 shrink-0">
                     3
                   </div>
-                  <p className="text-base font-extrabold text-white mt-4">Earn</p>
-                  <p className="text-xs text-slate-400 mt-1 max-w-[120px]">
-                    Complete tasks & earn rewards
+                  <h4 className="text-base font-extrabold text-white mt-4">Earn</h4>
+                  <p className="text-xs text-slate-400 mt-1 max-w-[150px] leading-relaxed">
+                    Collect daily ROI payouts & task rewards.
                   </p>
                 </div>
 
@@ -145,13 +180,13 @@ export function HowItWorksLeaderboard() {
             </div>
           </motion.div>
 
-          {/* Visual 2: Hologram Globe (Center) */}
+          {/* Visual 2: Hologram Globe (Center Column) */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="md:col-span-1 lg:col-span-4 flex items-center justify-center relative min-h-[320px]"
+            className="col-span-1 md:col-span-5 lg:col-span-3 flex items-center justify-center relative min-h-[300px] lg:min-h-0 py-6 lg:py-0"
           >
             {/* Soft background blue glow behind globe */}
             <div className="absolute w-64 h-64 bg-blue-500/20 rounded-full blur-[80px] pointer-events-none" />
@@ -159,26 +194,26 @@ export function HowItWorksLeaderboard() {
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-              className="relative w-full max-w-[340px] aspect-square flex items-center justify-center"
+              className="relative w-full max-w-[280px] aspect-square flex items-center justify-center"
             >
               <Image
                 src="/hologram_globe.png"
-                alt="Glowing Futuristic Holographic Globe"
+                alt="Glowing Futuristic Holographic Globe representing VR Galaxy P2P community network"
                 fill
                 priority
-                sizes="(max-width: 768px) 100vw, 340px"
+                sizes="(max-width: 768px) 100vw, 280px"
                 className="object-contain filter drop-shadow-[0_0_20px_rgba(59,130,246,0.4)]"
               />
             </motion.div>
           </motion.div>
 
-          {/* Card 3: Leaderboard */}
+          {/* Card 3: 100% Responsive Leaderboard */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="md:col-span-1 lg:col-span-3 rounded-3xl border border-blue-500/20 bg-[#04081c]/60 backdrop-blur-xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden"
+            className="col-span-1 md:col-span-7 lg:col-span-4 rounded-3xl border border-blue-500/20 bg-[#04081c]/60 backdrop-blur-xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden"
           >
             {/* Top lighting effect */}
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -191,19 +226,19 @@ export function HowItWorksLeaderboard() {
                 Leaderboard
               </h3>
 
-              {/* Leaderboard Track/List */}
-              <div className="flex flex-col gap-3.5 relative z-10">
+              {/* Leaderboard Track/List (No overflow, fully responsive) */}
+              <div className="flex flex-col gap-3.5 relative z-10 w-full">
                 {leaderboard.map((user) => (
                   <div
                     key={user.rank}
-                    className="flex items-center justify-between px-4 py-3 rounded-2xl bg-[#060b21]/70 border border-blue-950/40 hover:border-blue-700/30 transition-all duration-300 group hover:-translate-y-0.5"
+                    className="flex items-center justify-between px-4 py-3 rounded-2xl bg-[#060b21]/70 border border-blue-950/40 hover:border-blue-700/30 transition-all duration-300 group hover:-translate-y-0.5 w-full min-w-0"
                   >
-                    <div className="flex items-center gap-3.5">
-                      <span className="text-sm font-bold text-slate-500 w-4 text-center">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <span className="text-sm font-bold text-slate-500 w-4 text-center shrink-0">
                         {user.rank}
                       </span>
                       
-                      {/* Avatar */}
+                      {/* Avatar shrink protection */}
                       <div className="relative w-10 h-10 shrink-0 flex items-center justify-center">
                         {user.isBadge ? (
                           <PriyaBadge />
@@ -220,12 +255,14 @@ export function HowItWorksLeaderboard() {
                         )}
                       </div>
 
-                      <span className="text-sm sm:text-base font-extrabold text-slate-200 group-hover:text-white transition-colors">
+                      {/* Truncate name safely on very small widths to avoid layout break */}
+                      <span className="text-sm sm:text-base font-extrabold text-slate-200 group-hover:text-white transition-colors truncate">
                         {user.name}
                       </span>
                     </div>
 
-                    <span className="text-sm sm:text-base font-bold font-mono text-slate-100 group-hover:text-blue-400 transition-colors">
+                    {/* Amount padding and shrink protection */}
+                    <span className="text-sm sm:text-base font-bold font-mono text-slate-100 group-hover:text-blue-400 transition-colors shrink-0 pl-3">
                       {user.amount}
                     </span>
                   </div>
@@ -239,7 +276,7 @@ export function HowItWorksLeaderboard() {
                 href="/register"
                 className="inline-flex items-center gap-1 text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors group"
               >
-                View All
+                View All Top Earners
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
@@ -247,7 +284,7 @@ export function HowItWorksLeaderboard() {
 
         </div>
 
-        {/* Row 2: Bottom CTA Journey Banner */}
+        {/* ── Row 2: Bottom CTA Journey Banner ── */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -268,7 +305,7 @@ export function HowItWorksLeaderboard() {
           <div className="absolute top-1/2 right-0 -translate-y-1/2 w-48 h-24 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
 
           {/* Left: Floating Rocket */}
-          <div className="flex items-center gap-4 relative z-10">
+          <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 text-center sm:text-left">
             <motion.div
               animate={{ y: [0, -8, 0], x: [0, 4, 0] }}
               transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
@@ -276,7 +313,7 @@ export function HowItWorksLeaderboard() {
             >
               <Image
                 src="/rocket_cta.png"
-                alt="Premium 3D Glowing Space Rocket taking off"
+                alt="Premium 3D Glowing Space Rocket taking off to indicate high earnings trajectory"
                 fill
                 sizes="(max-width: 768px) 64px, 80px"
                 className="object-contain filter drop-shadow-[0_0_15px_rgba(249,115,22,0.4)]"
@@ -284,12 +321,12 @@ export function HowItWorksLeaderboard() {
             </motion.div>
 
             {/* Middle: Text Block */}
-            <div className="text-center md:text-left">
+            <div className="flex flex-col gap-1">
               <h4 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                Ready to Start Your Journey?
+                Ready to Start Your Passive Yield Journey?
               </h4>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-lg">
-                Join thousands of members and start earning with VR Galaxy Networks today!
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-xl">
+                Deposit funds securely, invite your peer network, and track your consistent daily ROI payouts. Secure your slot today!
               </p>
             </div>
           </div>

@@ -7,6 +7,7 @@ import { FeaturesSection } from '@/components/home/FeaturesSection'
 import { HowItWorksLeaderboard } from '@/components/home/HowItWorksLeaderboard'
 import { Testimonials } from '@/components/home/Testimonials'
 import { FAQSection } from '@/components/home/FAQSection'
+import { AnimatedGalaxyBackground } from '@/components/common/AnimatedGalaxyBackground'
 import { prisma } from '@/lib/prisma'
 
 export const metadata: Metadata = {
@@ -29,15 +30,18 @@ export default async function HomePage() {
   }
 
   return (
-    <>
-      <HeroSection />
-      <WhyUsSection />
-      {/* <StatsSection stats={stats} /> */}
-      <PlansSection />
-      <HowItWorksLeaderboard />
-      <FeaturesSection />
-      <Testimonials />
-      <FAQSection />
-    </>
+    <div className="relative w-full bg-[#020205] overflow-hidden">
+      <AnimatedGalaxyBackground />
+      <div className="relative z-10">
+        <HeroSection />
+        <WhyUsSection />
+        {/* <StatsSection stats={stats} /> */}
+        <PlansSection />
+        <HowItWorksLeaderboard />
+        <FeaturesSection />
+        <Testimonials />
+        <FAQSection />
+      </div>
+    </div>
   )
 }

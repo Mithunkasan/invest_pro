@@ -37,7 +37,7 @@ export function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="w-12 h-12 flex items-center justify-center overflow-hidden group-hover:scale-115 transition-transform duration-300">
-            <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
+            <img src="/logo3.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
           </div>
           <span className="text-2xl font-black tracking-wider bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent">VR Galaxy</span>
         </Link>
@@ -48,7 +48,7 @@ export function Navbar() {
             <Link 
               key={link.name} 
               href={link.href}
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              className="text-sm font-semibold text-white/80 hover:text-white transition-colors"
             >
               {link.name}
             </Link>
@@ -58,11 +58,11 @@ export function Navbar() {
         {/* Desktop Actions */}
         <div className="hidden lg:flex items-center gap-4">
           <Link href="/login">
-            <Button variant="ghost" className="font-semibold">{t('login')}</Button>
+            <Button variant="ghost" className="font-semibold text-white/80 hover:text-white hover:bg-white/5">{t('login')}</Button>
           </Link>
           <Link href="/register">
-            <Button className="font-bold px-6 shadow-lg shadow-primary/20">
-              {t('register')} <ChevronRight size={16} className="ml-1" />
+            <Button className="rounded-full font-extrabold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 hover:from-purple-500 hover:to-blue-400 transition-all duration-300 shadow-[0_0_20px_rgba(168,85,247,0.45)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] border border-white/10 px-6 gap-1 cursor-pointer">
+              {t('register')} <ChevronRight size={16} className="ml-0.5 shrink-0" />
             </Button>
           </Link>
         </div>
@@ -92,7 +92,7 @@ export function Navbar() {
                 <Link 
                   key={link.name} 
                   href={link.href}
-                  className="block text-lg font-semibold text-foreground hover:text-primary"
+                  className="block text-lg font-bold text-white/90 hover:text-white transition-colors"
                   onClick={() => setIsOpen(false)}
                 >
                   {link.name}
@@ -103,7 +103,9 @@ export function Navbar() {
                   <Button variant="outline" className="w-full py-6 text-lg">{t('login')}</Button>
                 </Link>
                 <Link href="/register" className="w-full">
-                  <Button className="w-full py-6 text-lg">{t('register')}</Button>
+                  <Button className="w-full rounded-full font-extrabold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 hover:from-purple-500 hover:to-blue-400 transition-all duration-300 shadow-[0_0_20px_rgba(168,85,247,0.45)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] border border-white/10 py-6 text-base cursor-pointer">
+                    {t('register')}
+                  </Button>
                 </Link>
 
               </div>

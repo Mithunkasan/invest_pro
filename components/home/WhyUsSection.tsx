@@ -257,16 +257,14 @@ export function WhyUsSection() {
   return (
     <section
       id="why-us"
-      className="relative w-full overflow-hidden bg-[#020714]"
+      className="relative w-full overflow-hidden bg-transparent"
       aria-labelledby="why-us-heading"
     >
-      {/* Subtle top gradient continuation from HeroSection */}
+      {/* Subtle top grid lines overlay */}
       <div
         className="absolute inset-0 pointer-events-none select-none"
         aria-hidden="true"
       >
-        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#02040a] to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,rgba(30,27,75,0.25)_0%,transparent_70%)]" />
         {/* Faint grid lines */}
         <div
           className="absolute inset-0 opacity-[0.03]"
@@ -388,11 +386,7 @@ export function WhyUsSection() {
         </motion.div>
       </div>
 
-      {/* Bottom fade to next section */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-b from-transparent to-[#020714] pointer-events-none"
-        aria-hidden="true"
-      />
+
     </section>
   )
 }
