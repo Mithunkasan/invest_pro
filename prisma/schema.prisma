@@ -382,6 +382,10 @@ model SystemSettings {
   tlRankRequiredReferrals Int      @default(5)
   tlRankMaxUsers          Int      @default(25)
   tlRankEnabled           Boolean  @default(true)
+  heroMembers             String   @default("25,689+")
+  heroActive              String   @default("8,932+")
+  heroPaid                String   @default("₹12.45 Cr+")
+  heroRate                String   @default("99.8%")
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 }

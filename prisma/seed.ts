@@ -43,6 +43,10 @@ async function main() {
       tlRankRequiredReferrals: 5,
       tlRankMaxUsers: 25,
       tlRankEnabled: true,
+      heroMembers: '25,689+',
+      heroActive: '8,932+',
+      heroPaid: '₹12.45 Cr+',
+      heroRate: '99.8%',
     }
   })
   console.log('✅ System Settings seeded')

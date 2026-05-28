@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { HeroSection } from '@/components/home/HeroSection'
+import { ScrollingStatsBar } from '@/components/home/ScrollingStatsBar'
 import { WhyUsSection } from '@/components/home/WhyUsSection'
 import { StatsSection } from '@/components/home/StatsSection'
 import { PlansSection } from '@/components/home/PlansSection'
@@ -17,9 +18,10 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const [userCount, totalAum] = await Promise.all([
+  const [userCount, totalAum, settings] = await Promise.all([
     prisma.user.count(),
-    prisma.investment.aggregate({ _sum: { amount: true } })
+    prisma.investment.aggregate({ _sum: { amount: true } }),
+    prisma.systemSettings.findUnique({ where: { id: 'default' } })
   ])
 
   const stats = {
@@ -33,7 +35,15 @@ export default async function HomePage() {
     <div className="relative w-full bg-[#020205] overflow-hidden">
       <AnimatedGalaxyBackground />
       <div className="relative z-10">
-        <HeroSection />
+        <HeroSection
+          stats={{
+            membersVal: settings?.heroMembers,
+            activeVal: settings?.heroActive,
+            paidVal: settings?.heroPaid,
+            rateVal: settings?.heroRate,
+          }}
+        />
+        <ScrollingStatsBar />
         <WhyUsSection />
         {/* <StatsSection stats={stats} /> */}
         <PlansSection />

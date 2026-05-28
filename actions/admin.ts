@@ -258,6 +258,10 @@ export async function getSystemSettings(): Promise<any> {
           tlRankRequiredReferrals: 5,
           tlRankMaxUsers: 25,
           tlRankEnabled: true,
+          heroMembers: '25,689+',
+          heroActive: '8,932+',
+          heroPaid: '₹12.45 Cr+',
+          heroRate: '99.8%',
         }
       })
     }
@@ -287,6 +291,10 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         tlRankRequiredReferrals: Number(data.tlRankRequiredReferrals),
         tlRankMaxUsers: Number(data.tlRankMaxUsers),
         tlRankEnabled: Boolean(data.tlRankEnabled),
+        heroMembers: String(data.heroMembers),
+        heroActive: String(data.heroActive),
+        heroPaid: String(data.heroPaid),
+        heroRate: String(data.heroRate),
       },
       create: {
         id: 'default',
@@ -300,10 +308,15 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         tlRankRequiredReferrals: Number(data.tlRankRequiredReferrals),
         tlRankMaxUsers: Number(data.tlRankMaxUsers),
         tlRankEnabled: Boolean(data.tlRankEnabled),
+        heroMembers: String(data.heroMembers),
+        heroActive: String(data.heroActive),
+        heroPaid: String(data.heroPaid),
+        heroRate: String(data.heroRate),
       }
     })
 
     revalidatePath('/admin/dashboard/settings')
+    revalidatePath('/')
     return { success: true, message: 'System settings updated successfully' }
   } catch (error) {
     console.error('Error updating system settings:', error)

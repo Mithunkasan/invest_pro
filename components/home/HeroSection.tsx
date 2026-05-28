@@ -25,8 +25,22 @@ const DiscordIcon = () => (
   </svg>
 )
 
-export function HeroSection() {
+interface HeroSectionProps {
+  stats?: {
+    membersVal?: string | null
+    activeVal?: string | null
+    paidVal?: string | null
+    rateVal?: string | null
+  }
+}
+
+export function HeroSection({ stats }: HeroSectionProps) {
   const t = useTranslations('hero')
+
+  const membersVal = stats?.membersVal || t('stats.membersVal')
+  const activeVal = stats?.activeVal || t('stats.activeVal')
+  const paidVal = stats?.paidVal || t('stats.paidVal')
+  const rateVal = stats?.rateVal || t('stats.rateVal')
 
   return (
     <section
@@ -180,10 +194,10 @@ export function HeroSection() {
                 {/* Clean inline stats row matching the reference layout */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-5 gap-x-0 w-full">
                   {[
-                    { val: t('stats.membersVal'), label: t('stats.members') },
-                    { val: t('stats.activeVal'),  label: t('stats.active') },
-                    { val: t('stats.paidVal'),    label: t('stats.paid') },
-                    { val: t('stats.rateVal'),    label: t('stats.rate') },
+                    { val: membersVal, label: t('stats.members') },
+                    { val: activeVal,  label: t('stats.active') },
+                    { val: paidVal,    label: t('stats.paid') },
+                    { val: rateVal,    label: t('stats.rate') },
                   ].map(({ val, label }, i) => (
                     <div
                       key={i}

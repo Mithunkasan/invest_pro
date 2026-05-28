@@ -31,19 +31,30 @@ interface SettingsFormProps {
     tlRankRequiredReferrals: number
     tlRankMaxUsers: number
     tlRankEnabled: boolean
+    heroMembers: string
+    heroActive: string
+    heroPaid: string
+    heroRate: string
   }
 }
 
 export function SettingsForm({ initialSettings }: SettingsFormProps) {
-  const [settings, setSettings] = useState(initialSettings)
+  const [settings, setSettings] = useState({
+    ...initialSettings,
+    heroMembers: initialSettings.heroMembers || '25,689+',
+    heroActive: initialSettings.heroActive || '8,932+',
+    heroPaid: initialSettings.heroPaid || '₹12.45 Cr+',
+    heroRate: initialSettings.heroRate || '99.8%',
+  })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
+    const isStringField = name.startsWith('hero')
     setSettings((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value === '' ? '' : Number(value),
+      [name]: type === 'checkbox' ? checked : value === '' ? '' : (isStringField ? value : Number(value)),
     }))
   }
 
@@ -267,6 +278,65 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
             </div>
           </motion.div>
         )}
+      </div>
+
+      {/* ── Section 5: Hero Section Statistics ────────────────────── */}
+      <div className="premium-card p-6 space-y-6">
+        <h2 className="text-lg font-bold border-b pb-3 border-muted/50 text-white/90">Hero Section Live Statistics</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="heroMembers" className="text-sm font-semibold">Total Members</Label>
+            <Input
+              id="heroMembers"
+              name="heroMembers"
+              type="text"
+              value={settings.heroMembers || ''}
+              onChange={handleChange}
+              disabled={loading}
+            />
+            <p className="text-xs text-muted-foreground">Displayed on the frontend. Supports format like: <code className="text-primary font-bold">25,689+</code></p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="heroActive" className="text-sm font-semibold">Active Today</Label>
+            <Input
+              id="heroActive"
+              name="heroActive"
+              type="text"
+              value={settings.heroActive || ''}
+              onChange={handleChange}
+              disabled={loading}
+            />
+            <p className="text-xs text-muted-foreground">Displayed on the frontend. Supports format like: <code className="text-primary font-bold">8,932+</code></p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="heroPaid" className="text-sm font-semibold">Total Paid</Label>
+            <Input
+              id="heroPaid"
+              name="heroPaid"
+              type="text"
+              value={settings.heroPaid || ''}
+              onChange={handleChange}
+              disabled={loading}
+            />
+            <p className="text-xs text-muted-foreground">Displayed on the frontend. Supports format like: <code className="text-primary font-bold">₹12.45 Cr+</code></p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="heroRate" className="text-sm font-semibold">Success Rate</Label>
+            <Input
+              id="heroRate"
+              name="heroRate"
+              type="text"
+              value={settings.heroRate || ''}
+              onChange={handleChange}
+              disabled={loading}
+            />
+            <p className="text-xs text-muted-foreground">Displayed on the frontend. Supports format like: <code className="text-primary font-bold">99.8%</code></p>
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-end">
