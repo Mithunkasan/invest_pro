@@ -1,6 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import fs from 'fs'
+import path from 'path'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { uploadToCloudinary } from '@/lib/cloudinary'
@@ -215,17 +217,47 @@ export async function submitKYC(formData: FormData): Promise<ApiResponse> {
       apiSecret && !isPlaceholder(apiSecret)
 
     if (isCloudinaryConfigured) {
-      // 1. Upload Aadhaar Image to Cloudinary
-      const aadhaarBuffer = Buffer.from(await aadhaarFile.arrayBuffer())
-      aadhaarUrl = await uploadToCloudinary(aadhaarBuffer, `aadhaar_${session.id}`)
+      try {
+        // 1. Upload Aadhaar Image to Cloudinary
+        const aadhaarBuffer = Buffer.from(await aadhaarFile.arrayBuffer())
+        aadhaarUrl = await uploadToCloudinary(aadhaarBuffer, `aadhaar_${session.id}`)
 
-      // 2. Upload PAN Image to Cloudinary
+        // 2. Upload PAN Image to Cloudinary
+        const panBuffer = Buffer.from(await panFile.arrayBuffer())
+        panUrl = await uploadToCloudinary(panBuffer, `pan_${session.id}`)
+      } catch (err) {
+        console.error('Cloudinary upload failed, falling back to local storage:', err)
+      }
+    }
+
+    if (!aadhaarUrl || !panUrl) {
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads')
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true })
+      }
+
+      const getExtension = (file: File) => {
+        const ext = path.extname(file.name)
+        return ext || '.png'
+      }
+
+      const aadhaarExt = getExtension(aadhaarFile)
+      const panExt = getExtension(panFile)
+
+      const aadhaarFileName = `aadhaar_${session.id}_${Date.now()}${aadhaarExt}`
+      const panFileName = `pan_${session.id}_${Date.now()}${panExt}`
+
+      const aadhaarFilePath = path.join(uploadDir, aadhaarFileName)
+      const panFilePath = path.join(uploadDir, panFileName)
+
+      const aadhaarBuffer = Buffer.from(await aadhaarFile.arrayBuffer())
       const panBuffer = Buffer.from(await panFile.arrayBuffer())
-      panUrl = await uploadToCloudinary(panBuffer, `pan_${session.id}`)
-    } else {
-      console.warn('Cloudinary not configured or placeholder keys used. Falling back to local placeholder URLs.')
-      aadhaarUrl = 'https://res.cloudinary.com/demo/image/upload/v123456/sample.jpg'
-      panUrl = 'https://res.cloudinary.com/demo/image/upload/v123456/sample.jpg'
+
+      await fs.promises.writeFile(aadhaarFilePath, aadhaarBuffer)
+      await fs.promises.writeFile(panFilePath, panBuffer)
+
+      aadhaarUrl = `/uploads/${aadhaarFileName}`
+      panUrl = `/uploads/${panFileName}`
     }
 
     await prisma.kYC.upsert({

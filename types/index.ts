@@ -176,6 +176,10 @@ export interface SystemSettings {
   tlRankRequiredReferrals: number
   tlRankMaxUsers: number
   tlRankEnabled: boolean
+  heroMembers: string
+  heroActive: string
+  heroPaid: string
+  heroRate: string
   createdAt: Date
   updatedAt: Date
 }
