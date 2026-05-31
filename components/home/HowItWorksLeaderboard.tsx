@@ -192,17 +192,17 @@ export function HowItWorksLeaderboard() {
             <div className="absolute w-64 h-64 bg-blue-500/20 rounded-full blur-[80px] pointer-events-none" />
 
             <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
               className="relative w-full max-w-[280px] aspect-square flex items-center justify-center"
             >
               <Image
-                src="/hologram_globe.png"
-                alt="Glowing Futuristic Holographic Globe representing VR Galaxy P2P community network"
+                src="/earth.png"
+                alt="Slowly rotating Earth representing VR Galaxy global network"
                 fill
                 priority
                 sizes="(max-width: 768px) 100vw, 280px"
-                className="object-contain filter drop-shadow-[0_0_20px_rgba(59,130,246,0.4)]"
+                className="object-contain filter drop-shadow-[0_0_30px_rgba(59,130,246,0.4)]"
               />
             </motion.div>
           </motion.div>
