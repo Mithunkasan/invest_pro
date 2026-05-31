@@ -231,33 +231,46 @@ export async function submitKYC(formData: FormData): Promise<ApiResponse> {
     }
 
     if (!aadhaarUrl || !panUrl) {
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true })
+      try {
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads')
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true })
+        }
+
+        const getExtension = (file: File) => {
+          const ext = path.extname(file.name)
+          return ext || '.png'
+        }
+
+        const aadhaarExt = getExtension(aadhaarFile)
+        const panExt = getExtension(panFile)
+
+        const aadhaarFileName = `aadhaar_${session.id}_${Date.now()}${aadhaarExt}`
+        const panFileName = `pan_${session.id}_${Date.now()}${panExt}`
+
+        const aadhaarFilePath = path.join(uploadDir, aadhaarFileName)
+        const panFilePath = path.join(uploadDir, panFileName)
+
+        const aadhaarBuffer = Buffer.from(await aadhaarFile.arrayBuffer())
+        const panBuffer = Buffer.from(await panFile.arrayBuffer())
+
+        await fs.promises.writeFile(aadhaarFilePath, aadhaarBuffer)
+        await fs.promises.writeFile(panFilePath, panBuffer)
+
+        aadhaarUrl = `/uploads/${aadhaarFileName}`
+        panUrl = `/uploads/${panFileName}`
+      } catch (writeError) {
+        console.warn('Local filesystem write failed (likely read-only environment). Falling back to base64 Data URLs:', writeError)
+        
+        const aadhaarBuffer = Buffer.from(await aadhaarFile.arrayBuffer())
+        const panBuffer = Buffer.from(await panFile.arrayBuffer())
+        
+        const aadhaarBase64 = aadhaarBuffer.toString('base64')
+        const panBase64 = panBuffer.toString('base64')
+        
+        aadhaarUrl = `data:${aadhaarFile.type || 'image/png'};base64,${aadhaarBase64}`
+        panUrl = `data:${panFile.type || 'image/png'};base64,${panBase64}`
       }
-
-      const getExtension = (file: File) => {
-        const ext = path.extname(file.name)
-        return ext || '.png'
-      }
-
-      const aadhaarExt = getExtension(aadhaarFile)
-      const panExt = getExtension(panFile)
-
-      const aadhaarFileName = `aadhaar_${session.id}_${Date.now()}${aadhaarExt}`
-      const panFileName = `pan_${session.id}_${Date.now()}${panExt}`
-
-      const aadhaarFilePath = path.join(uploadDir, aadhaarFileName)
-      const panFilePath = path.join(uploadDir, panFileName)
-
-      const aadhaarBuffer = Buffer.from(await aadhaarFile.arrayBuffer())
-      const panBuffer = Buffer.from(await panFile.arrayBuffer())
-
-      await fs.promises.writeFile(aadhaarFilePath, aadhaarBuffer)
-      await fs.promises.writeFile(panFilePath, panBuffer)
-
-      aadhaarUrl = `/uploads/${aadhaarFileName}`
-      panUrl = `/uploads/${panFileName}`
     }
 
     await prisma.kYC.upsert({
