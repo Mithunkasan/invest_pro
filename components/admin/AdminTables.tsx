@@ -245,6 +245,31 @@ export function KycTable({ data }: TableProps) {
     })
   }
 
+  const openDocument = (url: string, title: string) => {
+    if (url.startsWith('data:')) {
+      const win = window.open()
+      if (win) {
+        win.document.write(`
+          <html>
+            <head>
+              <title>${title}</title>
+              <style>
+                body { margin: 0; background: #0b0f19; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+                img { max-width: 100%; max-height: 100%; object-fit: contain; }
+              </style>
+            </head>
+            <body>
+              <img src="${url}" alt="${title}" />
+            </body>
+          </html>
+        `)
+        win.document.close()
+      }
+    } else {
+      window.open(url, '_blank')
+    }
+  }
+
   const cols = [
     { key: 'user.name', label: 'User', render: (_: any, row: any) => (
       <div>
@@ -258,13 +283,25 @@ export function KycTable({ data }: TableProps) {
         <p className="font-semibold text-white/90">PAN: <span className="font-mono text-muted-foreground">{row.panNo || '—'}</span></p>
         <div className="flex items-center gap-2 mt-1">
           {row.aadhaarUrl ? (
-            <a href={row.aadhaarUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold text-[9px]">📄 View Aadhaar</a>
+            <button
+              type="button"
+              onClick={() => openDocument(row.aadhaarUrl, `${row.user?.name || 'User'}'s Aadhaar Card`)}
+              className="text-primary hover:underline font-bold text-[9px] bg-transparent border-none p-0 cursor-pointer outline-none"
+            >
+              📄 View Aadhaar
+            </button>
           ) : (
             <span className="text-muted-foreground text-[9px]">No Aadhaar Image</span>
           )}
           <span className="text-muted-foreground/30">•</span>
           {row.panUrl ? (
-            <a href={row.panUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold text-[9px]">📄 View PAN</a>
+            <button
+              type="button"
+              onClick={() => openDocument(row.panUrl, `${row.user?.name || 'User'}'s PAN Card`)}
+              className="text-primary hover:underline font-bold text-[9px] bg-transparent border-none p-0 cursor-pointer outline-none"
+            >
+              📄 View PAN
+            </button>
           ) : (
             <span className="text-muted-foreground text-[9px]">No PAN Image</span>
           )}
