@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LayoutDashboard, TrendingUp, Wallet, ArrowDownToLine, ArrowUpFromLine,
-  History, Users, Bell, ShieldCheck, Settings, X, ChevronRight, Crown
+  LayoutDashboard, Wallet, ArrowDownToLine, ArrowUpFromLine,
+  History, Users, Bell, ShieldCheck, Settings, X, ChevronRight, Crown, Gift
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -24,7 +24,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
   { href: '/dashboard/membership', label: 'Membership', icon: Crown },
   { href: '/dashboard/deposit', label: 'Deposit', icon: ArrowDownToLine },
@@ -40,9 +39,10 @@ interface DashboardSidebarProps {
   mobileOpen: boolean
   onClose: () => void
   isKycApproved: boolean
+  user: { name: string; email: string; memberType?: 'FREE' | 'PREMIUM' }
 }
 
-export function DashboardSidebar({ mobileOpen, onClose, isKycApproved }: DashboardSidebarProps) {
+export function DashboardSidebar({ mobileOpen, onClose, isKycApproved, user }: DashboardSidebarProps) {
   const pathname = usePathname()
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
 
@@ -62,22 +62,50 @@ export function DashboardSidebar({ mobileOpen, onClose, isKycApproved }: Dashboa
     }))
   }
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-6 py-4 border-b border-sidebar-border">
-        <div className="w-11 h-11 flex items-center justify-center overflow-hidden">
-          <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
-        </div>
-        <span className="font-black tracking-wider text-xl bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">VR Galaxy</span>
-      </div>
+  const SidebarContent = () => {
+    // 1. Determine base nav items depending on member type
+    let baseItems = [...navItems]
+    const isFree = user?.memberType === 'FREE'
 
-      {/* Nav Items */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto no-scrollbar">
-        {(isKycApproved
-          ? navItems
-          : navItems.filter((item) => item.label === 'KYC' || item.label === 'Profile')
-        ).map((item) => {
+    if (isFree) {
+      // Free users do NOT see KYC or Membership
+      baseItems = baseItems.filter((item) => item.label !== 'KYC' && item.label !== 'Membership')
+    } else {
+      // Premium users see the Gift Section
+      const membershipIndex = baseItems.findIndex((item) => item.label === 'Membership')
+      if (membershipIndex !== -1) {
+        baseItems.splice(membershipIndex + 1, 0, {
+          href: '/dashboard/gift',
+          label: 'Gift Section',
+          icon: Gift
+        })
+      } else {
+        baseItems.push({
+          href: '/dashboard/gift',
+          label: 'Gift Section',
+          icon: Gift
+        })
+      }
+    }
+
+    // 2. Filter out non-KYC / non-Profile if KYC is not approved and user is not FREE
+    const filteredItems = isKycApproved
+      ? baseItems
+      : baseItems.filter((item) => item.label === 'KYC' || item.label === 'Profile')
+
+    return (
+      <div className="flex flex-col h-full">
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-6 py-4 border-b border-sidebar-border">
+          <div className="w-11 h-11 flex items-center justify-center overflow-hidden">
+            <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
+          </div>
+          <span className="font-black tracking-wider text-xl bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">VR Galaxy</span>
+        </div>
+
+        {/* Nav Items */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto no-scrollbar">
+          {filteredItems.map((item) => {
           const Icon = item.icon
 
           // Render collapsible section
@@ -177,6 +205,7 @@ export function DashboardSidebar({ mobileOpen, onClose, isKycApproved }: Dashboa
       </div>
     </div>
   )
+}
 
   return (
     <>

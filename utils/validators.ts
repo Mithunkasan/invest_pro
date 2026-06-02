@@ -18,9 +18,23 @@ export const registerSchema = z.object({
   confirmPassword: z.string(),
   referralCode: z.string().optional(),
   terms: z.boolean().refine((val) => val === true, { message: 'You must accept the terms' }),
+  memberType: z.enum(['FREE', 'PREMIUM']).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
+})
+
+export const giftSchema = z.object({
+  fullName: z.string().min(2, 'Full Name must be at least 2 characters'),
+  age: z.coerce.number().min(18, 'Age must be 18 or above').max(120, 'Invalid age'),
+  mobile: z.string().regex(/^[6-9]\d{9}$/, 'Invalid Indian phone number (10 digits)'),
+  email: z.string().email('Invalid email address'),
+  houseNo: z.string().min(1, 'House/Flat/Office number is required'),
+  area: z.string().min(2, 'Area/Street/Locality is required'),
+  state: z.string().min(1, 'State is required'),
+  district: z.string().min(1, 'District is required'),
+  city: z.string().min(1, 'City is required'),
+  pinCode: z.string().regex(/^\d{6}$/, 'PIN Code must be exactly 6 digits'),
 })
 
 export const adminLoginSchema = z.object({
@@ -104,3 +118,4 @@ export type DepositInput = z.infer<typeof depositSchema>
 export type WithdrawalInput = z.infer<typeof withdrawalSchema>
 export type ContactInput = z.infer<typeof contactSchema>
 export type InvestmentPlanInput = z.infer<typeof investmentPlanSchema>
+export type GiftInput = z.infer<typeof giftSchema>

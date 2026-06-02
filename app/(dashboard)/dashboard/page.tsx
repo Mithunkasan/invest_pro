@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { DashboardOverview } from '@/components/dashboard/DashboardOverview'
+import { FreeDashboardOverview } from '@/components/dashboard/FreeDashboardOverview'
 
 export const metadata: Metadata = {
   title: 'Dashboard — InvestPro',
@@ -71,7 +72,7 @@ export default async function DashboardPage() {
 
   const dbUser = await prisma.user.findUnique({
     where: { id: session.id },
-    select: { starPerformer: true, tlRank: true }
+    select: { starPerformer: true, tlRank: true, memberType: true }
   })
 
   const stats = {
@@ -81,6 +82,15 @@ export default async function DashboardPage() {
     referralIncome: referralIncome._sum.commission || 0,
     activePlans: investments.length,
     wallet: wallet || { mainBalance: 0, bonusBalance: 0, referralBalance: 0, rewardBalance: 0, levelBalance: 0, shareBalance: 0 },
+  }
+
+  if (dbUser?.memberType === 'FREE') {
+    return (
+      <FreeDashboardOverview
+        user={session}
+        stats={stats}
+      />
+    )
   }
 
   return (

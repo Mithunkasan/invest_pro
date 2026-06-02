@@ -8,6 +8,7 @@ import { registerAction } from '@/actions/auth'
 import { useFormStatus } from 'react-dom'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import { cn } from '@/lib/utils'
 
 function SubmitButton() {
   const { pending } = useFormStatus()
@@ -26,6 +27,7 @@ function SubmitButton() {
 
 function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false)
+  const [memberType, setMemberType] = useState<'FREE' | 'PREMIUM'>('PREMIUM')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const searchParams = useSearchParams()
@@ -56,6 +58,34 @@ function RegisterForm() {
         <p className="text-white/60 text-sm mt-1">Start your investment journey today</p>
       </div>
 
+      {/* Membership Switch Toggle */}
+      <div className="flex bg-white/5 p-1 rounded-full border border-white/10 mb-6 gap-1 relative z-10">
+        <button
+          type="button"
+          onClick={() => setMemberType('FREE')}
+          className={cn(
+            "flex-1 py-2.5 text-xs font-bold rounded-full transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5",
+            memberType === 'FREE' 
+              ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+              : "text-white/60 hover:text-white"
+          )}
+        >
+          🎮 Free Member
+        </button>
+        <button
+          type="button"
+          onClick={() => setMemberType('PREMIUM')}
+          className={cn(
+            "flex-1 py-2.5 text-xs font-bold rounded-full transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5",
+            memberType === 'PREMIUM'
+              ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25"
+              : "text-white/60 hover:text-white"
+          )}
+        >
+          💎 Premium Member
+        </button>
+      </div>
+
       {error && (
         <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
       )}
@@ -67,6 +97,7 @@ function RegisterForm() {
       )}
 
       <form action={handleAction} className="space-y-3">
+        <input type="hidden" name="memberType" value={memberType} />
         {/* Name */}
         <div>
           <label className="text-xs text-white/70 font-medium block mb-1">Full Name</label>
