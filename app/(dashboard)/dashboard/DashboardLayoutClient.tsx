@@ -8,7 +8,7 @@ import { MoneyBackground } from '@/components/dashboard/MoneyBackground'
 
 interface DashboardLayoutClientProps {
   children: React.ReactNode
-  user: { name: string; email: string }
+  user: { name: string; email: string; memberType?: 'FREE' | 'PREMIUM' }
   notificationCount: number
   isKycApproved: boolean
 }
@@ -43,6 +43,7 @@ export function DashboardLayoutClient({
         mobileOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         isKycApproved={isKycApproved}
+        user={user}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardNavbar

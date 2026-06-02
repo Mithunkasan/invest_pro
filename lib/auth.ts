@@ -14,6 +14,7 @@ export interface UserTokenPayload {
   name: string
   role: 'USER' | 'ADMIN'
   type: 'user' | 'admin'
+  memberType?: 'FREE' | 'PREMIUM'
 }
 
 // ── JWT Helpers ───────────────────────────────────────────────────────────────

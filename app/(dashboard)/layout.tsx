@@ -11,16 +11,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
     where: { userId: session.id, isRead: false },
   })
 
-  const kyc = await prisma.kYC.findUnique({
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: { memberType: true }
+  })
+
+  const isFree = dbUser?.memberType === 'FREE'
+
+  const kyc = isFree ? null : await prisma.kYC.findUnique({
     where: { userId: session.id },
     select: { status: true },
   })
 
-  const isKycApproved = kyc?.status === 'APPROVED'
+  const isKycApproved = isFree ? true : kyc?.status === 'APPROVED'
 
   return (
     <DashboardLayoutClient
-      user={{ name: session.name, email: session.email }}
+      user={{ name: session.name, email: session.email, memberType: dbUser?.memberType || 'PREMIUM' }}
       notificationCount={unreadCount}
       isKycApproved={isKycApproved}
     >

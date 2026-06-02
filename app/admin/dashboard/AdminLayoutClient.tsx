@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpFromLine, TrendingUp, ShieldCheck,
   GitBranch, Wallet, Bell, BarChart3, Lock, Settings, X, TrendingUpIcon,
-  LogOut, Menu, ChevronRight, Crown
+  LogOut, Menu, ChevronRight, Crown, Gift
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { adminLogoutAction } from '@/actions/auth'
@@ -19,6 +19,7 @@ const adminNavItems = [
   { href: '/admin/dashboard/withdrawals', label: 'Withdrawals', icon: ArrowUpFromLine },
   { href: '/admin/dashboard/plans', label: 'Investment Plans', icon: TrendingUp },
   { href: '/admin/dashboard/memberships', label: 'Membership Plans', icon: Crown },
+  { href: '/admin/dashboard/gifts', label: 'Gifts Management', icon: Gift },
   { href: '/admin/dashboard/kyc', label: 'KYC Management', icon: ShieldCheck },
   { href: '/admin/dashboard/settings', label: 'System Settings', icon: Settings },
   { href: '/admin/dashboard/wallet', label: 'Wallet Management', icon: Wallet },

@@ -34,7 +34,7 @@ export async function loginAction(
     return { success: false, message: 'Your account has been suspended. Please contact support.' }
   }
 
-  await setSession({ id: user.id, email: user.email, name: user.name, role: 'USER', type: 'user' })
+  await setSession({ id: user.id, email: user.email, name: user.name, role: 'USER', type: 'user', memberType: user.memberType as 'FREE' | 'PREMIUM' })
   redirect('/dashboard')
 }
 
@@ -50,6 +50,7 @@ export async function registerAction(
     confirmPassword: formData.get('confirmPassword') as string,
     referralCode: formData.get('referralCode') as string || undefined,
     terms: formData.get('terms') === 'on' ? true : undefined,
+    memberType: formData.get('memberType') as string || 'PREMIUM',
   }
 
   const parsed = registerSchema.safeParse(raw)
@@ -75,6 +76,12 @@ export async function registerAction(
 
   const passwordHash = await hashPassword(parsed.data.password)
 
+  let membershipPlanId: string | undefined
+  if (parsed.data.memberType === 'FREE') {
+    const freePlan = await prisma.membershipPlan.findFirst({ where: { name: 'Free Membership' } })
+    if (freePlan) membershipPlanId = freePlan.id
+  }
+
   const user = await prisma.user.create({
     data: {
       name: parsed.data.name,
@@ -82,6 +89,8 @@ export async function registerAction(
       phone: parsed.data.phone,
       passwordHash,
       referredById,
+      memberType: parsed.data.memberType as any || 'PREMIUM',
+      membershipPlanId,
     },
   })
 

@@ -44,9 +44,29 @@ export function HeroSection({ stats }: HeroSectionProps) {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-[#02040a] flex flex-col min-h-[100svh] lg:h-[100svh] lg:max-h-[100svh] bg-cover bg-center bg-no-repeat bg-[url('/bg1.jpeg')] lg:bg-[url('/bg.jpeg')]"
+      className="relative w-full overflow-hidden bg-[#02040a] flex flex-col min-h-[100svh] lg:h-[100svh] lg:max-h-[100svh]"
       aria-label="VR Galaxy Networks Hero Section"
     >
+      {/* Background Videos */}
+      <video
+        className="absolute inset-0 w-full h-full object-cover z-0 hidden lg:block"
+        autoPlay
+        muted
+        loop
+        playsInline
+      >
+        <source src="/bg4.mp4" type="video/mp4" />
+      </video>
+      <video
+        className="absolute inset-0 w-full h-full object-cover z-0 block lg:hidden"
+        autoPlay
+        muted
+        loop
+        playsInline
+      >
+        <source src="/bg5.mp4" type="video/mp4" />
+      </video>
+
       {/* Subtle Dark Overlay for Higher Text Contrast */}
       <div className="absolute inset-0 bg-black/15 pointer-events-none select-none z-10" />
 

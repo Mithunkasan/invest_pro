@@ -21,6 +21,7 @@ model User {
   passwordHash String
   role         Role     @default(USER)
   status       UserStatus @default(ACTIVE)
+  memberType   MemberType @default(PREMIUM)
   referralCode String   @unique @default(cuid())
   referredById String?
 
@@ -36,6 +37,7 @@ model User {
   referralsReceived Referral[] @relation("ReferredRelation")
   kyc           KYC?
   notifications Notification[]
+  gift          Gift?
 
   // Badges & Rank
   starPerformer Boolean @default(false)
@@ -290,6 +292,11 @@ enum Role {
   ADMIN
 }
 
+enum MemberType {
+  FREE
+  PREMIUM
+}
+
 enum UserStatus {
   ACTIVE
   SUSPENDED
@@ -414,4 +421,38 @@ model MembershipPlan {
   users           User[]   @relation("UserMembershipPlan")
 
   @@index([isActive])
+}
+
+// ============================================================
+// GIFT MODEL (PREMIUM ONLY)
+// ============================================================
+model Gift {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Gift address details
+  fullName             String
+  age                  Int
+  mobile               String
+  email                String
+  houseNo              String
+  area                 String
+  city                 String
+  district             String
+  state                String
+  pinCode              String
+
+  // Tracking details (added by admin)
+  trackingNumber       String    @default("")
+  courierName          String    @default("")
+  dispatchDate         DateTime?
+  expectedDeliveryDate DateTime?
+  deliveryStatus       String    @default("PENDING") // PENDING, SHIPPED, OUT_FOR_DELIVERY, DELIVERED
+  
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([deliveryStatus])
 }
