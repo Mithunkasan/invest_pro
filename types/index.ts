@@ -27,8 +27,14 @@ export interface User {
   referralCode: string
   referredById?: string | null
   starPerformer?: boolean
+  doubleStarPerformer?: boolean
+  elitePerformer?: boolean
   tlRank?: boolean
   tlRankEarnedAt?: Date | null
+  tlShareholder?: boolean
+  directorRank?: boolean
+  directorRankEarnedAt?: Date | null
+  directorShareholder?: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -171,11 +177,20 @@ export interface SystemSettings {
   level2Percent: number
   level3Percent: number
   levelIncomeEnabled: boolean
+  referralCommissionStructure: string
   starPerformerThreshold: number
   starPerformerEnabled: boolean
+  doubleStarThreshold: number
+  doubleStarEnabled: boolean
+  eliteThreshold: number
+  eliteEnabled: boolean
   tlRankRequiredReferrals: number
+  tlRankRequiredCommission: number
   tlRankMaxUsers: number
   tlRankEnabled: boolean
+  directorRankRequiredTLs: number
+  directorRankMaxUsers: number
+  directorRankEnabled: boolean
   heroMembers: string
   heroActive: string
   heroPaid: string

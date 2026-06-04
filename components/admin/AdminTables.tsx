@@ -1,6 +1,6 @@
 'use client'
 
-import { useTransition, useState } from 'react'
+import { useTransition, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { DataTable } from '@/components/dashboard/DataTable'
 import { formatDate, formatCurrency, getStatusColor } from '@/utils/formatters'
@@ -16,7 +16,7 @@ import {
   deleteMembershipPlanAction
 } from '@/actions/admin'
 import { toast } from '@/hooks/use-toast'
-import { Plus, Edit2, Trash2, X, PlusCircle } from 'lucide-react'
+import { Plus, Edit2, Trash2, X, PlusCircle, Search } from 'lucide-react'
 
 interface TableProps {
   data: any[]
@@ -24,6 +24,56 @@ interface TableProps {
 
 export function UsersTable({ users }: { users: any[] }) {
   const [isPending, startTransition] = useTransition()
+  const [filterName, setFilterName] = useState('')
+  const [filterMembership, setFilterMembership] = useState('ALL')
+  const [filterStatus, setFilterStatus] = useState('ALL')
+
+  // Map users to extract membershipPlanName for proper sorting
+  const processedUsers = useMemo(() => {
+    return users.map((user) => ({
+      ...user,
+      membershipPlanName: user.membershipPlan?.name || 'Free Membership',
+    }))
+  }, [users])
+
+  // Extract all unique membership plan names from users data
+  const availablePlans = useMemo(() => {
+    const plansSet = new Set<string>()
+    users.forEach((u) => {
+      const name = u.membershipPlan?.name
+      if (name) plansSet.add(name)
+    })
+    if (plansSet.size === 0) {
+      return ['Free Membership', 'Bronze Membership', 'Silver Membership', 'Gold Membership', 'Diamond Membership', 'Platinum Membership']
+    }
+    return Array.from(plansSet)
+  }, [users])
+
+  // Apply filters
+  const filteredUsers = useMemo(() => {
+    return processedUsers.filter((user) => {
+      // 1. Text Search (Name, Email, Phone)
+      if (filterName) {
+        const query = filterName.toLowerCase()
+        const matchName = user.name?.toLowerCase().includes(query)
+        const matchEmail = user.email?.toLowerCase().includes(query)
+        const matchPhone = user.phone?.toLowerCase().includes(query)
+        if (!matchName && !matchEmail && !matchPhone) return false
+      }
+
+      // 2. Membership Plan Filter
+      if (filterMembership !== 'ALL') {
+        if (user.membershipPlanName !== filterMembership) return false
+      }
+
+      // 3. Status Filter
+      if (filterStatus !== 'ALL') {
+        if (user.status !== filterStatus) return false
+      }
+
+      return true
+    })
+  }, [processedUsers, filterName, filterMembership, filterStatus])
 
   const handleToggleStatus = (userId: string) => {
     startTransition(async () => {
@@ -67,9 +117,21 @@ export function UsersTable({ users }: { users: any[] }) {
       const w = v as { mainBalance: number } | null
       return <span className="font-semibold text-sm">{formatCurrency(w?.mainBalance || 0)}</span>
     }},
-    { key: '_count', label: 'Investments', render: (v: unknown) => {
-      const c = v as { investments: number }
-      return <span className="text-sm">{c.investments}</span>
+    { key: 'membershipPlanName', label: 'Membership', sortable: true, render: (v: unknown, row: any) => {
+      const planName = String(v)
+      const planColor = row.membershipPlan?.color || '#3B82F6'
+      return (
+        <span 
+          className="text-xs font-bold px-2.5 py-1 rounded-md border shadow-sm whitespace-nowrap"
+          style={{ 
+            backgroundColor: `${planColor}15`, 
+            borderColor: `${planColor}30`,
+            color: planColor 
+          }}
+        >
+          {planName}
+        </span>
+      )
     }},
     { key: 'status', label: 'Status', sortable: true, render: (v: unknown) => <span className={`status-badge ${getStatusColor(String(v))}`}>{String(v)}</span> },
     { key: 'createdAt', label: 'Joined', sortable: true, render: (v: unknown) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
@@ -106,7 +168,77 @@ export function UsersTable({ users }: { users: any[] }) {
     )},
   ]
 
-  return <DataTable data={users} columns={cols as any} rowKey="id" searchPlaceholder="Search users..." emptyMessage="No users found" />
+  return (
+    <div className="space-y-4">
+      {/* Premium Filter Controls */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 backdrop-blur-sm">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search by name, email, or phone..."
+            value={filterName}
+            onChange={(e) => { setFilterName(e.target.value) }}
+            className="w-full h-10 pl-10 pr-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+          />
+        </div>
+
+        {/* Membership Dropdown */}
+        <div>
+          <select
+            value={filterMembership}
+            onChange={(e) => setFilterMembership(e.target.value)}
+            className="w-full h-10 px-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+          >
+            <option value="ALL">All Membership Plans</option>
+            {availablePlans.map((plan) => (
+              <option key={plan} value={plan}>
+                {plan}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Status Dropdown + Reset */}
+        <div className="flex gap-2">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="flex-1 h-10 px-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="SUSPENDED">Suspended</option>
+            <option value="PENDING">Pending</option>
+          </select>
+
+          {/* Reset button */}
+          {(filterName || filterMembership !== 'ALL' || filterStatus !== 'ALL') && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFilterName('')
+                setFilterMembership('ALL')
+                setFilterStatus('ALL')
+              }}
+              className="h-10 px-3 font-semibold shrink-0"
+            >
+              Reset
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <DataTable 
+        data={filteredUsers} 
+        columns={cols as any} 
+        rowKey="id" 
+        searchable={false}
+        emptyMessage="No users found matching current filters" 
+      />
+    </div>
+  )
 }
 
 export function DepositsTable({ data }: TableProps) {

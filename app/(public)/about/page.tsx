@@ -1,13 +1,27 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'About Us — InvestPro',
-  description: 'Learn about InvestPro, our mission, team, and commitment to transparent investment returns.',
+  title: 'About Us',
+  description: 'Learn about VR Galaxy, our mission, core values, experienced team, and commitment to transparent, high-yield investment returns in India.',
+  alternates: { canonical: '/about' },
 }
 
 export default function AboutPage() {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const aboutJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    'name': 'About VR Galaxy',
+    'description': 'Learn about VR Galaxy, our mission, core values, experienced team, and commitment to transparent, high-yield investment returns in India.',
+    'url': `${baseUrl}/about`,
+  }
+
   return (
     <div className="min-h-screen pt-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd) }}
+      />
       <div className="section-container">
         {/* Hero */}
         <div className="text-center mb-16">

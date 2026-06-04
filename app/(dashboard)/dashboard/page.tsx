@@ -72,7 +72,16 @@ export default async function DashboardPage() {
 
   const dbUser = await prisma.user.findUnique({
     where: { id: session.id },
-    select: { starPerformer: true, tlRank: true, memberType: true }
+    select: {
+      starPerformer: true,
+      doubleStarPerformer: true,
+      elitePerformer: true,
+      tlRank: true,
+      tlShareholder: true,
+      directorRank: true,
+      directorShareholder: true,
+      memberType: true
+    }
   })
 
   const stats = {
@@ -98,7 +107,12 @@ export default async function DashboardPage() {
       user={{
         ...session,
         starPerformer: dbUser?.starPerformer || false,
+        doubleStarPerformer: dbUser?.doubleStarPerformer || false,
+        elitePerformer: dbUser?.elitePerformer || false,
         tlRank: dbUser?.tlRank || false,
+        tlShareholder: dbUser?.tlShareholder || false,
+        directorRank: dbUser?.directorRank || false,
+        directorShareholder: dbUser?.directorShareholder || false,
       } as any}
       stats={stats}
       investments={JSON.parse(JSON.stringify(investments))}

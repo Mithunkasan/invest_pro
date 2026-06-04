@@ -11,6 +11,7 @@ interface ReferralClientProps {
   referrals: Array<{ id: string; commission: number; level: number; createdAt: string; referred: { name: string; email: string; createdAt: string } }>
   totalCommission: number
   totalReferrals: number
+  referralCommissionStructure: string
 }
 
 const cols = [
@@ -28,7 +29,7 @@ const cols = [
   { key: 'createdAt', label: 'Joined', render: (v: unknown) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
 ]
 
-export function ReferralClient({ referralCode, referrals, totalCommission, totalReferrals }: ReferralClientProps) {
+export function ReferralClient({ referralCode, referrals, totalCommission, totalReferrals, referralCommissionStructure }: ReferralClientProps) {
   const referralLink = generateReferralLink(referralCode)
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -89,18 +90,20 @@ export function ReferralClient({ referralCode, referrals, totalCommission, total
       {/* Commission Structure */}
       <div className="premium-card p-6">
         <h2 className="font-semibold mb-4">Commission Structure</h2>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          {[
-            { level: 'Level 1', rate: '5%', label: 'Direct Referrals' },
-            { level: 'Level 2', rate: '3%', label: 'Indirect Referrals' },
-            { level: 'Level 3', rate: '2%', label: 'Extended Network' },
-          ].map((c) => (
-            <div key={c.level} className="p-3 rounded-xl bg-muted/50">
-              <p className="text-xs text-muted-foreground">{c.level}</p>
-              <p className="text-2xl font-black text-primary">{c.rate}</p>
-              <p className="text-xs text-muted-foreground">{c.label}</p>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 text-center">
+          {(referralCommissionStructure || '10,5,3')
+            .split(',')
+            .map((p) => p.trim())
+            .filter(Boolean)
+            .map((rate, idx) => (
+              <div key={idx} className="p-3 rounded-xl bg-muted/50 border border-muted/30">
+                <p className="text-xs text-muted-foreground font-semibold">Level {idx + 1}</p>
+                <p className="text-2xl font-black text-primary my-1">{rate}%</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+                  {idx === 0 ? 'Direct Referrals' : idx === 1 ? 'Indirect Upline' : 'Network Upline'}
+                </p>
+              </div>
+            ))}
         </div>
       </div>
 

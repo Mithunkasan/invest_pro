@@ -366,6 +366,12 @@ export async function buyMembershipPlanAction(planId: string): Promise<ApiRespon
       })
     })
 
+    // Trigger referral commission if membership is a paid upgrade
+    if (plan.price > 0) {
+      const { distributeReferralAndLevelCommissions } = require('./rules')
+      await distributeReferralAndLevelCommissions(session.id, plan.price, plan.id)
+    }
+
     revalidatePath('/dashboard')
     revalidatePath('/dashboard/membership')
     revalidatePath('/dashboard/wallet')

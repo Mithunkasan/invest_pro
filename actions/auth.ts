@@ -71,7 +71,10 @@ export async function registerAction(
     const referrer = await prisma.user.findUnique({
       where: { referralCode: parsed.data.referralCode },
     })
-    if (referrer) referredById = referrer.id
+    if (!referrer) {
+      return { success: false, message: 'Invalid referral code' }
+    }
+    referredById = referrer.id
   }
 
   const passwordHash = await hashPassword(parsed.data.password)

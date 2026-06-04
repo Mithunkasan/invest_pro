@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
@@ -54,7 +54,7 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
 
       const totalIncrement = depositAmount + bonusAmount
 
-      const dbOps = [
+      const dbOps: any[] = [
         // Update deposit status
         prisma.deposit.update({
           where: { id: depositId },
@@ -103,7 +103,117 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
         )
       }
 
+      // ── Distribute Referral Commissions ──
+      const referralUpdates: { referrerId: string; amount: number; level: number }[] = []
+      
+      const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
+      if (settings && user?.referredById) {
+        const percentageString = settings.referralCommissionStructure || '10,5,3'
+        let levelPercentages = percentageString
+          .split(',')
+          .map(p => Number(p.trim()))
+          .filter(p => !isNaN(p))
+          
+        if (!settings.levelIncomeEnabled && levelPercentages.length > 0) {
+          levelPercentages = [levelPercentages[0]]
+        }
+
+        let currentReferrerId: string | null = user.referredById
+        
+        for (let index = 0; index < levelPercentages.length; index++) {
+          if (!currentReferrerId) break
+          
+          const percentage = levelPercentages[index]
+          const level = index + 1
+          
+          const referrer = (await prisma.user.findUnique({
+            where: { id: currentReferrerId },
+            select: { id: true, name: true, referredById: true }
+          })) as any
+          if (!referrer) break
+          
+          if (percentage > 0) {
+            const commissionAmount = (depositAmount * percentage) / 100
+            
+            // 1. Credit referrer's wallet
+            dbOps.push(
+              prisma.wallet.update({
+                where: { userId: referrer.id },
+                data: { referralBalance: { increment: commissionAmount } }
+              })
+            )
+            
+            // 2. Create transaction record for referral bonus
+            dbOps.push(
+              prisma.transaction.create({
+                data: {
+                  userId: referrer.id,
+                  type: 'REFERRAL_BONUS',
+                  amount: commissionAmount,
+                  status: 'COMPLETED',
+                  reference: deposit.utrNumber || depositId,
+                  description: `Level ${level} referral commission from ${user.name}'s deposit`,
+                  walletType: 'REFERRAL'
+                }
+              })
+            )
+            
+            // 3. Notification for referrer
+            dbOps.push(
+              prisma.notification.create({
+                data: {
+                  userId: referrer.id,
+                  title: 'Referral Commission Received 👥',
+                  message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} referral commission from ${user.name}'s deposit.`,
+                  type: 'SUCCESS'
+                }
+              })
+            )
+            
+            // 4. Update/Create Referral record
+            const referralRecord = await prisma.referral.findFirst({
+              where: { referrerId: referrer.id, referredId: user.id }
+            })
+            
+            if (referralRecord) {
+              dbOps.push(
+                prisma.referral.update({
+                  where: { id: referralRecord.id },
+                  data: { commission: { increment: commissionAmount }, level: level }
+                })
+              )
+            } else {
+              dbOps.push(
+                prisma.referral.create({
+                  data: {
+                    referrerId: referrer.id,
+                    referredId: user.id,
+                    commission: commissionAmount,
+                    level: level
+                  }
+                })
+              )
+            }
+            
+            referralUpdates.push({ referrerId: referrer.id, amount: commissionAmount, level: level })
+          }
+          
+          currentReferrerId = referrer.referredById
+        }
+      }
+
       await prisma.$transaction(dbOps)
+
+      // Run Badges & TL Rank check for each referrer who got a commission
+      for (const update of referralUpdates) {
+        try {
+          const { checkAndApplyPerformanceBadges, checkAndApplyTLRank } = require('./rules')
+          await checkAndApplyPerformanceBadges(update.referrerId)
+          await checkAndApplyTLRank(update.referrerId)
+        } catch (ruleErr) {
+          console.error(`Error checking rules for referrer ${update.referrerId}:`, ruleErr)
+        }
+      }
     } else {
       await prisma.deposit.update({
         where: { id: depositId },
@@ -119,8 +229,12 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
       })
     }
 
-    revalidatePath('/admin/dashboard/deposits')
-    revalidatePath('/admin/dashboard')
+    try {
+      revalidatePath('/admin/dashboard/deposits')
+      revalidatePath('/admin/dashboard')
+    } catch (e) {
+      // safe bypass outside request lifecycle
+    }
     return { success: true, message: `Deposit ${action.toLowerCase()}d successfully` }
   } catch (error) {
     console.error('Error processing deposit:', error)
@@ -231,6 +345,7 @@ export async function upsertInvestmentPlan(data: any): Promise<ApiResponse> {
 
     revalidatePath('/admin/dashboard/plans')
     revalidatePath('/')
+    revalidateTag('investment-plans', 'max')
     return { success: true, message: `Plan ${id ? 'updated' : 'created'} successfully` }
   } catch (error) {
     return { success: false, message: 'Failed to save investment plan' }
@@ -253,11 +368,20 @@ export async function getSystemSettings(): Promise<any> {
           level2Percent: 5.0,
           level3Percent: 2.0,
           levelIncomeEnabled: true,
+          referralCommissionStructure: '10,5,3',
           starPerformerThreshold: 5000.0,
           starPerformerEnabled: true,
+          doubleStarThreshold: 25000.0,
+          doubleStarEnabled: true,
+          eliteThreshold: 50000.0,
+          eliteEnabled: true,
           tlRankRequiredReferrals: 5,
+          tlRankRequiredCommission: 100000.0,
           tlRankMaxUsers: 25,
           tlRankEnabled: true,
+          directorRankRequiredTLs: 5,
+          directorRankMaxUsers: 5,
+          directorRankEnabled: true,
           heroMembers: '25,689+',
           heroActive: '8,932+',
           heroPaid: '₹12.45 Cr+',
@@ -286,11 +410,20 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         level2Percent: Number(data.level2Percent),
         level3Percent: Number(data.level3Percent),
         levelIncomeEnabled: Boolean(data.levelIncomeEnabled),
+        referralCommissionStructure: String(data.referralCommissionStructure || '10,5,3'),
         starPerformerThreshold: Number(data.starPerformerThreshold),
         starPerformerEnabled: Boolean(data.starPerformerEnabled),
+        doubleStarThreshold: Number(data.doubleStarThreshold || 25000.0),
+        doubleStarEnabled: Boolean(data.doubleStarEnabled),
+        eliteThreshold: Number(data.eliteThreshold || 50000.0),
+        eliteEnabled: Boolean(data.eliteEnabled),
         tlRankRequiredReferrals: Number(data.tlRankRequiredReferrals),
+        tlRankRequiredCommission: Number(data.tlRankRequiredCommission || 100000.0),
         tlRankMaxUsers: Number(data.tlRankMaxUsers),
         tlRankEnabled: Boolean(data.tlRankEnabled),
+        directorRankRequiredTLs: Number(data.directorRankRequiredTLs || 5),
+        directorRankMaxUsers: Number(data.directorRankMaxUsers || 5),
+        directorRankEnabled: Boolean(data.directorRankEnabled),
         heroMembers: String(data.heroMembers),
         heroActive: String(data.heroActive),
         heroPaid: String(data.heroPaid),
@@ -303,11 +436,20 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         level2Percent: Number(data.level2Percent),
         level3Percent: Number(data.level3Percent),
         levelIncomeEnabled: Boolean(data.levelIncomeEnabled),
+        referralCommissionStructure: String(data.referralCommissionStructure || '10,5,3'),
         starPerformerThreshold: Number(data.starPerformerThreshold),
         starPerformerEnabled: Boolean(data.starPerformerEnabled),
+        doubleStarThreshold: Number(data.doubleStarThreshold || 25000.0),
+        doubleStarEnabled: Boolean(data.doubleStarEnabled),
+        eliteThreshold: Number(data.eliteThreshold || 50000.0),
+        eliteEnabled: Boolean(data.eliteEnabled),
         tlRankRequiredReferrals: Number(data.tlRankRequiredReferrals),
+        tlRankRequiredCommission: Number(data.tlRankRequiredCommission || 100000.0),
         tlRankMaxUsers: Number(data.tlRankMaxUsers),
         tlRankEnabled: Boolean(data.tlRankEnabled),
+        directorRankRequiredTLs: Number(data.directorRankRequiredTLs || 5),
+        directorRankMaxUsers: Number(data.directorRankMaxUsers || 5),
+        directorRankEnabled: Boolean(data.directorRankEnabled),
         heroMembers: String(data.heroMembers),
         heroActive: String(data.heroActive),
         heroPaid: String(data.heroPaid),
@@ -404,10 +546,11 @@ export async function adjustUserBalanceAction(
       }),
     ])
 
-    // Trigger promotions check if MAIN wallet got incremented
-    if (walletType === 'MAIN' && operation === 'ADD') {
-      const { checkStarPerformer } = require('./rules')
-      await checkStarPerformer(userId)
+    // Trigger promotions check if REFERRAL wallet got incremented
+    if (walletType === 'REFERRAL' && operation === 'ADD') {
+      const { checkAndApplyPerformanceBadges, checkAndApplyTLRank } = require('./rules')
+      await checkAndApplyPerformanceBadges(userId)
+      await checkAndApplyTLRank(userId)
     }
 
     revalidatePath('/admin/dashboard/wallet')
@@ -423,7 +566,7 @@ export async function adjustUserBalanceAction(
 // ── Admin: Toggle Rank/Badge manually ─────────────────────────────────────────
 export async function toggleUserRankAction(
   userId: string,
-  rankType: 'starPerformer' | 'tlRank',
+  rankType: 'starPerformer' | 'doubleStarPerformer' | 'elitePerformer' | 'tlRank' | 'tlShareholder' | 'directorRank' | 'directorShareholder',
   value: boolean
 ): Promise<ApiResponse> {
   const admin = await getAdminSession()
@@ -431,10 +574,10 @@ export async function toggleUserRankAction(
 
   try {
     const updateData: any = { [rankType]: value }
-    if (rankType === 'tlRank' && value) {
-      updateData.tlRankEarnedAt = new Date()
-    } else if (rankType === 'tlRank' && !value) {
-      updateData.tlRankEarnedAt = null
+    if (rankType === 'tlRank') {
+      updateData.tlRankEarnedAt = value ? new Date() : null
+    } else if (rankType === 'directorRank') {
+      updateData.directorRankEarnedAt = value ? new Date() : null
     }
 
     await prisma.user.update({
@@ -442,20 +585,29 @@ export async function toggleUserRankAction(
       data: updateData,
     })
 
+    const rankLabel = 
+      rankType === 'starPerformer' ? 'Star Performer' :
+      rankType === 'doubleStarPerformer' ? 'Double Star Performer' :
+      rankType === 'elitePerformer' ? 'Elite Performer' :
+      rankType === 'tlRank' ? 'Team Leader Rank' :
+      rankType === 'tlShareholder' ? 'TL 1% Shareholder' :
+      rankType === 'directorRank' ? 'Director Rank' :
+      'Director 1% Shareholder'
+
     await prisma.notification.create({
       data: {
         userId,
-        title: value ? `Badge Awarded! 🏆` : `Rank Revoked ⚠️`,
+        title: value ? `Badge/Rank Awarded! 🏆` : `Badge/Rank Revoked ⚠️`,
         message: value 
-          ? `Admin has manually awarded you the ${rankType === 'starPerformer' ? 'Star Performer' : 'TL Rank'} status.` 
-          : `Admin has manually removed your ${rankType === 'starPerformer' ? 'Star Performer' : 'TL Rank'} status.`,
+          ? `Admin has manually awarded you the ${rankLabel} status.` 
+          : `Admin has manually removed your ${rankLabel} status.`,
         type: value ? 'SUCCESS' : 'WARNING',
       },
     })
 
     revalidatePath('/admin/dashboard/users')
     revalidatePath('/dashboard')
-    return { success: true, message: `Successfully ${value ? 'awarded' : 'removed'} rank/badge` }
+    return { success: true, message: `Successfully updated ${rankLabel} status` }
   } catch (error) {
     console.error('Error toggling rank status:', error)
     return { success: false, message: 'Failed to toggle user rank status' }

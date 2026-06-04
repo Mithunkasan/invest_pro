@@ -3,13 +3,34 @@ import { Mail, Phone, MapPin, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export const metadata: Metadata = {
-  title: 'Contact Us — InvestPro',
-  description: 'Get in touch with the InvestPro support team. We are available 24/7 to help with your investment queries.',
+  title: 'Contact Us',
+  description: 'Get in touch with the VR Galaxy support team. We are available 24/7 online to assist with your investment, deposit, withdrawal, and wallet queries in India.',
+  alternates: { canonical: '/contact' },
 }
 
 export default function ContactPage() {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const contactJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    'name': 'Contact VR Galaxy support',
+    'description': 'Contact coordinates for VR Galaxy client queries.',
+    'url': `${baseUrl}/contact`,
+    'contactPoint': {
+      '@type': 'ContactPoint',
+      'telephone': '+91-98765-43210',
+      'contactType': 'customer support',
+      'email': 'support@investpro.com',
+      'availableLanguage': 'en'
+    }
+  }
+
   return (
     <div className="min-h-screen pt-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactJsonLd) }}
+      />
       <div className="section-container">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-black mb-4">Contact Us</h1>

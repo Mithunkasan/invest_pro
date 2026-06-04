@@ -2,14 +2,44 @@ import type { Metadata } from 'next'
 import { getInvestmentPlans } from '@/actions/investment'
 
 export const metadata: Metadata = {
-  title: 'Investment Plans — InvestPro',
-  description: 'Explore all InvestPro investment plans with daily ROI from 1.5% to 3%. Invest in Bronze, Silver, Gold, or Platinum plans.',
+  title: 'Investment Plans',
+  description: 'Explore our high-yield daily ROI investment options starting at ₹1,00,000 or less. Choose from Bronze, Silver, Gold, or Platinum plans with daily yields up to 3.0%.',
+  alternates: { canonical: '/plans' },
 }
 
 export default async function PlansPage() {
   const plans = await getInvestmentPlans()
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+  const plansJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    'name': 'VR Galaxy Investment Plans',
+    'description': 'A list of high-yield investment plans offering daily ROI with clear entry limits.',
+    'url': `${baseUrl}/plans`,
+    'numberOfItems': plans.length,
+    'itemListElement': plans.map((plan: any, index: number) => ({
+      '@type': 'ListItem',
+      'position': index + 1,
+      'item': {
+        '@type': 'FinancialProduct',
+        'name': plan.name,
+        'description': plan.description,
+        'offers': {
+          '@type': 'Offer',
+          'priceCurrency': 'INR',
+          'price': String(plan.minAmount),
+        },
+      }
+    }))
+  }
+
   return (
     <div className="min-h-screen pt-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(plansJsonLd) }}
+      />
       <div className="section-container">
         <div className="text-center mb-12">
           <h1 className="text-4xl sm:text-5xl font-black mb-4">Investment Plans</h1>

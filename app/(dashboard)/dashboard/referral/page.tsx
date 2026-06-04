@@ -8,11 +8,14 @@ export default async function ReferralPage() {
   if (!session) redirect('/login')
 
   const user = await prisma.user.findUnique({ where: { id: session.id }, select: { referralCode: true, name: true } })
-  const referrals = await prisma.referral.findMany({
-    where: { referrerId: session.id },
-    include: { referred: { select: { name: true, email: true, createdAt: true } } },
-    orderBy: { createdAt: 'desc' },
-  })
+  const [referrals, settings] = await Promise.all([
+    prisma.referral.findMany({
+      where: { referrerId: session.id },
+      include: { referred: { select: { name: true, email: true, createdAt: true } } },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.systemSettings.findUnique({ where: { id: 'default' } })
+  ])
   const totalCommission = referrals.reduce((s: number, r: any) => s + r.commission, 0)
 
   return (
@@ -21,6 +24,7 @@ export default async function ReferralPage() {
       referrals={JSON.parse(JSON.stringify(referrals))}
       totalCommission={totalCommission}
       totalReferrals={referrals.length}
+      referralCommissionStructure={settings?.referralCommissionStructure || '10,5,3'}
     />
   )
 }

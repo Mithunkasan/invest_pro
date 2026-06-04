@@ -1,6 +1,10 @@
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Privacy Policy — InvestPro' }
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'Privacy Policy for VR Galaxy. Read how we secure your personal data, KYC documents, and financial transaction records.',
+  alternates: { canonical: '/privacy' },
+}
 
 export default function PrivacyPage() {
   return (

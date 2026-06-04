@@ -1,17 +1,21 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
 
 // ── Get Investment Plans ───────────────────────────────────────────────────────
-export async function getInvestmentPlans() {
-  return prisma.investmentPlan.findMany({
-    where: { status: 'ACTIVE' },
-    orderBy: { minAmount: 'asc' },
-  })
-}
+export const getInvestmentPlans = unstable_cache(
+  async () => {
+    return prisma.investmentPlan.findMany({
+      where: { status: 'ACTIVE' },
+      orderBy: { minAmount: 'asc' },
+    })
+  },
+  ['investment-plans'],
+  { revalidate: 3600, tags: ['investment-plans'] }
+)
 
 // ── Create Investment ─────────────────────────────────────────────────────────
 export async function createInvestmentAction(

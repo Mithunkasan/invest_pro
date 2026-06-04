@@ -47,28 +47,42 @@ export function HeroSection({ stats }: HeroSectionProps) {
       className="relative w-full overflow-hidden bg-[#02040a] flex flex-col min-h-[100svh] lg:h-[100svh] lg:max-h-[100svh]"
       aria-label="VR Galaxy Networks Hero Section"
     >
-      {/* Background Videos */}
-      <video
-        className="absolute inset-0 w-full h-full object-cover z-0 hidden lg:block"
-        autoPlay
-        muted
-        loop
-        playsInline
-      >
-        <source src="/bg4.mp4" type="video/mp4" />
-      </video>
-      <video
-        className="absolute inset-0 w-full h-full object-cover z-0 block lg:hidden"
-        autoPlay
-        muted
-        loop
-        playsInline
-      >
-        <source src="/bg5.mp4" type="video/mp4" />
-      </video>
+      {/* Background Images */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center z-0 hidden lg:block"
+        style={{ backgroundImage: "url('/bg.jpeg')" }}
+      />
+      <div 
+        className="absolute inset-0 bg-cover bg-center z-0 block lg:hidden"
+        style={{ backgroundImage: "url('/bg1.jpeg')" }}
+      />
+
+      {/* Rotating Planets */}
+      <motion.img
+        src="/planet1.png"
+        alt="Rotating Planet 1"
+        className="absolute left-[-8%] lg:left-[2%] top-[10%] lg:top-[12%] w-[180px] sm:w-[300px] lg:w-[450px] h-auto pointer-events-none z-10 opacity-75"
+        animate={{ rotate: 360 }}
+        transition={{
+          repeat: Infinity,
+          duration: 60,
+          ease: "linear"
+        }}
+      />
+      <motion.img
+        src="/planet2.png"
+        alt="Rotating Planet 2"
+        className="absolute right-[-8%] lg:right-[5%] bottom-[8%] lg:bottom-[15%] w-[90px] sm:w-[150px] lg:w-[230px] h-auto pointer-events-none z-10 opacity-65"
+        animate={{ rotate: -360 }}
+        transition={{
+          repeat: Infinity,
+          duration: 80,
+          ease: "linear"
+        }}
+      />
 
       {/* Subtle Dark Overlay for Higher Text Contrast */}
-      <div className="absolute inset-0 bg-black/15 pointer-events-none select-none z-10" />
+      <div className="absolute inset-0 bg-black/20 pointer-events-none select-none z-20" />
 
       {/* ── Social Sidebar (desktop only) ── */}
       <div
@@ -97,7 +111,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
 
             {/* ── LEFT COLUMN ── */}
-            <div className="lg:col-span-7 flex flex-col items-start text-left w-full min-w-0">
+            <div className="lg:col-span-6 flex flex-col items-start text-left w-full min-w-0">
 
               {/* Welcome badge */}
               <motion.div
@@ -261,8 +275,17 @@ export function HeroSection({ stats }: HeroSectionProps) {
               </div>
             </div>
 
-            {/* ── RIGHT COLUMN (Empty Spacer to reveal the background image pedestal/logo) ── */}
-            <div className="lg:col-span-5 hidden lg:block w-full min-w-0" />
+            {/* ── RIGHT COLUMN (Display shield.png) ── */}
+            <div className="lg:col-span-6 flex justify-center items-center w-full min-w-0 relative z-30 mt-6 lg:mt-0">
+              <motion.img
+                src="/shield.png"
+                alt="Galaxy Shield"
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
+                className="w-full max-w-[450px] sm:max-w-[540px] lg:max-w-[580px] xl:max-w-[680px] h-auto object-contain drop-shadow-[0_0_75px_rgba(99,102,241,0.35)] select-none pointer-events-none"
+              />
+            </div>
 
           </div>
         </div>
