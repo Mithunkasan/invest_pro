@@ -26,11 +26,20 @@ interface SettingsFormProps {
     level2Percent: number
     level3Percent: number
     levelIncomeEnabled: boolean
+    referralCommissionStructure?: string
     starPerformerThreshold: number
     starPerformerEnabled: boolean
+    doubleStarThreshold: number
+    doubleStarEnabled: boolean
+    eliteThreshold: number
+    eliteEnabled: boolean
     tlRankRequiredReferrals: number
+    tlRankRequiredCommission: number
     tlRankMaxUsers: number
     tlRankEnabled: boolean
+    directorRankRequiredTLs: number
+    directorRankMaxUsers: number
+    directorRankEnabled: boolean
     heroMembers: string
     heroActive: string
     heroPaid: string
@@ -41,11 +50,37 @@ interface SettingsFormProps {
 export function SettingsForm({ initialSettings }: SettingsFormProps) {
   const [settings, setSettings] = useState({
     ...initialSettings,
+    doubleStarThreshold: initialSettings.doubleStarThreshold ?? 25000.0,
+    doubleStarEnabled: initialSettings.doubleStarEnabled ?? true,
+    eliteThreshold: initialSettings.eliteThreshold ?? 50000.0,
+    eliteEnabled: initialSettings.eliteEnabled ?? true,
+    tlRankRequiredCommission: initialSettings.tlRankRequiredCommission ?? 100000.0,
+    directorRankRequiredTLs: initialSettings.directorRankRequiredTLs ?? 5,
+    directorRankMaxUsers: initialSettings.directorRankMaxUsers ?? 5,
+    directorRankEnabled: initialSettings.directorRankEnabled ?? true,
     heroMembers: initialSettings.heroMembers || '25,689+',
     heroActive: initialSettings.heroActive || '8,932+',
     heroPaid: initialSettings.heroPaid || '₹12.45 Cr+',
     heroRate: initialSettings.heroRate || '99.8%',
   })
+
+  // Initialize referral levels
+  const getInitialLevels = () => {
+    if (initialSettings.referralCommissionStructure) {
+      return initialSettings.referralCommissionStructure
+        .split(',')
+        .map((p) => Number(p.trim()))
+        .filter((p) => !isNaN(p))
+    }
+    // Fallback to legacy fields
+    return [
+      initialSettings.referralPercent ?? 10,
+      initialSettings.level2Percent ?? 5,
+      initialSettings.level3Percent ?? 2,
+    ]
+  }
+
+  const [commissionLevels, setCommissionLevels] = useState<number[]>(getInitialLevels())
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
@@ -71,7 +106,16 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
     setMessage(null)
 
     try {
-      const res = await updateSystemSettingsAction(settings)
+      const payload = {
+        ...settings,
+        referralCommissionStructure: commissionLevels.join(','),
+        // Sync legacy fields for backwards compatibility
+        referralPercent: commissionLevels[0] || 0,
+        level1Percent: commissionLevels[0] || 0,
+        level2Percent: commissionLevels[1] || 0,
+        level3Percent: commissionLevels[2] || 0,
+      }
+      const res = await updateSystemSettingsAction(payload)
       if (res.success) {
         setMessage({ type: 'success', text: res.message })
       } else {
@@ -99,139 +143,196 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
         </motion.div>
       )}
 
-      {/* ── Section 1: Referral & Commission ──────────────────────── */}
+      {/* ── Section: Referral Level Commissions ──────────────────────── */}
       <div className="premium-card p-6 space-y-6">
-        <h2 className="text-lg font-bold border-b pb-3 border-muted/50 text-white/90">Referral Commissions</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="referralPercent" className="text-sm font-semibold">Direct Referral Commission (%)</Label>
-            <Input
-              id="referralPercent"
-              name="referralPercent"
-              type="number"
-              step="0.01"
-              value={settings.referralPercent}
-              onChange={handleChange}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-4 border-muted/50">
+          <div>
+            <h2 className="text-lg font-bold text-white/90">Referral Level Commissions</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Configure the referral commission percentage distributed to each upline level.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (commissionLevels.length > 1) {
+                  setCommissionLevels(commissionLevels.slice(0, -1))
+                }
+              }}
+              disabled={loading || commissionLevels.length <= 1}
+              className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-50 transition-all"
+            >
+              - Remove Level
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setCommissionLevels([...commissionLevels, 0])
+              }}
               disabled={loading}
-              className="bg-background/50"
-            />
-            <p className="text-xs text-muted-foreground">Percentage credited to direct referrer on user investment.</p>
+              className="border-primary/30 text-primary hover:bg-primary/10 hover:text-primary-foreground transition-all"
+            >
+              + Add Level
+            </Button>
           </div>
         </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 pt-2">
+          {commissionLevels.map((pct, idx) => (
+            <div key={idx} className="space-y-2 premium-card p-4 bg-background/30 border border-muted/40 relative overflow-hidden group rounded-xl">
+              <div className="absolute top-2 right-3 text-[10px] font-bold text-primary/30 group-hover:text-primary/50 transition-colors uppercase tracking-wider">
+                Level {idx + 1}
+              </div>
+              <Label htmlFor={`level-${idx}`} className="text-sm font-semibold text-white/90">
+                Upline Level {idx + 1} (%)
+              </Label>
+              <div className="relative flex items-center">
+                <Input
+                  id={`level-${idx}`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={pct}
+                  onChange={(e) => {
+                    const newLevels = [...commissionLevels]
+                    newLevels[idx] = e.target.value === '' ? 0 : Number(e.target.value)
+                    setCommissionLevels(newLevels)
+                  }}
+                  disabled={loading}
+                  className="pr-8 bg-background/50 font-medium text-white"
+                />
+                <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-normal">
+                {idx === 0 
+                  ? "Direct Referrer (e.g. User A refers User B)"
+                  : `Level ${idx + 1} Uplines in the referral tree`}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* ── Section 2: Level Income Configuration ───────────────────── */}
+      {/* ── Section 3: Performance Badges Automations ────────────────────── */}
       <div className="premium-card p-6 space-y-6">
-        <div className="flex items-center justify-between border-b pb-3 border-muted/50">
-          <h2 className="text-lg font-bold text-white/90">Level Income System</h2>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={settings.levelIncomeEnabled}
-              onChange={(e) => handleToggle('levelIncomeEnabled', e.target.checked)}
-              disabled={loading}
-            />
-            <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            <span className="ml-3 text-sm font-bold text-white/80">Enabled</span>
-          </label>
+        <h2 className="text-lg font-bold text-white/90 border-b pb-3 border-muted/50">Performance Badges Configuration</h2>
+        
+        {/* Star Performer */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white/80">⭐ Star Performer Badge</h3>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={settings.starPerformerEnabled}
+                onChange={(e) => handleToggle('starPerformerEnabled', e.target.checked)}
+                disabled={loading}
+              />
+              <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              <span className="ml-3 text-sm font-bold text-white/80">Enabled</span>
+            </label>
+          </div>
+          {settings.starPerformerEnabled && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-4 border-l border-primary/20">
+              <div className="space-y-2">
+                <Label htmlFor="starPerformerThreshold" className="text-xs font-semibold text-white/70">Commission Threshold Amount (₹)</Label>
+                <Input
+                  id="starPerformerThreshold"
+                  name="starPerformerThreshold"
+                  type="number"
+                  value={settings.starPerformerThreshold}
+                  onChange={handleChange}
+                  disabled={loading}
+                />
+                <p className="text-[11px] text-muted-foreground">Cumulative referral commissions needed to auto-promote to Star Performer (Standard: ₹5,000).</p>
+              </div>
+            </div>
+          )}
         </div>
 
-        {settings.levelIncomeEnabled && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="level1Percent" className="text-sm font-semibold">Level 1 Commission (%)</Label>
-              <Input
-                id="level1Percent"
-                name="level1Percent"
-                type="number"
-                step="0.01"
-                value={settings.level1Percent}
-                onChange={handleChange}
+        {/* Double Star Performer */}
+        <div className="space-y-4 pt-4 border-t border-muted/30">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white/80">⭐⭐ Double Star Performer Badge</h3>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={settings.doubleStarEnabled}
+                onChange={(e) => handleToggle('doubleStarEnabled', e.target.checked)}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">Direct Referrer (Standard: 10%)</p>
+              <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              <span className="ml-3 text-sm font-bold text-white/80">Enabled</span>
+            </label>
+          </div>
+          {settings.doubleStarEnabled && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-4 border-l border-primary/20">
+              <div className="space-y-2">
+                <Label htmlFor="doubleStarThreshold" className="text-xs font-semibold text-white/70">Commission Threshold Amount (₹)</Label>
+                <Input
+                  id="doubleStarThreshold"
+                  name="doubleStarThreshold"
+                  type="number"
+                  value={settings.doubleStarThreshold}
+                  onChange={handleChange}
+                  disabled={loading}
+                />
+                <p className="text-[11px] text-muted-foreground">Cumulative referral commissions needed to auto-promote to Double Star Performer (Standard: ₹25,000).</p>
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="level2Percent" className="text-sm font-semibold">Level 2 Commission (%)</Label>
-              <Input
-                id="level2Percent"
-                name="level2Percent"
-                type="number"
-                step="0.01"
-                value={settings.level2Percent}
-                onChange={handleChange}
-                disabled={loading}
-              />
-              <p className="text-xs text-muted-foreground">Level 2 Referrer (Standard: 5%)</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="level3Percent" className="text-sm font-semibold">Level 3 Commission (%)</Label>
-              <Input
-                id="level3Percent"
-                name="level3Percent"
-                type="number"
-                step="0.01"
-                value={settings.level3Percent}
-                onChange={handleChange}
-                disabled={loading}
-              />
-              <p className="text-xs text-muted-foreground">Level 3 Referrer (Standard: 2%)</p>
-            </div>
-          </motion.div>
-        )}
-      </div>
-
-      {/* ── Section 3: Star Performer Automations ────────────────────── */}
-      <div className="premium-card p-6 space-y-6">
-        <div className="flex items-center justify-between border-b pb-3 border-muted/50">
-          <h2 className="text-lg font-bold text-white/90">Star Performer Promotion</h2>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={settings.starPerformerEnabled}
-              onChange={(e) => handleToggle('starPerformerEnabled', e.target.checked)}
-              disabled={loading}
-            />
-            <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            <span className="ml-3 text-sm font-bold text-white/80">Enabled</span>
-          </label>
+          )}
         </div>
 
-        {settings.starPerformerEnabled && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="starPerformerThreshold" className="text-sm font-semibold">Wallet Threshold Amount (₹)</Label>
-              <Input
-                id="starPerformerThreshold"
-                name="starPerformerThreshold"
-                type="number"
-                value={settings.starPerformerThreshold}
-                onChange={handleChange}
+        {/* Elite Performer */}
+        <div className="space-y-4 pt-4 border-t border-muted/30">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white/80">💎 Elite Performer Badge</h3>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={settings.eliteEnabled}
+                onChange={(e) => handleToggle('eliteEnabled', e.target.checked)}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">Required Main Wallet balance to auto-promote user to Star Performer status.</p>
+              <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              <span className="ml-3 text-sm font-bold text-white/80">Enabled</span>
+            </label>
+          </div>
+          {settings.eliteEnabled && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-4 border-l border-primary/20">
+              <div className="space-y-2">
+                <Label htmlFor="eliteThreshold" className="text-xs font-semibold text-white/70">Commission Threshold Amount (₹)</Label>
+                <Input
+                  id="eliteThreshold"
+                  name="eliteThreshold"
+                  type="number"
+                  value={settings.eliteThreshold}
+                  onChange={handleChange}
+                  disabled={loading}
+                />
+                <p className="text-[11px] text-muted-foreground">Cumulative referral commissions needed to auto-promote to Elite Performer (Standard: ₹50,000).</p>
+              </div>
             </div>
-          </motion.div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ── Section 4: TL Rank Automations ─────────────────────────── */}
       <div className="premium-card p-6 space-y-6">
         <div className="flex items-center justify-between border-b pb-3 border-muted/50">
-          <h2 className="text-lg font-bold text-white/90">TL Rank Promotion</h2>
+          <div>
+            <h2 className="text-lg font-bold text-white/90">TL Rank Promotion Settings</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Awarded to users referring 5 active members with commissions ≥ ₹1,00,000.</p>
+          </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -249,7 +350,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2"
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2"
           >
             <div className="space-y-2">
               <Label htmlFor="tlRankRequiredReferrals" className="text-sm font-semibold">Required Active Referrals</Label>
@@ -261,11 +362,24 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                 onChange={handleChange}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">Number of referred members with active investments needed for TL Rank.</p>
+              <p className="text-[11px] text-muted-foreground">Number of referred members with active investments needed (Standard: 5).</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tlRankMaxUsers" className="text-sm font-semibold">Max Global Limit (Users Cap)</Label>
+              <Label htmlFor="tlRankRequiredCommission" className="text-sm font-semibold">Required Cumulative Commission (₹)</Label>
+              <Input
+                id="tlRankRequiredCommission"
+                name="tlRankRequiredCommission"
+                type="number"
+                value={settings.tlRankRequiredCommission}
+                onChange={handleChange}
+                disabled={loading}
+              />
+              <p className="text-[11px] text-muted-foreground">Cumulative commission from referred users needed (Standard: ₹1,00,000).</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tlRankMaxUsers" className="text-sm font-semibold">Max Global Shareholder Limit</Label>
               <Input
                 id="tlRankMaxUsers"
                 name="tlRankMaxUsers"
@@ -274,7 +388,62 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                 onChange={handleChange}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">Maximum first N eligible users globally to auto-receive TL Rank status (Standard: 25).</p>
+              <p className="text-[11px] text-muted-foreground">First N eligible users globally to auto-receive 1% business shareholder status (Standard: 25).</p>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* ── Section 4.5: Director Rank Automations ─────────────────────────── */}
+      <div className="premium-card p-6 space-y-6">
+        <div className="flex items-center justify-between border-b pb-3 border-muted/50">
+          <div>
+            <h2 className="text-lg font-bold text-white/90">Director Rank Promotion Settings</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Awarded to users referring 5 Team Leaders.</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={settings.directorRankEnabled}
+              onChange={(e) => handleToggle('directorRankEnabled', e.target.checked)}
+              disabled={loading}
+            />
+            <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            <span className="ml-3 text-sm font-bold text-white/80">Enabled</span>
+          </label>
+        </div>
+
+        {settings.directorRankEnabled && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="directorRankRequiredTLs" className="text-sm font-semibold">Required Team Leaders</Label>
+              <Input
+                id="directorRankRequiredTLs"
+                name="directorRankRequiredTLs"
+                type="number"
+                value={settings.directorRankRequiredTLs}
+                onChange={handleChange}
+                disabled={loading}
+              />
+              <p className="text-[11px] text-muted-foreground">Number of referred members with Team Leader rank needed (Standard: 5).</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="directorRankMaxUsers" className="text-sm font-semibold">Max Global Shareholder Limit</Label>
+              <Input
+                id="directorRankMaxUsers"
+                name="directorRankMaxUsers"
+                type="number"
+                value={settings.directorRankMaxUsers}
+                onChange={handleChange}
+                disabled={loading}
+              />
+              <p className="text-[11px] text-muted-foreground">First N eligible users globally to auto-receive 1% business shareholder status (Standard: 5).</p>
             </div>
           </motion.div>
         )}

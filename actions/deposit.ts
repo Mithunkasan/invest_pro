@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import type { ApiResponse, PaginatedResponse, Deposit } from '@/types'
+import { handleDeposit } from './admin'
 
 // ── Submit Deposit ────────────────────────────────────────────────────────────
 export async function submitDepositAction(
@@ -85,55 +86,6 @@ export async function updateDepositStatusAction(
   status: 'APPROVED' | 'REJECTED',
   remarks?: string
 ): Promise<ApiResponse> {
-  const deposit = await prisma.deposit.findUnique({ where: { id: depositId } })
-  if (!deposit) return { success: false, message: 'Deposit not found' }
-
-  await prisma.deposit.update({
-    where: { id: depositId },
-    data: { status, remarks },
-  })
-
-  if (status === 'APPROVED') {
-    // Credit wallet
-    await prisma.wallet.upsert({
-      where: { userId: deposit.userId },
-      update: { mainBalance: { increment: deposit.amount } },
-      create: { userId: deposit.userId, mainBalance: deposit.amount },
-    })
-
-    // Create transaction record
-    await prisma.transaction.create({
-      data: {
-        userId: deposit.userId,
-        type: 'DEPOSIT',
-        amount: deposit.amount,
-        status: 'COMPLETED',
-        reference: deposit.utrNumber || undefined,
-        description: `Deposit approved - ${deposit.method}`,
-        walletType: 'MAIN',
-      },
-    })
-
-    // Notify user
-    await prisma.notification.create({
-      data: {
-        userId: deposit.userId,
-        title: 'Deposit Approved ✅',
-        message: `Your deposit of ₹${deposit.amount.toLocaleString('en-IN')} has been approved.`,
-        type: 'SUCCESS',
-      },
-    })
-  } else {
-    await prisma.notification.create({
-      data: {
-        userId: deposit.userId,
-        title: 'Deposit Rejected',
-        message: `Your deposit of ₹${deposit.amount.toLocaleString('en-IN')} was rejected. Reason: ${remarks || 'Contact support'}`,
-        type: 'ERROR',
-      },
-    })
-  }
-
-  revalidatePath('/admin/dashboard/deposits')
-  return { success: true, message: `Deposit ${status.toLowerCase()} successfully` }
+  const action = status === 'APPROVED' ? 'APPROVE' : 'REJECT'
+  return handleDeposit(depositId, action, remarks)
 }

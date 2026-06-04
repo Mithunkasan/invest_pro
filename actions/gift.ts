@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { giftSchema } from '@/utils/validators'
 import type { ApiResponse } from '@/types'
+import { getLocationsTree } from '@/lib/indiaLocationsLoader'
 
 export async function submitGiftAction(
   data: {
@@ -47,6 +48,24 @@ export async function submitGiftAction(
         message: firstError, 
         errors: fieldErrors as Record<string, string> 
       }
+    }
+
+    // 2b. Validate cascading location combination against CSV data
+    const tree = await getLocationsTree()
+    const stateData = tree[parsed.data.state]
+    if (!stateData) {
+      return { success: false, message: `Invalid location: State "${parsed.data.state}" is not valid.` }
+    }
+    const districtData = stateData[parsed.data.district]
+    if (!districtData) {
+      return { success: false, message: `Invalid location: District "${parsed.data.district}" is not valid for state "${parsed.data.state}".` }
+    }
+    const expectedPincode = districtData[parsed.data.city]
+    if (!expectedPincode) {
+      return { success: false, message: `Invalid location: City "${parsed.data.city}" is not valid for district "${parsed.data.district}".` }
+    }
+    if (expectedPincode !== parsed.data.pinCode) {
+      return { success: false, message: `Invalid location: PIN Code "${parsed.data.pinCode}" does not match city "${parsed.data.city}".` }
     }
 
     // 3. Save to database using upsert (allow updates before shipping)

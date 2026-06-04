@@ -72,8 +72,33 @@ export default async function RootLayout({
 }) {
   const messages = await getMessages()
 
+  const orgJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    'name': 'VR Galaxy',
+    'url': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    'logo': `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/logo3.png`,
+    'sameAs': [
+      'https://twitter.com/vrgalaxy',
+      'https://github.com/vrgalaxy'
+    ],
+    'contactPoint': {
+      '@type': 'ContactPoint',
+      'telephone': '+91-98765-43210',
+      'contactType': 'customer support',
+      'email': 'support@investpro.com',
+      'availableLanguage': 'en'
+    }
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+        />
+      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider

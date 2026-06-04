@@ -14,7 +14,15 @@ import { formatCurrency, formatDate, getStatusColor } from '@/utils/formatters'
 import type { UserTokenPayload } from '@/lib/auth'
 
 interface DashboardOverviewProps {
-  user: UserTokenPayload & { starPerformer?: boolean; tlRank?: boolean }
+  user: UserTokenPayload & {
+    starPerformer?: boolean
+    doubleStarPerformer?: boolean
+    elitePerformer?: boolean
+    tlRank?: boolean
+    tlShareholder?: boolean
+    directorRank?: boolean
+    directorShareholder?: boolean
+  }
   stats: {
     totalInvestment: number
     currentBalance: number
@@ -57,21 +65,54 @@ export function DashboardOverview({ user, stats, investments, transactions, char
   return (
     <div className="space-y-6">
       {/* Welcome */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold flex flex-wrap items-center gap-2">
-          Welcome back, <span className="text-primary">{user.name.split(' ')[0]}</span> 👋
-          {user.starPerformer && (
-            <span className="text-xs font-bold px-2 py-0.5 bg-gradient-to-r from-amber-400 to-amber-500 text-black rounded-lg shadow-sm flex items-center gap-1 border border-amber-300">
-              ⭐ Star Performer
-            </span>
-          )}
-          {user.tlRank && (
-            <span className="text-xs font-bold px-2 py-0.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg shadow-sm flex items-center gap-1 border border-indigo-400">
-              🏆 TL Rank
-            </span>
-          )}
-        </h1>
-        <p className="text-muted-foreground text-sm">Here&apos;s your investment summary</p>
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold flex flex-wrap items-center gap-2">
+              Welcome back, <span className="text-primary">{user.name.split(' ')[0]}</span> 👋
+            </h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Here&apos;s your investment summary</p>
+          </div>
+          
+          {/* Badge Display Row */}
+          <div className="flex flex-wrap gap-1.5 items-center">
+            {user.starPerformer && (
+              <span className="text-[11px] font-bold px-2 py-1 bg-gradient-to-r from-amber-400 to-amber-500 text-black rounded-lg shadow-sm flex items-center gap-1 border border-amber-300/40" title="Star Performer Badge">
+                ⭐ Star Performer
+              </span>
+            )}
+            {user.doubleStarPerformer && (
+              <span className="text-[11px] font-bold px-2 py-1 bg-gradient-to-r from-orange-400 to-amber-500 text-white rounded-lg shadow-sm flex items-center gap-1 border border-orange-300/40" title="Double Star Performer Badge">
+                ⭐⭐ Double Star
+              </span>
+            )}
+            {user.elitePerformer && (
+              <span className="text-[11px] font-bold px-2 py-1 bg-gradient-to-r from-cyan-400 to-blue-500 text-white rounded-lg shadow-sm flex items-center gap-1 border border-cyan-300/40" title="Elite Performer Badge">
+                💎 Elite Performer
+              </span>
+            )}
+            {user.tlRank && (
+              <span className="text-[11px] font-bold px-2 py-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg shadow-sm flex items-center gap-1 border border-indigo-400/40" title="Team Leader Rank">
+                🏆 TL Rank
+              </span>
+            )}
+            {user.directorRank && (
+              <span className="text-[11px] font-bold px-2 py-1 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-lg shadow-sm flex items-center gap-1 border border-rose-400/40" title="Director Rank">
+                👑 Director
+              </span>
+            )}
+            {user.tlShareholder && (
+              <span className="text-[11px] font-bold px-2 py-1 bg-gradient-to-r from-emerald-400 to-teal-500 text-white rounded-lg shadow-sm flex items-center gap-1 border border-emerald-300/40 animate-pulse" title="1% Business Shareholder">
+                📊 TL Shareholder (1%)
+              </span>
+            )}
+            {user.directorShareholder && (
+              <span className="text-[11px] font-bold px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg shadow-sm flex items-center gap-1 border border-emerald-400/40 animate-pulse" title="1% Business Shareholder">
+                📊 Director Shareholder (1%)
+              </span>
+            )}
+          </div>
+        </div>
       </motion.div>
 
       {/* Stats Grid */}

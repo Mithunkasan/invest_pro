@@ -3,34 +3,71 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 
-// ── Check and Apply Star Performer Badge ─────────────────────────────────────
-export async function checkStarPerformer(userId: string) {
+// ── Check and Apply Performance Badges ─────────────────────────────────────────
+export async function checkAndApplyPerformanceBadges(userId: string) {
   try {
     const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
-    if (!settings || !settings.starPerformerEnabled) return
+    if (!settings) return
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId } })
-    if (!wallet) return
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) return
 
-    if (wallet.mainBalance >= settings.starPerformerThreshold) {
-      const user = await prisma.user.findUnique({ where: { id: userId } })
-      if (user && !user.starPerformer) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { starPerformer: true },
-        })
-        await prisma.notification.create({
-          data: {
-            userId,
-            title: '⭐ Star Performer Badge! ⭐',
-            message: `Congratulations! Your Main Wallet balance has reached ₹${wallet.mainBalance.toLocaleString('en-IN')}, and you have been awarded the Star Performer status.`,
-            type: 'SUCCESS',
-          },
-        })
-      }
+    // Sum up referral commission earnings
+    const referralIncome = await prisma.referral.aggregate({
+      where: { referrerId: userId },
+      _sum: { commission: true }
+    })
+    const totalCommission = referralIncome._sum.commission || 0
+
+    // 1. Star Performer Check
+    if (settings.starPerformerEnabled && totalCommission >= settings.starPerformerThreshold && !user.starPerformer) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { starPerformer: true },
+      })
+      await prisma.notification.create({
+        data: {
+          userId,
+          title: '⭐ Star Performer Badge! ⭐',
+          message: `Congratulations! Your referral earnings have reached ₹${totalCommission.toLocaleString('en-IN')}, and you have been awarded the Star Performer status.`,
+          type: 'SUCCESS',
+        },
+      })
+    }
+
+    // 2. Double Star Performer Check
+    if (settings.doubleStarEnabled && totalCommission >= settings.doubleStarThreshold && !user.doubleStarPerformer) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { doubleStarPerformer: true },
+      })
+      await prisma.notification.create({
+        data: {
+          userId,
+          title: '⭐⭐ Double Star Performer! ⭐⭐',
+          message: `Congratulations! Your referral earnings have reached ₹${totalCommission.toLocaleString('en-IN')}, and you have been awarded the Double Star Performer status.`,
+          type: 'SUCCESS',
+        },
+      })
+    }
+
+    // 3. Elite Performer Check
+    if (settings.eliteEnabled && totalCommission >= settings.eliteThreshold && !user.elitePerformer) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { elitePerformer: true },
+      })
+      await prisma.notification.create({
+        data: {
+          userId,
+          title: '💎 Elite Performer Badge! 💎',
+          message: `Congratulations! Your referral earnings have reached ₹${totalCommission.toLocaleString('en-IN')}, and you have been awarded the Elite Performer status.`,
+          type: 'SUCCESS',
+        },
+      })
     }
   } catch (error) {
-    console.error('Error checking Star Performer status:', error)
+    console.error('Error checking Performance Badges status:', error)
   }
 }
 
@@ -53,29 +90,94 @@ export async function checkAndApplyTLRank(userId: string) {
       }
     })
 
-    if (activeReferralsCount >= settings.tlRankRequiredReferrals) {
-      // Check total users who automatically/manually earned TL Rank
-      const tlRankedCount = await prisma.user.count({
-        where: { tlRank: true }
+    // Sum up referral commission earnings
+    const referralIncome = await prisma.referral.aggregate({
+      where: { referrerId: userId },
+      _sum: { commission: true }
+    })
+    const totalCommission = referralIncome._sum.commission || 0
+
+    if (activeReferralsCount >= settings.tlRankRequiredReferrals && totalCommission >= settings.tlRankRequiredCommission) {
+      // Check if they qualify to be a shareholder (first 25 users)
+      const tlShareholdersCount = await prisma.user.count({
+        where: { tlShareholder: true }
       })
 
-      if (tlRankedCount < settings.tlRankMaxUsers) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { tlRank: true, tlRankEarnedAt: new Date() },
-        })
-        await prisma.notification.create({
-          data: {
-            userId,
-            title: '🏆 Promoted to TL Rank! 🏆',
-            message: `Congratulations! You have referred ${activeReferralsCount} active members and are promoted to TL Rank!`,
-            type: 'SUCCESS',
-          },
-        })
+      const isEligibleShareholder = tlShareholdersCount < settings.tlRankMaxUsers
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { 
+          tlRank: true, 
+          tlRankEarnedAt: new Date(),
+          tlShareholder: isEligibleShareholder
+        },
+      })
+
+      await prisma.notification.create({
+        data: {
+          userId,
+          title: '🏆 Promoted to TL Rank! 🏆',
+          message: `Congratulations! You have referred ${activeReferralsCount} active members and earned ₹${totalCommission.toLocaleString('en-IN')} in commissions. You are promoted to TL Rank!${isEligibleShareholder ? ' You are also selected as a 1% Business Shareholder! 📊' : ''}`,
+          type: 'SUCCESS',
+        },
+      })
+
+      // Trigger Director Rank check for their referrer
+      if (user.referredById) {
+        await checkAndApplyDirectorRank(user.referredById)
       }
     }
   } catch (error) {
     console.error('Error checking TL Rank status:', error)
+  }
+}
+
+// ── Check and Apply Director Rank ──────────────────────────────────────────
+export async function checkAndApplyDirectorRank(userId: string) {
+  try {
+    const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
+    if (!settings || !settings.directorRankEnabled) return
+
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user || user.directorRank) return
+
+    // Count referred users who have achieved TL Rank
+    const tlReferralsCount = await prisma.user.count({
+      where: {
+        referredById: userId,
+        tlRank: true
+      }
+    })
+
+    if (tlReferralsCount >= settings.directorRankRequiredTLs) {
+      // Check if they qualify to be a shareholder (first 5 users)
+      const directorShareholdersCount = await prisma.user.count({
+        where: { directorShareholder: true }
+      })
+
+      const isEligibleShareholder = directorShareholdersCount < settings.directorRankMaxUsers
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          directorRank: true,
+          directorRankEarnedAt: new Date(),
+          directorShareholder: isEligibleShareholder
+        }
+      })
+
+      await prisma.notification.create({
+        data: {
+          userId,
+          title: '👑 Promoted to Director Rank! 👑',
+          message: `Congratulations! You have successfully referred ${tlReferralsCount} Team Leaders and are promoted to Director Rank!${isEligibleShareholder ? ' You are also selected as a 1% Business Shareholder! 📊' : ''}`,
+          type: 'SUCCESS',
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Error checking Director Rank status:', error)
   }
 }
 
@@ -95,130 +197,88 @@ export async function distributeReferralAndLevelCommissions(
     })
     if (!investor || !investor.referredById) return
 
-    // 1. Direct Referral Income
-    const directReferrerId = investor.referredById
-    const referralCommission = (investmentAmount * settings.referralPercent) / 100
+    // Parse the configured percentages
+    const percentageString = settings.referralCommissionStructure || '10,5,3'
+    const levelPercentages = percentageString
+      .split(',')
+      .map(p => Number(p.trim()))
+      .filter(p => !isNaN(p))
 
-    await prisma.$transaction([
-      prisma.wallet.update({
-        where: { userId: directReferrerId },
-        data: { referralBalance: { increment: referralCommission } }
-      }),
-      prisma.transaction.create({
-        data: {
-          userId: directReferrerId,
-          type: 'REFERRAL_BONUS',
-          amount: referralCommission,
-          status: 'COMPLETED',
-          reference: investmentId,
-          description: `Referral income from ${investor.name}'s investment`,
-          walletType: 'REFERRAL'
-        }
-      }),
-      prisma.notification.create({
-        data: {
-          userId: directReferrerId,
-          title: 'Referral Income Received 👥',
-          message: `You earned ₹${referralCommission.toLocaleString('en-IN')} referral commission from ${investor.name}'s investment.`,
-          type: 'SUCCESS'
-        }
-      })
-    ])
+    let currentReferrerId: string | null = investor.referredById
 
-    // Update referral model record
-    const referralRecord = await prisma.referral.findFirst({
-      where: { referrerId: directReferrerId, referredId: investorId }
-    })
-    if (referralRecord) {
-      await prisma.referral.update({
-        where: { id: referralRecord.id },
-        data: { commission: { increment: referralCommission } }
-      })
-    }
+    for (let index = 0; index < levelPercentages.length; index++) {
+      if (!currentReferrerId) break
 
-    // Check TL Rank for the direct referrer
-    await checkAndApplyTLRank(directReferrerId)
+      const percentage = levelPercentages[index]
+      const level = index + 1
 
-    // 2. Recursive Level Income (Level 1, Level 2, Level 3)
-    if (settings.levelIncomeEnabled) {
-      let currentReferrerId: string | null = investor.referredById
-      const levelPercentages = [settings.level1Percent, settings.level2Percent, settings.level3Percent]
+      const referrer = (await prisma.user.findUnique({
+        where: { id: currentReferrerId },
+        select: { id: true, name: true, referredById: true }
+      })) as any
+      if (!referrer) break
 
-      for (let level = 1; level <= 3; level++) {
-        if (!currentReferrerId) break
-
-        const parentReferrer = (await prisma.user.findUnique({
-          where: { id: currentReferrerId },
-          include: { membershipPlan: true }
-        })) as any
-        if (!parentReferrer) break
-
-        // Determine Level Commission based on Referrer's active membership plan
-        let commissionPercent = 0
-        if (parentReferrer.membershipPlan) {
-          if (level === 1) commissionPercent = parentReferrer.membershipPlan.referralLevel1
-          else if (level === 2) commissionPercent = parentReferrer.membershipPlan.referralLevel2
-          else if (level === 3) commissionPercent = parentReferrer.membershipPlan.referralLevel3
-        } else {
-          // Fallback to system settings for Level 1, but Level 2 & 3 require an active membership plan by default
-          if (level === 1) commissionPercent = settings.referralPercent || 10
-          else commissionPercent = 0
-        }
-
-        // If the percentage is 0 or less, they are ineligible for this level's commission
-        if (commissionPercent <= 0) {
-          currentReferrerId = parentReferrer.referredById || null
-          continue
-        }
-
-        const levelCommission = (investmentAmount * commissionPercent) / 100
+      if (percentage > 0) {
+        const commissionAmount = (investmentAmount * percentage) / 100
 
         await prisma.$transaction([
+          // Credit the commission to the referrer's referral balance
           prisma.wallet.update({
-            where: { userId: parentReferrer.id },
-            data: { levelBalance: { increment: levelCommission } }
+            where: { userId: referrer.id },
+            data: { referralBalance: { increment: commissionAmount } }
           }),
+          // Create a transaction record with type REFERRAL_BONUS and walletType REFERRAL
           prisma.transaction.create({
             data: {
-              userId: parentReferrer.id,
-              type: 'LEVEL_INCOME',
-              amount: levelCommission,
+              userId: referrer.id,
+              type: 'REFERRAL_BONUS',
+              amount: commissionAmount,
               status: 'COMPLETED',
               reference: investmentId,
-              description: `Level ${level} income from ${investor.name}'s investment`,
-              walletType: 'LEVEL'
+              description: `Level ${level} referral commission from ${investor.name}'s investment`,
+              walletType: 'REFERRAL'
             }
           }),
+          // Create user notification
           prisma.notification.create({
             data: {
-              userId: parentReferrer.id,
-              title: `Level ${level} Income Received 📈`,
-              message: `You earned ₹${levelCommission.toLocaleString('en-IN')} level ${level} income from ${investor.name}'s investment.`,
+              userId: referrer.id,
+              title: 'Referral Commission Received 👥',
+              message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} referral commission from ${investor.name}'s investment.`,
               type: 'SUCCESS'
             }
           })
         ])
 
-        // Add a helper referral tracking record for levels > 1
-        if (level > 1) {
+        // Find or create a Referral record to track this specific commission at this level
+        const referralRecord = await prisma.referral.findFirst({
+          where: { referrerId: referrer.id, referredId: investorId }
+        })
+        if (referralRecord) {
+          await prisma.referral.update({
+            where: { id: referralRecord.id },
+            data: { commission: { increment: commissionAmount }, level: level }
+          })
+        } else {
           await prisma.referral.create({
             data: {
-              referrerId: parentReferrer.id,
+              referrerId: referrer.id,
               referredId: investorId,
-              commission: levelCommission,
+              commission: commissionAmount,
               level: level
             }
           })
         }
 
-        // Trigger TL Rank check for each level referrer
-        await checkAndApplyTLRank(parentReferrer.id)
-
-        // Go to next parent in tree
-        currentReferrerId = parentReferrer.referredById || null
+        // Run Badges & TL Rank check for this referrer
+        await checkAndApplyPerformanceBadges(referrer.id)
+        await checkAndApplyTLRank(referrer.id)
       }
+
+      // Move to the next parent referrer in the chain
+      currentReferrerId = referrer.referredById
     }
   } catch (error) {
-    console.error('Error distributing referral & level commissions:', error)
+    console.error('Error distributing referral commissions:', error)
   }
 }

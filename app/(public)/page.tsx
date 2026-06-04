@@ -31,8 +31,38 @@ export default async function HomePage() {
     experience: '5+'
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  
+  const websiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    'name': 'VR Galaxy',
+    'url': baseUrl,
+  }
+
+  const financeJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FinancialProduct',
+    'name': 'VR Galaxy Daily ROI Investment Plan',
+    'description': 'High-yield smart investment plans starting from ₹1,000 with a daily ROI ranging from 1.5% to 3.0%.',
+    'url': `${baseUrl}/plans`,
+    'offers': {
+      '@type': 'Offer',
+      'priceCurrency': 'INR',
+      'price': '1000.00',
+    },
+  }
+
   return (
     <div className="relative w-full bg-[#020205] overflow-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(financeJsonLd) }}
+      />
       <AnimatedGalaxyBackground />
       <div className="relative z-10">
         <HeroSection

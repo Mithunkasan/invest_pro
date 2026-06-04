@@ -1,6 +1,10 @@
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Terms & Conditions — InvestPro' }
+export const metadata: Metadata = {
+  title: 'Terms & Conditions',
+  description: 'Terms and Conditions for using VR Galaxy. Read about investment risks, KYC requirements, withdrawal policies, and referral program terms.',
+  alternates: { canonical: '/terms' },
+}
 
 export default function TermsPage() {
   return (

@@ -5,7 +5,7 @@ export default async function AdminUsersPage() {
   const users = await prisma.user.findMany({
     include: {
       wallet: { select: { mainBalance: true } },
-      _count: { select: { investments: true } },
+      membershipPlan: { select: { name: true, color: true } },
     },
     orderBy: { createdAt: 'desc' },
   })

@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MapPin, Phone, Mail, User, ShieldCheck, Truck, Package, Clock, Calendar, Check,
   AlertCircle, ChevronRight, ExternalLink, HelpCircle
 } from 'lucide-react'
-import { INDIA_STATES } from '@/lib/indiaLocations'
+import { getStatesAction, getDistrictsAction, getCitiesAction } from '@/actions/locations'
 import { submitGiftAction } from '@/actions/gift'
 import { formatDate } from '@/utils/formatters'
 
@@ -51,26 +51,54 @@ export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
     pinCode: gift?.pinCode || '',
   })
 
-  // Dropdown lists
-  const [districts, setDistricts] = useState<any[]>([])
-  const [cities, setCities] = useState<any[]>([])
+  // Dropdown lists and loading states
+  const [states, setStates] = useState<string[]>([])
+  const [districts, setDistricts] = useState<string[]>([])
+  const [cities, setCities] = useState<{ name: string; pinCode: string }[]>([])
+  
+  const [loadingStates, setLoadingStates] = useState(false)
+  const [loadingDistricts, setLoadingDistricts] = useState(false)
+  const [loadingCities, setLoadingCities] = useState(false)
+
+  // Fetch all states on mount
+  useEffect(() => {
+    async function loadStates() {
+      setLoadingStates(true)
+      const res = await getStatesAction()
+      if (res.success) {
+        setStates(res.states)
+      }
+      setLoadingStates(false)
+    }
+    loadStates()
+  }, [])
 
   // On mount, if state is pre-populated, load districts and cities
-  useState(() => {
-    if (gift) {
-      const stateObj = INDIA_STATES.find(s => s.name === gift.state)
-      if (stateObj) {
-        setDistricts(stateObj.districts)
-        const distObj = stateObj.districts.find(d => d.name === gift.district)
-        if (distObj) {
-          setCities(distObj.cities)
+  useEffect(() => {
+    async function loadPrePopulated() {
+      if (gift?.state) {
+        setLoadingDistricts(true)
+        const resDist = await getDistrictsAction(gift.state)
+        if (resDist.success) {
+          setDistricts(resDist.districts)
+        }
+        setLoadingDistricts(false)
+
+        if (gift?.district) {
+          setLoadingCities(true)
+          const resCity = await getCitiesAction(gift.state, gift.district)
+          if (resCity.success) {
+            setCities(resCity.cities)
+          }
+          setLoadingCities(false)
         }
       }
     }
-  })
+    loadPrePopulated()
+  }, [gift])
 
   // --- HANDLERS ---
-  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleStateChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const stateName = e.target.value
     setFormData(prev => ({
       ...prev,
@@ -79,17 +107,20 @@ export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
       city: '',
       pinCode: ''
     }))
+    setDistricts([])
     setCities([])
 
-    const stateObj = INDIA_STATES.find(s => s.name === stateName)
-    if (stateObj) {
-      setDistricts(stateObj.districts)
-    } else {
-      setDistricts([])
+    if (stateName) {
+      setLoadingDistricts(true)
+      const res = await getDistrictsAction(stateName)
+      if (res.success) {
+        setDistricts(res.districts)
+      }
+      setLoadingDistricts(false)
     }
   }
 
-  const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleDistrictChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const districtName = e.target.value
     setFormData(prev => ({
       ...prev,
@@ -97,22 +128,21 @@ export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
       city: '',
       pinCode: ''
     }))
+    setCities([])
 
-    const stateObj = INDIA_STATES.find(s => s.name === formData.state)
-    const distObj = stateObj?.districts.find(d => d.name === districtName)
-    if (distObj) {
-      setCities(distObj.cities)
-    } else {
-      setCities([])
+    if (districtName && formData.state) {
+      setLoadingCities(true)
+      const res = await getCitiesAction(formData.state, districtName)
+      if (res.success) {
+        setCities(res.cities)
+      }
+      setLoadingCities(false)
     }
   }
 
   const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const cityName = e.target.value
-    
-    const stateObj = INDIA_STATES.find(s => s.name === formData.state)
-    const distObj = stateObj?.districts.find(d => d.name === formData.district)
-    const cityObj = distObj?.cities.find(c => c.name === cityName)
+    const cityObj = cities.find(c => c.name === cityName)
 
     setFormData(prev => ({
       ...prev,
@@ -443,32 +473,37 @@ export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
         {/* Dynamic Location Cascading Dropdowns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-white/70 font-semibold block mb-1">State / Union Territory</label>
+            <label className="text-xs text-white/70 font-semibold block mb-1">
+              State / Union Territory {loadingStates && '(Loading...)'}
+            </label>
             <select
               required
               value={formData.state}
               onChange={handleStateChange}
-              className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white/80 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+              disabled={loadingStates}
+              className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white/80 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:opacity-50"
             >
               <option value="">Select State</option>
-              {INDIA_STATES.map((s) => (
-                <option key={s.name} value={s.name}>{s.name}</option>
+              {states.map((s) => (
+                <option key={s} value={s}>{s}</option>
               ))}
             </select>
           </div>
           
           <div>
-            <label className="text-xs text-white/70 font-semibold block mb-1">District</label>
+            <label className="text-xs text-white/70 font-semibold block mb-1">
+              District {loadingDistricts && '(Loading...)'}
+            </label>
             <select
               required
-              disabled={!formData.state}
+              disabled={!formData.state || loadingDistricts}
               value={formData.district}
               onChange={handleDistrictChange}
               className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white/80 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:opacity-50"
             >
               <option value="">Select District</option>
               {districts.map((d) => (
-                <option key={d.name} value={d.name}>{d.name}</option>
+                <option key={d} value={d}>{d}</option>
               ))}
             </select>
           </div>
@@ -476,10 +511,12 @@ export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
-            <label className="text-xs text-white/70 font-semibold block mb-1">City / Region</label>
+            <label className="text-xs text-white/70 font-semibold block mb-1">
+              City / Region {loadingCities && '(Loading...)'}
+            </label>
             <select
               required
-              disabled={!formData.district}
+              disabled={!formData.district || loadingCities}
               value={formData.city}
               onChange={handleCityChange}
               className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white/80 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:opacity-50"
