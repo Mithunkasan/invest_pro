@@ -4,6 +4,7 @@ import { revalidatePath, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
+import { deductFromWallets } from './walletUtils'
 
 // ── Get Investment Plans ───────────────────────────────────────────────────────
 export const getInvestmentPlans = unstable_cache(
@@ -42,37 +43,38 @@ export async function createInvestmentAction(
     return { success: false, message: 'Insufficient wallet balance. Please deposit funds first.' }
   }
 
-  // Deduct from wallet
-  await prisma.wallet.update({
-    where: { userId: session.id },
-    data: { mainBalance: { decrement: amount } },
-  })
-
   const endDate = new Date()
   endDate.setDate(endDate.getDate() + plan.durationDays)
 
-  // Create investment
-  const investment = await prisma.investment.create({
-    data: {
-      userId: session.id,
-      planId,
-      amount,
-      status: 'ACTIVE',
-      endDate,
-    },
-  })
+  const investment = await prisma.$transaction(async (tx) => {
+    // Deduct from wallet sub-wallets
+    await deductFromWallets(tx, session.id, amount)
 
-  // Transaction record
-  await prisma.transaction.create({
-    data: {
-      userId: session.id,
-      type: 'INVESTMENT',
-      amount,
-      status: 'COMPLETED',
-      reference: investment.id,
-      description: `${plan.name} Investment`,
-      walletType: 'MAIN',
-    },
+    // Create investment
+    const inv = await tx.investment.create({
+      data: {
+        userId: session.id,
+        planId,
+        amount,
+        status: 'ACTIVE',
+        endDate,
+      },
+    })
+
+    // Transaction record
+    await tx.transaction.create({
+      data: {
+        userId: session.id,
+        type: 'INVESTMENT',
+        amount,
+        status: 'COMPLETED',
+        reference: inv.id,
+        description: `${plan.name} Investment`,
+        walletType: 'MAIN',
+      },
+    })
+
+    return inv
   })
 
   // Notification

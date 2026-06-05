@@ -32,10 +32,13 @@ interface BonusClientProps {
 
 const walletOptions = [
   'Main Wallet',
+  'Deposit Wallet',
   'Referral Wallet',
   'Reward Wallet',
   'Game Wallet',
-  'Bonus Wallet'
+  'Bonus Wallet',
+  'Share Wallet',
+  'Level Wallet'
 ]
 
 const remarkSuggestions = [
@@ -126,10 +129,10 @@ export function BonusClient({ users, initialBonuses }: BonusClientProps) {
           amount: parsedAmount,
           userEmail: emailToUse,
           originalWallet: selectedWallet,
-          creditedWallet: selectedUser?.memberType === 'FREE' ? 'Main Wallet' : selectedWallet,
+          creditedWallet: selectedWallet,
           remark: remark,
           sentBy: 'You', // Just a placeholder for immediate local addition
-          freeRestricted: selectedUser?.memberType === 'FREE' && selectedWallet !== 'Main Wallet'
+          freeRestricted: false
         }
         setHistory(prev => [newLog, ...prev])
       } else {
@@ -251,12 +254,7 @@ export function BonusClient({ users, initialBonuses }: BonusClientProps) {
                     <option key={opt} value={opt} className="bg-popover text-white">{opt}</option>
                   ))}
                 </select>
-                {selectedUser?.memberType === 'FREE' && selectedWallet !== 'Main Wallet' && (
-                  <p className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1 mt-1">
-                    <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-                    As a Free Member, this bonus will be forced to credit directly to their Main Wallet.
-                  </p>
-                )}
+                {/* Free Member Wallet restriction removed */}
               </div>
 
               {/* Send Amount */}
@@ -329,7 +327,7 @@ export function BonusClient({ users, initialBonuses }: BonusClientProps) {
             </li>
             <li className="flex gap-2">
               <span className="text-primary font-bold">2.</span>
-              <span><strong>Free Member Restrictions:</strong> Users with <strong>Free Membership</strong> are restricted from other wallets. Therefore, any selected wallet will be overriden to deposit directly into their <strong>Main Wallet</strong>.</span>
+              <span><strong>Separate Sub-Wallets:</strong> All users (including Free Members) support separate sub-wallets (Reward, Referral, Level, Share, Bonus), allowing you to target transfers precisely.</span>
             </li>
             <li className="flex gap-2">
               <span className="text-primary font-bold">3.</span>

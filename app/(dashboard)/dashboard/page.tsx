@@ -50,6 +50,24 @@ export default async function DashboardPage() {
     })
   ])
 
+  let dbWallet = wallet
+  if (dbWallet) {
+    const expectedMain = 
+      (dbWallet.depositBalance || 0) +
+      (dbWallet.rewardBalance || 0) +
+      (dbWallet.referralBalance || 0) +
+      (dbWallet.levelBalance || 0) +
+      (dbWallet.shareBalance || 0) +
+      (dbWallet.bonusBalance || 0)
+    
+    if (dbWallet.mainBalance !== expectedMain) {
+      dbWallet = await prisma.wallet.update({
+        where: { id: dbWallet.id },
+        data: { mainBalance: expectedMain }
+      })
+    }
+  }
+
   // Calculate monthly profit/investment for chart
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const currentMonthIndex = new Date().getMonth()
@@ -119,13 +137,11 @@ export default async function DashboardPage() {
 
   const stats = {
     totalInvestment: totalInvestment._sum.amount || 0,
-    currentBalance: dbUser?.memberType === 'FREE'
-      ? (wallet?.mainBalance || 0)
-      : (wallet?.mainBalance || 0) + (wallet?.bonusBalance || 0) + (wallet?.referralBalance || 0) + (wallet?.rewardBalance || 0) + (wallet?.levelBalance || 0) + (wallet?.shareBalance || 0),
+    currentBalance: dbWallet?.mainBalance || 0,
     totalProfit: totalProfit._sum.profit || 0,
     referralIncome: referralIncome._sum.commission || 0,
     activePlans: investments.length,
-    wallet: wallet || { mainBalance: 0, bonusBalance: 0, referralBalance: 0, rewardBalance: 0, levelBalance: 0, shareBalance: 0 },
+    wallet: dbWallet || { mainBalance: 0, depositBalance: 0, bonusBalance: 0, referralBalance: 0, rewardBalance: 0, levelBalance: 0, shareBalance: 0 },
   }
 
   if (dbUser?.memberType === 'FREE') {

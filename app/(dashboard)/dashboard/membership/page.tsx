@@ -16,7 +16,7 @@ export default async function UserMembershipPage() {
   if (!session) redirect('/login')
 
   // Fetch current user along with their active membership relation and wallet
-  const [user, wallet, activePlans] = await Promise.all([
+  const [user, dbWalletRaw, activePlans] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.id },
       include: { membershipPlan: true }
@@ -29,6 +29,24 @@ export default async function UserMembershipPage() {
       orderBy: { price: 'asc' }
     })
   ])
+
+  let wallet = dbWalletRaw
+  if (wallet) {
+    const expectedMain = 
+      (wallet.depositBalance || 0) +
+      (wallet.rewardBalance || 0) +
+      (wallet.referralBalance || 0) +
+      (wallet.levelBalance || 0) +
+      (wallet.shareBalance || 0) +
+      (wallet.bonusBalance || 0)
+    
+    if (wallet.mainBalance !== expectedMain) {
+      wallet = await prisma.wallet.update({
+        where: { id: wallet.id },
+        data: { mainBalance: expectedMain }
+      })
+    }
+  }
 
   if (!user || !wallet) {
     redirect('/login')

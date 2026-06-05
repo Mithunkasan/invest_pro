@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
+import { syncWalletMainBalance } from './walletUtils'
 
 export async function claimRewardAction(
   amount: number,
@@ -40,14 +41,14 @@ export async function claimRewardAction(
       }
 
       const isFree = user.memberType === 'FREE'
-      const actualWalletType: 'MAIN' | 'REWARD' = isFree ? 'MAIN' : 'REWARD'
-      const actualBalanceField = isFree ? 'mainBalance' : 'rewardBalance'
+      const actualWalletType = 'REWARD'
+      const actualBalanceField = 'rewardBalance'
 
       // Check for negative amounts (e.g., laser upgrade costs)
       if (amount < 0) {
-        const balance = isFree ? wallet.mainBalance : wallet.rewardBalance
+        const balance = wallet.rewardBalance
         if (balance < Math.abs(amount)) {
-          throw new Error(`Insufficient balance in ${isFree ? 'Main' : 'Reward'} Wallet to upgrade laser`)
+          throw new Error(`Insufficient balance in Reward Wallet to upgrade laser`)
         }
       }
 
@@ -55,7 +56,7 @@ export async function claimRewardAction(
       const updatedWallet = await tx.wallet.update({
         where: { userId: session.id },
         data: {
-          [actualBalanceField]: {
+          rewardBalance: {
             increment: amount
           }
         }
@@ -68,7 +69,7 @@ export async function claimRewardAction(
           type: 'REWARD',
           amount: amount,
           status: 'COMPLETED',
-          walletType: actualWalletType,
+          walletType: 'REWARD',
           description: amount < 0 ? activityName : `Earned from ${activityName}`
         }
       })
@@ -80,10 +81,13 @@ export async function claimRewardAction(
           title: amount < 0 ? 'Laser Upgraded! ⚡' : 'Reward Credited! 🎁',
           message: amount < 0
             ? `Successfully spent ₹${Math.abs(amount).toFixed(2)} on ${activityName}.`
-            : `Congratulations! You received ₹${amount.toFixed(2)} reward cash credited to your ${isFree ? 'Main' : 'Reward'} Wallet from ${activityName}.`,
+            : `Congratulations! You received ₹${amount.toFixed(2)} reward cash credited to your Reward Wallet from ${activityName}.`,
           type: 'SUCCESS'
         }
       })
+
+      // Sync Main balance
+      await syncWalletMainBalance(tx, session.id)
 
       return updatedWallet
     })
