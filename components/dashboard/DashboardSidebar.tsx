@@ -68,8 +68,13 @@ export function DashboardSidebar({ mobileOpen, onClose, isKycApproved, user }: D
     const isFree = user?.memberType === 'FREE'
 
     if (isFree) {
-      // Free users do NOT see KYC or Membership
-      baseItems = baseItems.filter((item) => item.label !== 'KYC' && item.label !== 'Membership')
+      // Free users do NOT see KYC, Membership, Deposit, or Referral
+      baseItems = baseItems.filter((item) => 
+        item.label !== 'KYC' && 
+        item.label !== 'Membership' && 
+        item.label !== 'Deposit' && 
+        item.label !== 'Referral'
+      )
     } else {
       // Premium users see the Gift Section
       const membershipIndex = baseItems.findIndex((item) => item.label === 'Membership')

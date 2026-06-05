@@ -15,13 +15,22 @@ export async function claimRewardAction(
       return { success: false, message: 'Unauthorized. Please login again.' }
     }
 
-    if (amount <= 0) {
+    if (amount === 0) {
       return { success: false, message: 'Invalid reward amount' }
     }
 
     // Process in a secure transaction
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Fetch user wallet
+      // 1. Fetch user and wallet
+      const user = await tx.user.findUnique({
+        where: { id: session.id },
+        select: { memberType: true }
+      })
+
+      if (!user) {
+        throw new Error('User not found')
+      }
+
       const wallet = await tx.wallet.findUnique({
         where: { userId: session.id }
       })
@@ -30,11 +39,23 @@ export async function claimRewardAction(
         throw new Error('Wallet not found')
       }
 
-      // 2. Increment reward balance
+      const isFree = user.memberType === 'FREE'
+      const actualWalletType: 'MAIN' | 'REWARD' = isFree ? 'MAIN' : 'REWARD'
+      const actualBalanceField = isFree ? 'mainBalance' : 'rewardBalance'
+
+      // Check for negative amounts (e.g., laser upgrade costs)
+      if (amount < 0) {
+        const balance = isFree ? wallet.mainBalance : wallet.rewardBalance
+        if (balance < Math.abs(amount)) {
+          throw new Error(`Insufficient balance in ${isFree ? 'Main' : 'Reward'} Wallet to upgrade laser`)
+        }
+      }
+
+      // 2. Increment balance
       const updatedWallet = await tx.wallet.update({
         where: { userId: session.id },
         data: {
-          rewardBalance: {
+          [actualBalanceField]: {
             increment: amount
           }
         }
@@ -47,8 +68,8 @@ export async function claimRewardAction(
           type: 'REWARD',
           amount: amount,
           status: 'COMPLETED',
-          walletType: 'REWARD',
-          description: `Earned from ${activityName}`
+          walletType: actualWalletType,
+          description: amount < 0 ? activityName : `Earned from ${activityName}`
         }
       })
 
@@ -56,8 +77,10 @@ export async function claimRewardAction(
       await tx.notification.create({
         data: {
           userId: session.id,
-          title: 'Reward Credited! 🎁',
-          message: `Congratulations! You received ₹${amount.toFixed(2)} reward coins from ${activityName}.`,
+          title: amount < 0 ? 'Laser Upgraded! ⚡' : 'Reward Credited! 🎁',
+          message: amount < 0
+            ? `Successfully spent ₹${Math.abs(amount).toFixed(2)} on ${activityName}.`
+            : `Congratulations! You received ₹${amount.toFixed(2)} reward cash credited to your ${isFree ? 'Main' : 'Reward'} Wallet from ${activityName}.`,
           type: 'SUCCESS'
         }
       })

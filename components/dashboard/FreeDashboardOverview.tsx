@@ -20,6 +20,14 @@ interface FreeDashboardOverviewProps {
       rewardBalance: number
     }
   }
+  adminBonuses: Array<{
+    id: string
+    amount: number
+    createdAt: string
+    walletName: string
+    remark: string
+    sentBy: string
+  }>
 }
 
 // Location Trivia Questions
@@ -54,7 +62,7 @@ const TRIVIA_QUESTIONS = [
   }
 ]
 
-export function FreeDashboardOverview({ user, stats }: FreeDashboardOverviewProps) {
+export function FreeDashboardOverview({ user, stats, adminBonuses }: FreeDashboardOverviewProps) {
   // --- STATE ---
   const [walletBalance, setWalletBalance] = useState({
     main: stats.wallet.mainBalance,
@@ -195,6 +203,7 @@ export function FreeDashboardOverview({ user, stats }: FreeDashboardOverviewProp
             if (res.success) {
               setWalletBalance((prev) => ({
                 ...prev,
+                main: prev.main + rewardVal,
                 reward: prev.reward + rewardVal
               }))
             }
@@ -229,6 +238,7 @@ export function FreeDashboardOverview({ user, stats }: FreeDashboardOverviewProp
         if (res.success) {
           setWalletBalance((prev) => ({
             ...prev,
+            main: prev.main + activeTrivia.reward,
             reward: prev.reward + activeTrivia.reward
           }))
           setTriviaStatus('CLAIMED')
@@ -275,6 +285,7 @@ export function FreeDashboardOverview({ user, stats }: FreeDashboardOverviewProp
       if (res.success) {
         setWalletBalance((prev) => ({
           ...prev,
+          main: prev.main + claimAmount,
           reward: prev.reward + claimAmount
         }))
         setMinerCredits((prev) => parseFloat((prev - claimAmount).toFixed(2)))
@@ -283,16 +294,18 @@ export function FreeDashboardOverview({ user, stats }: FreeDashboardOverviewProp
   }
 
   const upgradeMiningLaser = () => {
-    if (walletBalance.reward < 25) return
+    if (walletBalance.main < 25) return
     
     // Deduct coins as an upgrade cost
     claimRewardAction(-25, "Mining laser upgrade").then((res) => {
-      setWalletBalance((prev) => ({
-        ...prev,
-        reward: Math.max(0, prev.reward - 25)
-      }))
-      setMinerMiningSpeed((prev) => prev + 1)
-      setMinerLevel((prev) => prev + 1)
+      if (res.success) {
+        setWalletBalance((prev) => ({
+          ...prev,
+          main: Math.max(0, prev.main - 25)
+        }))
+        setMinerMiningSpeed((prev) => prev + 1)
+        setMinerLevel((prev) => prev + 1)
+      }
     })
   }
 
@@ -306,6 +319,7 @@ export function FreeDashboardOverview({ user, stats }: FreeDashboardOverviewProp
       if (res.success) {
         setWalletBalance((prev) => ({
           ...prev,
+          main: prev.main + rewardVal,
           reward: prev.reward + rewardVal
         }))
         setStreakDays((prev) => {
@@ -365,19 +379,9 @@ export function FreeDashboardOverview({ user, stats }: FreeDashboardOverviewProp
 
           {/* Large Dynamic Wallet Info */}
           <div className="flex gap-4 self-start md:self-center shrink-0">
-            <div className="bg-black/30 backdrop-blur-md px-5 py-4 rounded-2xl border border-white/10 flex items-center gap-4 hover:border-emerald-400/40 transition-colors shadow-lg">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
-                <Coins className="w-6 h-6 text-white animate-bounce" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white/60 uppercase tracking-widest">Reward Balance</p>
-                <p className="text-2xl font-black text-emerald-300 tracking-tight">{formatCurrency(walletBalance.reward)}</p>
-              </div>
-            </div>
-            
-            <div className="bg-black/30 backdrop-blur-md px-5 py-4 rounded-2xl border border-white/10 flex items-center gap-4 hover:border-indigo-400/40 transition-colors shadow-lg">
+            <div className="bg-black/30 backdrop-blur-md px-5 py-4 rounded-2xl border border-indigo-500/20 flex items-center gap-4 hover:border-indigo-400/40 transition-colors shadow-lg">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-500 to-blue-600 flex items-center justify-center shadow-md">
-                <Gift className="w-6 h-6 text-white" />
+                <Gift className="w-6 h-6 text-white animate-bounce" />
               </div>
               <div>
                 <p className="text-xs font-bold text-white/60 uppercase tracking-widest">Main Wallet</p>
@@ -676,10 +680,10 @@ export function FreeDashboardOverview({ user, stats }: FreeDashboardOverviewProp
             </button>
             
             <button
-              disabled={walletBalance.reward < 25}
+              disabled={walletBalance.main < 25}
               onClick={upgradeMiningLaser}
               className="py-3 px-4 rounded-xl font-bold bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-white disabled:opacity-40 disabled:cursor-not-allowed text-xs flex items-center justify-center gap-1.5 cursor-pointer text-center"
-              title="Cost: 25 Coins"
+              title="Cost: 25 Main Balance"
             >
               <Star className="w-4 h-4 fill-current text-yellow-500" />
               Upgrade Laser (Cost: 25)
@@ -760,6 +764,58 @@ export function FreeDashboardOverview({ user, stats }: FreeDashboardOverviewProp
         </motion.div>
 
       </div>
+
+      {/* Admin Bonus History Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="premium-card p-6 bg-card/45 backdrop-blur-xl border-white/5 shadow-2xl relative overflow-hidden"
+      >
+        <h2 className="font-semibold text-base mb-4 flex items-center gap-2 text-white">
+          🎁 Admin Bonus History
+        </h2>
+        <div className="overflow-x-auto no-scrollbar">
+          {adminBonuses.length === 0 ? (
+            <p className="text-muted-foreground text-sm text-center py-6">No admin bonuses received yet</p>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/5 text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                  <th className="py-3 px-4">Date</th>
+                  <th className="py-3 px-4 text-right">Amount</th>
+                  <th className="py-3 px-4">Wallet</th>
+                  <th className="py-3 px-4">Remark</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 text-sm font-medium">
+                {adminBonuses.map((bonus) => (
+                  <tr key={bonus.id} className="hover:bg-white/5 transition-colors">
+                    <td className="py-3.5 px-4 text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                      {(() => {
+                        const d = new Date(bonus.createdAt)
+                        const day = String(d.getDate()).padStart(2, '0')
+                        const month = String(d.getMonth() + 1).padStart(2, '0')
+                        const year = d.getFullYear()
+                        return `${day}-${month}-${year}`
+                      })()}
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-bold text-green-400 whitespace-nowrap">
+                      +{formatCurrency(bonus.amount)}
+                    </td>
+                    <td className="py-3.5 px-4 text-xs text-white/80">
+                      {bonus.walletName}
+                    </td>
+                    <td className="py-3.5 px-4 text-xs text-white/80">
+                      {bonus.remark}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </motion.div>
     </div>
   )
 }

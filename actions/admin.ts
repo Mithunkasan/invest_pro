@@ -675,3 +675,136 @@ export async function deleteMembershipPlanAction(id: string): Promise<ApiRespons
   }
 }
 
+export async function sendAdminBonusAction(
+  userEmail: string,
+  amount: number,
+  walletName: string,
+  remark: string
+): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  if (!userEmail || isNaN(amount) || amount <= 0 || !walletName || !remark) {
+    return { success: false, message: 'Invalid inputs. All fields are required.' }
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail.trim() },
+      include: { wallet: true }
+    })
+
+    if (!user) return { success: false, message: 'User not found with email: ' + userEmail }
+
+    let field: 'mainBalance' | 'bonusBalance' | 'referralBalance' | 'rewardBalance' | 'levelBalance' | 'shareBalance'
+    let walletType: 'MAIN' | 'BONUS' | 'REFERRAL' | 'LEVEL' | 'REWARD' | 'SHARE'
+
+    switch (walletName) {
+      case 'Main Wallet':
+        field = 'mainBalance'
+        walletType = 'MAIN'
+        break
+      case 'Referral Wallet':
+        field = 'referralBalance'
+        walletType = 'REFERRAL'
+        break
+      case 'Reward Wallet':
+        field = 'rewardBalance'
+        walletType = 'REWARD'
+        break
+      case 'Game Wallet':
+        field = 'rewardBalance'
+        walletType = 'REWARD'
+        break
+      case 'Bonus Wallet':
+        field = 'bonusBalance'
+        walletType = 'BONUS'
+        break
+      default:
+        return { success: false, message: 'Invalid wallet selection: ' + walletName }
+    }
+
+    let actualWalletType = walletType
+    let actualField = field
+    let isFreeRestricted = false
+
+    if (user.memberType === 'FREE') {
+      actualWalletType = 'MAIN'
+      actualField = 'mainBalance'
+      if (walletType !== 'MAIN') {
+        isFreeRestricted = true
+      }
+    }
+
+    const metadata = {
+      sentBy: admin.name,
+      userEmail: user.email,
+      walletName: walletName,
+      remark: remark,
+      freeRestricted: isFreeRestricted
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Ensure wallet exists
+      let wallet = user.wallet
+      if (!wallet) {
+        wallet = await tx.wallet.create({
+          data: { userId: user.id }
+        })
+      }
+
+      // Increment balance
+      await tx.wallet.update({
+        where: { userId: user.id },
+        data: { [actualField]: { increment: amount } }
+      })
+
+      // Create transaction log
+      await tx.transaction.create({
+        data: {
+          userId: user.id,
+          type: 'BONUS',
+          amount: amount,
+          status: 'COMPLETED',
+          walletType: actualWalletType,
+          description: remark,
+          reference: 'ADMIN_BONUS:' + JSON.stringify(metadata)
+        }
+      })
+
+      // Create notification
+      await tx.notification.create({
+        data: {
+          userId: user.id,
+          title: 'Bonus Received! 🎁',
+          message: `You have received a bonus of ₹${amount.toLocaleString('en-IN')} to your ${actualWalletType === 'MAIN' ? 'Main' : actualWalletType.toLowerCase()} wallet. Remark: ${remark}`,
+          type: 'SUCCESS'
+        }
+      })
+    })
+
+    if (actualWalletType === 'REFERRAL') {
+      try {
+        const { checkAndApplyPerformanceBadges, checkAndApplyTLRank } = require('./rules')
+        await checkAndApplyPerformanceBadges(user.id)
+        await checkAndApplyTLRank(user.id)
+      } catch (err) {
+        console.error('Error applying rules for referral bonus:', err)
+      }
+    }
+
+    revalidatePath('/admin/dashboard/bonus')
+    revalidatePath('/dashboard/wallet')
+    revalidatePath('/dashboard')
+
+    return {
+      success: true,
+      message: `Successfully sent ₹${amount.toLocaleString('en-IN')} bonus to ${user.name} (${user.email}).`
+    }
+  } catch (error: any) {
+    console.error('Error sending admin bonus:', error)
+    return { success: false, message: error.message || 'Failed to send admin bonus' }
+  }
+}
+
+

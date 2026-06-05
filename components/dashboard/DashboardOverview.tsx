@@ -41,6 +41,14 @@ interface DashboardOverviewProps {
   investments: Array<{ id: string; amount: number; profit: number; status: string; startDate: string; endDate: string; plan: { name: string; roiPercent: number } }>
   transactions: Array<{ id: string; type: string; amount: number; status: string; description: string | null; createdAt: string }>
   chartData: Array<{ name: string; profit: number; investment: number }>
+  adminBonuses: Array<{
+    id: string
+    amount: number
+    createdAt: string
+    walletName: string
+    remark: string
+    sentBy: string
+  }>
 }
 
 const transactionColumns = [
@@ -61,7 +69,15 @@ const transactionColumns = [
   )},
 ]
 
-export function DashboardOverview({ user, stats, investments, transactions, chartData }: DashboardOverviewProps) {
+export function DashboardOverview({ user, stats, investments, transactions, chartData, adminBonuses }: DashboardOverviewProps) {
+  const formatDDMMYYYY = (date: Date | string) => {
+    const d = new Date(date)
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = d.getFullYear()
+    return `${day}-${month}-${year}`
+  }
+
   return (
     <div className="space-y-6">
       {/* Welcome */}
@@ -325,6 +341,52 @@ export function DashboardOverview({ user, stats, investments, transactions, char
           pageSize={10}
           emptyMessage="No transactions yet"
         />
+      </motion.div>
+
+      {/* Admin Bonus History Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="premium-card p-6 bg-card/45 backdrop-blur-xl border-white/5 shadow-2xl relative overflow-hidden"
+      >
+        <h2 className="font-semibold text-base mb-4 flex items-center gap-2 text-white">
+          🎁 Admin Bonus History
+        </h2>
+        <div className="overflow-x-auto no-scrollbar">
+          {adminBonuses.length === 0 ? (
+            <p className="text-muted-foreground text-sm text-center py-6">No admin bonuses received yet</p>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/5 text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                  <th className="py-3 px-4">Date</th>
+                  <th className="py-3 px-4 text-right">Amount</th>
+                  <th className="py-3 px-4">Wallet</th>
+                  <th className="py-3 px-4">Remark</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 text-sm font-medium">
+                {adminBonuses.map((bonus) => (
+                  <tr key={bonus.id} className="hover:bg-white/5 transition-colors">
+                    <td className="py-3.5 px-4 text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                      {formatDDMMYYYY(bonus.createdAt)}
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-bold text-green-400 whitespace-nowrap">
+                      +{formatCurrency(bonus.amount)}
+                    </td>
+                    <td className="py-3.5 px-4 text-xs text-white/80 font-semibold">
+                      {bonus.walletName}
+                    </td>
+                    <td className="py-3.5 px-4 text-xs text-white/80">
+                      {bonus.remark}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </motion.div>
     </div>
   )
