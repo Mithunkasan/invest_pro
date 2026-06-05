@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
+import { deductFromWallets, syncWalletMainBalance } from './walletUtils'
 
 // ── Request Withdrawal ────────────────────────────────────────────────────────
 export async function requestWithdrawalAction(
@@ -32,29 +33,70 @@ export async function requestWithdrawalAction(
   const wallet = await prisma.wallet.findUnique({ where: { userId: session.id } })
   if (!wallet) return { success: false, message: 'Wallet not found' }
 
-  const balanceKey = walletType === 'MAIN' ? 'mainBalance'
-    : walletType === 'BONUS' ? 'bonusBalance' : 'referralBalance'
+  if (walletType === 'MAIN') {
+    if (wallet.mainBalance < amount) {
+      return { success: false, message: 'Insufficient balance' }
+    }
 
-  if (wallet[balanceKey] < amount) {
-    return { success: false, message: 'Insufficient balance' }
+    await prisma.$transaction(async (tx) => {
+      // Deduct from wallets in priority order
+      await deductFromWallets(tx, session.id, amount)
+      
+      // Create withdrawal request
+      await tx.withdrawal.create({
+        data: {
+          userId: session.id,
+          amount,
+          walletType,
+          bankDetails: { bankName, accountNo, ifsc, accountName },
+          upiId: upiId || undefined,
+          status: 'PENDING',
+        },
+      })
+    })
+  } else {
+    const balanceKey = walletType === 'BONUS' ? 'bonusBalance' : 'referralBalance'
+    if (wallet[balanceKey] < amount) {
+      return { success: false, message: 'Insufficient balance' }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Deduct from wallet immediately
+      await tx.wallet.update({
+        where: { userId: session.id },
+        data: { [balanceKey]: { decrement: amount } },
+      })
+      
+      // Sync main balance
+      const updatedWallet = await tx.wallet.findUnique({
+        where: { userId: session.id }
+      })
+      if (updatedWallet) {
+        const newMain = 
+          (updatedWallet.rewardBalance || 0) +
+          (updatedWallet.referralBalance || 0) +
+          (updatedWallet.levelBalance || 0) +
+          (updatedWallet.shareBalance || 0) +
+          (updatedWallet.bonusBalance || 0)
+        await tx.wallet.update({
+          where: { userId: session.id },
+          data: { mainBalance: newMain }
+        })
+      }
+
+      // Create withdrawal request
+      await tx.withdrawal.create({
+        data: {
+          userId: session.id,
+          amount,
+          walletType,
+          bankDetails: { bankName, accountNo, ifsc, accountName },
+          upiId: upiId || undefined,
+          status: 'PENDING',
+        },
+      })
+    })
   }
-
-  // Deduct from wallet immediately (hold)
-  await prisma.wallet.update({
-    where: { userId: session.id },
-    data: { [balanceKey]: { decrement: amount } },
-  })
-
-  await prisma.withdrawal.create({
-    data: {
-      userId: session.id,
-      amount,
-      walletType,
-      bankDetails: { bankName, accountNo, ifsc, accountName },
-      upiId: upiId || undefined,
-      status: 'PENDING',
-    },
-  })
 
   await prisma.notification.create({
     data: {
@@ -99,13 +141,15 @@ export async function updateWithdrawalStatusAction(
 
   if (status === 'REJECTED') {
     // Refund if rejected
-    const balanceKey = withdrawal.walletType === 'MAIN' ? 'mainBalance'
+    const balanceKey = withdrawal.walletType === 'MAIN' ? 'rewardBalance'
       : withdrawal.walletType === 'BONUS' ? 'bonusBalance' : 'referralBalance'
 
     await prisma.wallet.update({
       where: { userId: withdrawal.userId },
       data: { [balanceKey]: { increment: withdrawal.amount } },
     })
+
+    await syncWalletMainBalance(prisma, withdrawal.userId)
 
     await prisma.notification.create({
       data: {

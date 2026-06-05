@@ -31,6 +31,7 @@ interface DashboardOverviewProps {
     activePlans: number
     wallet: {
       mainBalance: number
+      depositBalance: number
       bonusBalance: number
       referralBalance: number
       rewardBalance: number
@@ -305,10 +306,11 @@ export function DashboardOverview({ user, stats, investments, transactions, char
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4"
+        className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4"
       >
         {[
           { label: 'Main Wallet', value: stats.wallet.mainBalance, color: 'from-blue-500 to-blue-600', icon: '💼' },
+          { label: 'Deposit Wallet', value: stats.wallet.depositBalance, color: 'from-indigo-500 to-indigo-600', icon: '💰' },
           { label: 'Reward Wallet', value: stats.wallet.rewardBalance, color: 'from-amber-500 to-amber-600', icon: '🎁' },
           { label: 'Referral Wallet', value: stats.wallet.referralBalance, color: 'from-purple-500 to-purple-600', icon: '👥' },
           { label: 'Level Wallet', value: stats.wallet.levelBalance, color: 'from-emerald-500 to-emerald-600', icon: '📈' },

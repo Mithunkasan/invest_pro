@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { uploadToCloudinary } from '@/lib/cloudinary'
 import type { ApiResponse } from '@/types'
+import { deductFromWallets } from './walletUtils'
 
 // ── Submit Deposit ────────────────────────────────────────────────────────────
 export async function submitDeposit(formData: FormData): Promise<ApiResponse> {
@@ -63,23 +64,21 @@ export async function submitWithdrawal(formData: FormData): Promise<ApiResponse>
       return { success: false, message: 'Insufficient balance' }
     }
 
-    await prisma.$transaction([
+    await prisma.$transaction(async (tx) => {
       // Deduct from wallet immediately
-      prisma.wallet.update({
-        where: { userId: session.id },
-        data: { mainBalance: { decrement: amount } },
-      }),
+      await deductFromWallets(tx, session.id, amount)
+      
       // Create withdrawal request
-      prisma.withdrawal.create({
+      await tx.withdrawal.create({
         data: {
           userId: session.id,
           amount,
           bankDetails,
           status: 'PENDING',
         },
-      }),
+      })
       // Create transaction record
-      prisma.transaction.create({
+      await tx.transaction.create({
         data: {
           userId: session.id,
           type: 'WITHDRAWAL',
@@ -88,8 +87,8 @@ export async function submitWithdrawal(formData: FormData): Promise<ApiResponse>
           description: 'Withdrawal request submitted',
           walletType: 'MAIN',
         },
-      }),
-    ])
+      })
+    })
 
     revalidatePath('/dashboard/wallet')
     revalidatePath('/dashboard/transactions')
@@ -122,14 +121,11 @@ export async function startInvestment(planId: string, amount: number): Promise<A
     const endDate = new Date()
     endDate.setDate(endDate.getDate() + plan.durationDays)
 
-    await prisma.$transaction([
+    await prisma.$transaction(async (tx) => {
       // Deduct from wallet
-      prisma.wallet.update({
-        where: { userId: session.id },
-        data: { mainBalance: { decrement: amount } },
-      }),
+      await deductFromWallets(tx, session.id, amount)
       // Create investment
-      prisma.investment.create({
+      await tx.investment.create({
         data: {
           userId: session.id,
           planId,
@@ -137,9 +133,9 @@ export async function startInvestment(planId: string, amount: number): Promise<A
           endDate,
           status: 'ACTIVE',
         },
-      }),
+      })
       // Create transaction
-      prisma.transaction.create({
+      await tx.transaction.create({
         data: {
           userId: session.id,
           type: 'INVESTMENT',
@@ -148,8 +144,8 @@ export async function startInvestment(planId: string, amount: number): Promise<A
           description: `Investment in ${plan.name}`,
           walletType: 'MAIN',
         },
-      }),
-    ])
+      })
+    })
 
     // Retrieve latest active investment
     const investment = await prisma.investment.findFirst({
@@ -331,10 +327,7 @@ export async function buyMembershipPlanAction(planId: string): Promise<ApiRespon
     await prisma.$transaction(async (tx) => {
       // Deduct from wallet if price > 0
       if (plan.price > 0) {
-        await tx.wallet.update({
-          where: { userId: session.id },
-          data: { mainBalance: { decrement: plan.price } },
-        })
+        await deductFromWallets(tx, session.id, plan.price)
         
         // Create transaction
         await tx.transaction.create({

@@ -138,6 +138,7 @@ model Wallet {
   id              String @id @default(cuid())
   userId          String @unique
   mainBalance     Float  @default(0)
+  depositBalance  Float  @default(0)
   bonusBalance    Float  @default(0)
   referralBalance Float  @default(0)
   rewardBalance   Float  @default(0)

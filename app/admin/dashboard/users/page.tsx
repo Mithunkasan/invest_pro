@@ -4,16 +4,41 @@ import { UsersTable } from '@/components/admin/UsersTable'
 export default async function AdminUsersPage() {
   const users = await prisma.user.findMany({
     include: {
-      wallet: { select: { mainBalance: true } },
+      wallet: { 
+        select: { 
+          mainBalance: true,
+          rewardBalance: true,
+          referralBalance: true,
+          levelBalance: true,
+          shareBalance: true,
+          bonusBalance: true,
+        } 
+      },
       membershipPlan: { select: { name: true, color: true } },
     },
     orderBy: { createdAt: 'desc' },
   })
 
+  const processedUsers = users.map(u => {
+    if (!u.wallet) return u
+    return {
+      ...u,
+      wallet: {
+        ...u.wallet,
+        mainBalance: 
+          (u.wallet.rewardBalance || 0) + 
+          (u.wallet.referralBalance || 0) + 
+          (u.wallet.levelBalance || 0) + 
+          (u.wallet.shareBalance || 0) + 
+          (u.wallet.bonusBalance || 0)
+      }
+    }
+  })
+
   const stats = [
-    { label: 'Total', value: users.length, color: 'bg-blue-500/10 text-blue-500' },
-    { label: 'Active', value: users.filter((u: any) => u.status === 'ACTIVE').length, color: 'bg-green-500/10 text-green-500' },
-    { label: 'Suspended', value: users.filter((u: any) => u.status === 'SUSPENDED').length, color: 'bg-red-500/10 text-red-500' },
+    { label: 'Total', value: processedUsers.length, color: 'bg-blue-500/10 text-blue-500' },
+    { label: 'Active', value: processedUsers.filter((u: any) => u.status === 'ACTIVE').length, color: 'bg-green-500/10 text-green-500' },
+    { label: 'Suspended', value: processedUsers.filter((u: any) => u.status === 'SUSPENDED').length, color: 'bg-red-500/10 text-red-500' },
   ]
 
   return (
@@ -27,7 +52,7 @@ export default async function AdminUsersPage() {
         </div>
       </div>
       <div className="premium-card p-6">
-        <UsersTable users={JSON.parse(JSON.stringify(users))} />
+        <UsersTable users={JSON.parse(JSON.stringify(processedUsers))} />
       </div>
     </div>
   )

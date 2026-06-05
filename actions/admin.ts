@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
+import { syncWalletMainBalance, deductFromWallets } from './walletUtils'
 
 // ── User Management ───────────────────────────────────────────────────────────
 export async function toggleUserStatus(userId: string): Promise<ApiResponse> {
@@ -60,10 +61,10 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
           where: { id: depositId },
           data: { status: 'APPROVED', approvedById: admin.id, remarks },
         }),
-        // Update user wallet with total increment (deposit + yield bonus)
+        // Update user wallet with total increment (deposit + yield bonus) - goes to Deposit Wallet
         prisma.wallet.update({
           where: { userId: deposit.userId },
-          data: { mainBalance: { increment: totalIncrement } },
+          data: { depositBalance: { increment: totalIncrement } },
         }),
         // Create transaction record for deposit
         prisma.transaction.create({
@@ -74,6 +75,7 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
             status: 'COMPLETED',
             description: `Deposit via ${deposit.method} approved`,
             reference: deposit.utrNumber || depositId,
+            walletType: 'MAIN',
           },
         }),
         // Notification
@@ -98,6 +100,7 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
               status: 'COMPLETED',
               description: `${user?.membershipPlan?.name || 'Membership'} +${user?.membershipPlan?.depositBonus || 0}% Deposit Yield Bonus`,
               reference: deposit.utrNumber || depositId,
+              walletType: 'MAIN',
             },
           })
         )
@@ -134,26 +137,31 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
           
           if (percentage > 0) {
             const commissionAmount = (depositAmount * percentage) / 100
+            const balanceField = level === 1 ? 'referralBalance' : 'levelBalance'
+            const walletEnum = level === 1 ? 'REFERRAL' : 'LEVEL'
+            const txType = level === 1 ? 'REFERRAL_BONUS' : 'LEVEL_INCOME'
             
             // 1. Credit referrer's wallet
             dbOps.push(
               prisma.wallet.update({
                 where: { userId: referrer.id },
-                data: { referralBalance: { increment: commissionAmount } }
+                data: { [balanceField]: { increment: commissionAmount } }
               })
             )
             
-            // 2. Create transaction record for referral bonus
+            // 2. Create transaction record
             dbOps.push(
               prisma.transaction.create({
                 data: {
                   userId: referrer.id,
-                  type: 'REFERRAL_BONUS',
+                  type: txType,
                   amount: commissionAmount,
                   status: 'COMPLETED',
                   reference: deposit.utrNumber || depositId,
-                  description: `Level ${level} referral commission from ${user.name}'s deposit`,
-                  walletType: 'REFERRAL'
+                  description: level === 1 
+                    ? `Level ${level} referral commission from ${user.name}'s deposit`
+                    : `Level ${level} level income from ${user.name}'s deposit`,
+                  walletType: walletEnum
                 }
               })
             )
@@ -163,8 +171,8 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
               prisma.notification.create({
                 data: {
                   userId: referrer.id,
-                  title: 'Referral Commission Received 👥',
-                  message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} referral commission from ${user.name}'s deposit.`,
+                  title: level === 1 ? 'Referral Commission Received 👥' : 'Level Income Received 📈',
+                  message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} ${level === 1 ? 'referral commission' : 'level income'} from ${user.name}'s deposit.`,
                   type: 'SUCCESS'
                 }
               })
@@ -204,8 +212,12 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
 
       await prisma.$transaction(dbOps)
 
-      // Run Badges & TL Rank check for each referrer who got a commission
+      // Sync main balance for user who deposited
+      await syncWalletMainBalance(prisma, deposit.userId)
+
+      // Run Badges, TL Rank check, and sync main balance for each referrer
       for (const update of referralUpdates) {
+        await syncWalletMainBalance(prisma, update.referrerId)
         try {
           const { checkAndApplyPerformanceBadges, checkAndApplyTLRank } = require('./rules')
           await checkAndApplyPerformanceBadges(update.referrerId)
@@ -268,6 +280,9 @@ export async function handleWithdrawal(withdrawalId: string, action: 'APPROVE' |
         },
       })
     } else {
+      const balanceField = withdrawal.walletType === 'MAIN' ? 'rewardBalance'
+        : withdrawal.walletType === 'BONUS' ? 'bonusBalance' : 'referralBalance'
+
       await prisma.$transaction([
         // Reject withdrawal
         prisma.withdrawal.update({
@@ -277,7 +292,7 @@ export async function handleWithdrawal(withdrawalId: string, action: 'APPROVE' |
         // Refund to wallet
         prisma.wallet.update({
           where: { userId: withdrawal.userId },
-          data: { mainBalance: { increment: withdrawal.amount } },
+          data: { [balanceField]: { increment: withdrawal.amount } },
         }),
         // Notification
         prisma.notification.create({
@@ -289,6 +304,7 @@ export async function handleWithdrawal(withdrawalId: string, action: 'APPROVE' |
           },
         }),
       ])
+      await syncWalletMainBalance(prisma, withdrawal.userId)
     }
 
     revalidatePath('/admin/dashboard/withdrawals')
@@ -482,69 +498,122 @@ export async function adjustUserBalanceAction(
     const wallet = await prisma.wallet.findUnique({ where: { userId } })
     if (!wallet) return { success: false, message: 'Wallet not found' }
 
-    let field: keyof typeof wallet
-    let txType: any = 'BONUS'
+    if (walletType === 'MAIN') {
+      if (operation === 'SUBTRACT' && wallet.mainBalance < amount) {
+        return { success: false, message: `Insufficient balance in MAIN wallet (Current: ₹${wallet.mainBalance})` }
+      }
 
-    switch (walletType) {
-      case 'MAIN':
-        field = 'mainBalance'
-        txType = operation === 'ADD' ? 'DEPOSIT' : 'WITHDRAWAL'
-        break
-      case 'BONUS':
-        field = 'bonusBalance'
-        txType = 'BONUS'
-        break
-      case 'REFERRAL':
-        field = 'referralBalance'
-        txType = 'REFERRAL_BONUS'
-        break
-      case 'LEVEL':
-        field = 'levelBalance'
-        txType = 'LEVEL_INCOME'
-        break
-      case 'REWARD':
-        field = 'rewardBalance'
-        txType = 'REWARD'
-        break
-      case 'SHARE':
-        field = 'shareBalance'
-        txType = 'SHARE_BONUS'
-        break
-      default:
-        return { success: false, message: 'Invalid wallet type' }
+      if (operation === 'ADD') {
+        await prisma.$transaction([
+          prisma.wallet.update({
+            where: { userId },
+            data: { depositBalance: { increment: amount } },
+          }),
+          prisma.transaction.create({
+            data: {
+              userId,
+              type: 'DEPOSIT',
+              amount,
+              status: 'COMPLETED',
+              description: `Admin manual addition of ₹${amount} to MAIN wallet`,
+              walletType: 'MAIN',
+            },
+          }),
+          prisma.notification.create({
+            data: {
+              userId,
+              title: `Wallet Adjusted 💼`,
+              message: `Admin has manually added ₹${amount.toLocaleString('en-IN')} to your Main wallet.`,
+              type: 'SUCCESS',
+            },
+          }),
+        ])
+        await syncWalletMainBalance(prisma, userId)
+      } else {
+        await prisma.$transaction(async (tx) => {
+          await deductFromWallets(tx, userId, amount)
+          await tx.transaction.create({
+            data: {
+              userId,
+              type: 'WITHDRAWAL',
+              amount,
+              status: 'COMPLETED',
+              description: `Admin manual deduction of ₹${amount} from MAIN wallet`,
+              walletType: 'MAIN',
+            },
+          })
+          await tx.notification.create({
+            data: {
+              userId,
+              title: `Wallet Adjusted 💼`,
+              message: `Admin has manually deducted ₹${amount.toLocaleString('en-IN')} from your Main wallet.`,
+              type: 'WARNING',
+            },
+          })
+        })
+      }
+    } else {
+      let field: keyof typeof wallet
+      let txType: any = 'BONUS'
+
+      switch (walletType) {
+        case 'BONUS':
+          field = 'bonusBalance'
+          txType = 'BONUS'
+          break
+        case 'REFERRAL':
+          field = 'referralBalance'
+          txType = 'REFERRAL_BONUS'
+          break
+        case 'LEVEL':
+          field = 'levelBalance'
+          txType = 'LEVEL_INCOME'
+          break
+        case 'REWARD':
+          field = 'rewardBalance'
+          txType = 'REWARD'
+          break
+        case 'SHARE':
+          field = 'shareBalance'
+          txType = 'SHARE_BONUS'
+          break
+        default:
+          return { success: false, message: 'Invalid wallet type' }
+      }
+
+      const currentVal = wallet[field] as number
+      if (operation === 'SUBTRACT' && currentVal < amount) {
+        return { success: false, message: `Insufficient balance in ${walletType} wallet (Current: ₹${currentVal})` }
+      }
+
+      const delta = operation === 'ADD' ? amount : -amount
+
+      await prisma.$transaction([
+        prisma.wallet.update({
+          where: { userId },
+          data: { [field]: { increment: delta } },
+        }),
+        prisma.transaction.create({
+          data: {
+            userId,
+            type: txType,
+            amount,
+            status: 'COMPLETED',
+            description: `Admin manual ${operation === 'ADD' ? 'addition' : 'deduction'} of ₹${amount} to ${walletType} wallet`,
+            walletType: walletType as any,
+          },
+        }),
+        prisma.notification.create({
+          data: {
+            userId,
+            title: `Wallet Adjusted 💼`,
+            message: `Admin has manually ${operation === 'ADD' ? 'added' : 'deducted'} ₹${amount.toLocaleString('en-IN')} ${operation === 'ADD' ? 'to' : 'from'} your ${walletType} wallet.`,
+            type: operation === 'ADD' ? 'SUCCESS' : 'WARNING',
+          },
+        }),
+      ])
+      await syncWalletMainBalance(prisma, userId)
     }
-
-    const currentVal = wallet[field] as number
-    if (operation === 'SUBTRACT' && currentVal < amount) {
-      return { success: false, message: `Insufficient balance in ${walletType} wallet (Current: ₹${currentVal})` }
-    }
-
-    const delta = operation === 'ADD' ? amount : -amount
-
-    await prisma.$transaction([
-      prisma.wallet.update({
-        where: { userId },
-        data: { [field]: { increment: delta } },
-      }),
-      prisma.transaction.create({
-        data: {
-          userId,
-          type: txType,
-          amount,
-          status: 'COMPLETED',
-          description: `Admin manual ${operation === 'ADD' ? 'addition' : 'deduction'} of ₹${amount} to ${walletType} wallet`,
-          walletType: walletType as any,
-        },
-      }),
-      prisma.notification.create({
-        data: {
-          userId,
-          title: `Wallet Adjusted 💼`,
-          message: `Admin has manually ${operation === 'ADD' ? 'added' : 'deducted'} ₹${amount.toLocaleString('en-IN')} ${operation === 'ADD' ? 'to' : 'from'} your ${walletType} wallet.`,
-          type: operation === 'ADD' ? 'SUCCESS' : 'WARNING',
-        },
-      }),
-    ])
 
     // Trigger promotions check if REFERRAL wallet got incremented
     if (walletType === 'REFERRAL' && operation === 'ADD') {
@@ -696,12 +765,13 @@ export async function sendAdminBonusAction(
 
     if (!user) return { success: false, message: 'User not found with email: ' + userEmail }
 
-    let field: 'mainBalance' | 'bonusBalance' | 'referralBalance' | 'rewardBalance' | 'levelBalance' | 'shareBalance'
+    let field: 'bonusBalance' | 'referralBalance' | 'rewardBalance' | 'levelBalance' | 'shareBalance' | 'depositBalance'
     let walletType: 'MAIN' | 'BONUS' | 'REFERRAL' | 'LEVEL' | 'REWARD' | 'SHARE'
 
     switch (walletName) {
       case 'Main Wallet':
-        field = 'mainBalance'
+      case 'Deposit Wallet':
+        field = 'depositBalance' // Credit to Deposit Wallet as the active component of Main
         walletType = 'MAIN'
         break
       case 'Referral Wallet':
@@ -720,20 +790,17 @@ export async function sendAdminBonusAction(
         field = 'bonusBalance'
         walletType = 'BONUS'
         break
+      case 'Share Wallet':
+        field = 'shareBalance'
+        walletType = 'SHARE'
+        break
+      case 'Level Wallet':
+      case 'Level Income Wallet':
+        field = 'levelBalance'
+        walletType = 'LEVEL'
+        break
       default:
         return { success: false, message: 'Invalid wallet selection: ' + walletName }
-    }
-
-    let actualWalletType = walletType
-    let actualField = field
-    let isFreeRestricted = false
-
-    if (user.memberType === 'FREE') {
-      actualWalletType = 'MAIN'
-      actualField = 'mainBalance'
-      if (walletType !== 'MAIN') {
-        isFreeRestricted = true
-      }
     }
 
     const metadata = {
@@ -741,7 +808,7 @@ export async function sendAdminBonusAction(
       userEmail: user.email,
       walletName: walletName,
       remark: remark,
-      freeRestricted: isFreeRestricted
+      freeRestricted: false
     }
 
     await prisma.$transaction(async (tx) => {
@@ -756,7 +823,7 @@ export async function sendAdminBonusAction(
       // Increment balance
       await tx.wallet.update({
         where: { userId: user.id },
-        data: { [actualField]: { increment: amount } }
+        data: { [field]: { increment: amount } }
       })
 
       // Create transaction log
@@ -766,7 +833,7 @@ export async function sendAdminBonusAction(
           type: 'BONUS',
           amount: amount,
           status: 'COMPLETED',
-          walletType: actualWalletType,
+          walletType: walletType,
           description: remark,
           reference: 'ADMIN_BONUS:' + JSON.stringify(metadata)
         }
@@ -777,13 +844,16 @@ export async function sendAdminBonusAction(
         data: {
           userId: user.id,
           title: 'Bonus Received! 🎁',
-          message: `You have received a bonus of ₹${amount.toLocaleString('en-IN')} to your ${actualWalletType === 'MAIN' ? 'Main' : actualWalletType.toLowerCase()} wallet. Remark: ${remark}`,
+          message: `You have received a bonus of ₹${amount.toLocaleString('en-IN')} to your ${walletType === 'MAIN' ? 'Main' : walletType.toLowerCase()} wallet. Remark: ${remark}`,
           type: 'SUCCESS'
         }
       })
+
+      // Sync Main balance
+      await syncWalletMainBalance(tx, user.id)
     })
 
-    if (actualWalletType === 'REFERRAL') {
+    if (walletType === 'REFERRAL') {
       try {
         const { checkAndApplyPerformanceBadges, checkAndApplyTLRank } = require('./rules')
         await checkAndApplyPerformanceBadges(user.id)

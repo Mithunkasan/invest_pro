@@ -524,6 +524,7 @@ export function WalletsTable({ data }: TableProps) {
       </div>
     )},
     { key: 'mainBalance', label: 'Main', render: (v: any) => <span className="font-bold text-xs">{formatCurrency(Number(v))}</span> },
+    { key: 'depositBalance', label: 'Deposit', render: (v: any) => <span className="text-blue-400 font-bold text-xs">{formatCurrency(Number(v))}</span> },
     { key: 'rewardBalance', label: 'Reward', render: (v: any) => <span className="text-amber-500 font-bold text-xs">{formatCurrency(Number(v))}</span> },
     { key: 'referralBalance', label: 'Referral', render: (v: any) => <span className="text-purple-500 font-bold text-xs">{formatCurrency(Number(v))}</span> },
     { key: 'levelBalance', label: 'Level', render: (v: any) => <span className="text-emerald-500 font-bold text-xs">{formatCurrency(Number(v))}</span> },

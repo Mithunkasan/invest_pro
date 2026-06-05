@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { syncWalletMainBalance } from './walletUtils'
 
 // ── Check and Apply Performance Badges ─────────────────────────────────────────
 export async function checkAndApplyPerformanceBadges(userId: string) {
@@ -205,6 +206,7 @@ export async function distributeReferralAndLevelCommissions(
       .filter(p => !isNaN(p))
 
     let currentReferrerId: string | null = investor.referredById
+    const referralUpdates: { referrerId: string; amount: number; level: number }[] = []
 
     for (let index = 0; index < levelPercentages.length; index++) {
       if (!currentReferrerId) break
@@ -220,31 +222,36 @@ export async function distributeReferralAndLevelCommissions(
 
       if (percentage > 0) {
         const commissionAmount = (investmentAmount * percentage) / 100
+        const balanceField = level === 1 ? 'referralBalance' : 'levelBalance'
+        const walletEnum = level === 1 ? 'REFERRAL' : 'LEVEL'
+        const txType = level === 1 ? 'REFERRAL_BONUS' : 'LEVEL_INCOME'
 
         await prisma.$transaction([
-          // Credit the commission to the referrer's referral balance
+          // Credit the commission to the referrer's balance
           prisma.wallet.update({
             where: { userId: referrer.id },
-            data: { referralBalance: { increment: commissionAmount } }
+            data: { [balanceField]: { increment: commissionAmount } }
           }),
-          // Create a transaction record with type REFERRAL_BONUS and walletType REFERRAL
+          // Create a transaction record
           prisma.transaction.create({
             data: {
               userId: referrer.id,
-              type: 'REFERRAL_BONUS',
+              type: txType,
               amount: commissionAmount,
               status: 'COMPLETED',
               reference: investmentId,
-              description: `Level ${level} referral commission from ${investor.name}'s investment`,
-              walletType: 'REFERRAL'
+              description: level === 1
+                ? `Level ${level} referral commission from ${investor.name}'s investment`
+                : `Level ${level} level income from ${investor.name}'s investment`,
+              walletType: walletEnum
             }
           }),
           // Create user notification
           prisma.notification.create({
             data: {
               userId: referrer.id,
-              title: 'Referral Commission Received 👥',
-              message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} referral commission from ${investor.name}'s investment.`,
+              title: level === 1 ? 'Referral Commission Received 👥' : 'Level Income Received 📈',
+              message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} ${level === 1 ? 'referral commission' : 'level income'} from ${investor.name}'s investment.`,
               type: 'SUCCESS'
             }
           })
@@ -270,13 +277,18 @@ export async function distributeReferralAndLevelCommissions(
           })
         }
 
-        // Run Badges & TL Rank check for this referrer
-        await checkAndApplyPerformanceBadges(referrer.id)
-        await checkAndApplyTLRank(referrer.id)
+        referralUpdates.push({ referrerId: referrer.id, amount: commissionAmount, level })
       }
 
       // Move to the next parent referrer in the chain
       currentReferrerId = referrer.referredById
+    }
+
+    // Sync main balances and run badge checks for all referrers who got commissions
+    for (const update of referralUpdates) {
+      await syncWalletMainBalance(prisma, update.referrerId)
+      await checkAndApplyPerformanceBadges(update.referrerId)
+      await checkAndApplyTLRank(update.referrerId)
     }
   } catch (error) {
     console.error('Error distributing referral commissions:', error)
