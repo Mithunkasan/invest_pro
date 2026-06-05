@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   if (!session) redirect('/login')
 
   // Fetch all dashboard data in parallel
-  const [wallet, investments, transactions, notifications, chartTxns] = await Promise.all([
+  const [wallet, investments, transactions, notifications, chartTxns, dbAdminBonuses] = await Promise.all([
     prisma.wallet.findUnique({ where: { userId: session.id } }),
     prisma.investment.findMany({
       where: { userId: session.id, status: 'ACTIVE' },
@@ -37,6 +37,16 @@ export default async function DashboardPage() {
         createdAt: { gte: new Date(new Date().getFullYear(), 0, 1) } 
       },
       select: { type: true, amount: true, createdAt: true }
+    }),
+    prisma.transaction.findMany({
+      where: {
+        userId: session.id,
+        type: 'BONUS',
+        reference: {
+          startsWith: 'ADMIN_BONUS:'
+        }
+      },
+      orderBy: { createdAt: 'desc' }
     })
   ])
 
@@ -84,9 +94,34 @@ export default async function DashboardPage() {
     }
   })
 
+  const adminBonuses = dbAdminBonuses.map(txn => {
+    let details = { sentBy: 'Admin', walletName: txn.walletType + ' Wallet', remark: txn.description || '' }
+    if (txn.reference) {
+      try {
+        const jsonStr = txn.reference.replace('ADMIN_BONUS:', '')
+        const parsed = JSON.parse(jsonStr)
+        details.sentBy = parsed.sentBy || 'Admin'
+        details.walletName = parsed.walletName || (txn.walletType + ' Wallet')
+        details.remark = parsed.remark || txn.description || ''
+      } catch (e) {
+        console.error("Failed to parse admin bonus metadata:", e)
+      }
+    }
+    return {
+      id: txn.id,
+      amount: txn.amount,
+      createdAt: txn.createdAt.toISOString(),
+      walletName: details.walletName,
+      remark: details.remark,
+      sentBy: details.sentBy
+    }
+  })
+
   const stats = {
     totalInvestment: totalInvestment._sum.amount || 0,
-    currentBalance: (wallet?.mainBalance || 0) + (wallet?.bonusBalance || 0) + (wallet?.referralBalance || 0) + (wallet?.rewardBalance || 0) + (wallet?.levelBalance || 0) + (wallet?.shareBalance || 0),
+    currentBalance: dbUser?.memberType === 'FREE'
+      ? (wallet?.mainBalance || 0)
+      : (wallet?.mainBalance || 0) + (wallet?.bonusBalance || 0) + (wallet?.referralBalance || 0) + (wallet?.rewardBalance || 0) + (wallet?.levelBalance || 0) + (wallet?.shareBalance || 0),
     totalProfit: totalProfit._sum.profit || 0,
     referralIncome: referralIncome._sum.commission || 0,
     activePlans: investments.length,
@@ -98,6 +133,7 @@ export default async function DashboardPage() {
       <FreeDashboardOverview
         user={session}
         stats={stats}
+        adminBonuses={adminBonuses}
       />
     )
   }
@@ -118,6 +154,7 @@ export default async function DashboardPage() {
       investments={JSON.parse(JSON.stringify(investments))}
       transactions={JSON.parse(JSON.stringify(transactions))}
       chartData={chartData}
+      adminBonuses={adminBonuses}
     />
   )
 }

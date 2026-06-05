@@ -13,6 +13,12 @@ export default async function WalletPage() {
   const session = await getSession()
   if (!session) redirect('/login')
 
+  const user = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: { memberType: true }
+  })
+  const isFree = user?.memberType === 'FREE'
+
   const wallet = await prisma.wallet.findUnique({ where: { userId: session.id } })
   const recentTxns = await prisma.transaction.findMany({
     where: { userId: session.id },
@@ -20,7 +26,9 @@ export default async function WalletPage() {
     take: 5,
   })
 
-  const total = (wallet?.mainBalance || 0) + (wallet?.bonusBalance || 0) + (wallet?.referralBalance || 0) + (wallet?.rewardBalance || 0) + (wallet?.levelBalance || 0) + (wallet?.shareBalance || 0)
+  const total = isFree
+    ? (wallet?.mainBalance || 0)
+    : (wallet?.mainBalance || 0) + (wallet?.bonusBalance || 0) + (wallet?.referralBalance || 0) + (wallet?.rewardBalance || 0) + (wallet?.levelBalance || 0) + (wallet?.shareBalance || 0)
 
   return (
     <div className="space-y-6">
@@ -31,7 +39,7 @@ export default async function WalletPage() {
         <p className="text-white/60 text-sm">Total Balance</p>
         <p className="text-4xl font-black text-white mt-1">{formatCurrency(total)}</p>
         <div className="flex gap-3 mt-4">
-          <Link href="/dashboard/deposit"><Button size="sm" variant="glass">+ Deposit</Button></Link>
+          {!isFree && <Link href="/dashboard/deposit"><Button size="sm" variant="glass">+ Deposit</Button></Link>}
           <Link href="/dashboard/withdraw"><Button size="sm" variant="glass">↑ Withdraw</Button></Link>
         </div>
       </div>
@@ -39,13 +47,13 @@ export default async function WalletPage() {
       {/* Wallet Breakdown */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: 'Main Wallet', value: wallet?.mainBalance || 0, icon: Wallet, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Available for withdrawal and investment' },
-          { label: 'Reward Wallet', value: wallet?.rewardBalance || 0, icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-500/10', desc: 'Rewards managed by admin' },
-          { label: 'Referral Wallet', value: wallet?.referralBalance || 0, icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Commission from direct referrals' },
-          { label: 'Level Wallet', value: wallet?.levelBalance || 0, icon: ArrowDownToLine, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Commission from multi-level referrals' },
-          { label: 'Share Wallet', value: wallet?.shareBalance || 0, icon: TrendingUp, color: 'text-cyan-500', bg: 'bg-cyan-500/10', desc: 'Income as active member TL Rank' },
-          { label: 'Bonus Wallet', value: wallet?.bonusBalance || 0, icon: Wallet, color: 'text-orange-500', bg: 'bg-orange-500/10', desc: 'Platform bonus credits' },
-        ].map((w) => (
+          { label: 'Main Wallet', value: wallet?.mainBalance || 0, icon: Wallet, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Available for withdrawal and investment', show: true },
+          { label: 'Reward Wallet', value: wallet?.rewardBalance || 0, icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-500/10', desc: 'Rewards managed by admin', show: !isFree },
+          { label: 'Referral Wallet', value: wallet?.referralBalance || 0, icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Commission from direct referrals', show: !isFree },
+          { label: 'Level Wallet', value: wallet?.levelBalance || 0, icon: ArrowDownToLine, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Commission from multi-level referrals', show: !isFree },
+          { label: 'Share Wallet', value: wallet?.shareBalance || 0, icon: TrendingUp, color: 'text-cyan-500', bg: 'bg-cyan-500/10', desc: 'Income as active member TL Rank', show: !isFree },
+          { label: 'Bonus Wallet', value: wallet?.bonusBalance || 0, icon: Wallet, color: 'text-orange-500', bg: 'bg-orange-500/10', desc: 'Platform bonus credits', show: !isFree },
+        ].filter(w => w.show).map((w) => (
           <div key={w.label} className="premium-card p-5">
             <div className={`w-10 h-10 rounded-xl ${w.bg} flex items-center justify-center mb-3`}>
               <w.icon className={`w-5 h-5 ${w.color}`} />
