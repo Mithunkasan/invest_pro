@@ -15,7 +15,7 @@ import { logoutAction } from '@/actions/auth'
 
 interface DashboardNavbarProps {
   onMenuClick: () => void
-  user: { name: string; email: string }
+  user: { name: string; email: string; profilePictureUrl?: string | null }
   notificationCount?: number
 }
 
@@ -72,9 +72,13 @@ export function DashboardNavbar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-accent transition-colors">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
-                {initials}
-              </div>
+              {user.profilePictureUrl ? (
+                <img src={user.profilePictureUrl} alt={user.name} className="w-8 h-8 rounded-full object-cover border border-white/10" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+                  {initials}
+                </div>
+              )}
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium leading-tight">{user.name}</p>
                 <p className="text-xs text-muted-foreground">{user.email}</p>
