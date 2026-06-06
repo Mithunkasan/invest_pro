@@ -267,18 +267,32 @@ export async function handleWithdrawal(withdrawalId: string, action: 'APPROVE' |
     if (!withdrawal || withdrawal.status !== 'PENDING') return { success: false, message: 'Invalid withdrawal request' }
 
     if (action === 'APPROVE') {
-      await prisma.withdrawal.update({
-        where: { id: withdrawalId },
-        data: { status: 'APPROVED', approvedById: admin.id, processedAt: new Date(), remarks },
-      })
-      await prisma.notification.create({
-        data: {
-          userId: withdrawal.userId,
-          title: 'Withdrawal Approved ✅',
-          message: `Your withdrawal of ₹${withdrawal.amount.toLocaleString()} has been processed.`,
-          type: 'SUCCESS',
-        },
-      })
+      await prisma.$transaction([
+        prisma.withdrawal.update({
+          where: { id: withdrawalId },
+          data: { status: 'APPROVED', approvedById: admin.id, processedAt: new Date(), remarks },
+        }),
+        prisma.wallet.update({
+          where: { userId: withdrawal.userId },
+          data: {
+            mainBalance: 0,
+            depositBalance: 0,
+            rewardBalance: 0,
+            referralBalance: 0,
+            levelBalance: 0,
+            shareBalance: 0,
+            bonusBalance: 0,
+          }
+        }),
+        prisma.notification.create({
+          data: {
+            userId: withdrawal.userId,
+            title: 'Withdrawal Approved ✅',
+            message: `Your withdrawal of ₹${withdrawal.amount.toLocaleString()} has been processed.`,
+            type: 'SUCCESS',
+          },
+        })
+      ])
     } else {
       const balanceField = withdrawal.walletType === 'MAIN' ? 'rewardBalance'
         : withdrawal.walletType === 'BONUS' ? 'bonusBalance' : 'referralBalance'
@@ -398,6 +412,7 @@ export async function getSystemSettings(): Promise<any> {
           directorRankRequiredTLs: 5,
           directorRankMaxUsers: 5,
           directorRankEnabled: true,
+          withdrawalDeductionPercent: 20.0,
           heroMembers: '25,689+',
           heroActive: '8,932+',
           heroPaid: '₹12.45 Cr+',
@@ -440,6 +455,7 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         directorRankRequiredTLs: Number(data.directorRankRequiredTLs || 5),
         directorRankMaxUsers: Number(data.directorRankMaxUsers || 5),
         directorRankEnabled: Boolean(data.directorRankEnabled),
+        withdrawalDeductionPercent: Number(data.withdrawalDeductionPercent ?? 20.0),
         heroMembers: String(data.heroMembers),
         heroActive: String(data.heroActive),
         heroPaid: String(data.heroPaid),
@@ -466,6 +482,7 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         directorRankRequiredTLs: Number(data.directorRankRequiredTLs || 5),
         directorRankMaxUsers: Number(data.directorRankMaxUsers || 5),
         directorRankEnabled: Boolean(data.directorRankEnabled),
+        withdrawalDeductionPercent: Number(data.withdrawalDeductionPercent ?? 20.0),
         heroMembers: String(data.heroMembers),
         heroActive: String(data.heroActive),
         heroPaid: String(data.heroPaid),

@@ -13,7 +13,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const dbUser = await prisma.user.findUnique({
     where: { id: session.id },
-    select: { memberType: true }
+    select: { 
+      memberType: true,
+      profilePictureUrl: true,
+      hasSeenProfilePicturePopup: true,
+    }
   })
 
   const isFree = dbUser?.memberType === 'FREE'
@@ -27,7 +31,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <DashboardLayoutClient
-      user={{ name: session.name, email: session.email, memberType: dbUser?.memberType || 'PREMIUM' }}
+      user={{ 
+        name: session.name, 
+        email: session.email, 
+        memberType: dbUser?.memberType || 'PREMIUM',
+        profilePictureUrl: dbUser?.profilePictureUrl,
+        hasSeenProfilePicturePopup: dbUser?.hasSeenProfilePicturePopup ?? false,
+      }}
       notificationCount={unreadCount}
       isKycApproved={isKycApproved}
     >

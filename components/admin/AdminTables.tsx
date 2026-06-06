@@ -310,7 +310,16 @@ export function WithdrawalsTable({ data }: TableProps) {
         <p className="text-xs text-muted-foreground">{row.user.email}</p>
       </div>
     )},
-    { key: 'amount', label: 'Amount', sortable: true, render: (v: any) => <span className="font-semibold">{formatCurrency(Number(v))}</span> },
+    { key: 'amount', label: 'Amount', sortable: true, render: (v: any, row: any) => (
+      <div>
+        <p className="font-semibold text-sm">{formatCurrency(Number(v))}</p>
+        {row.deduction > 0 && (
+          <p className="text-[10px] text-muted-foreground mt-0.5 whitespace-nowrap">
+            Net: <span className="text-green-500 font-bold">{formatCurrency(row.netAmount)}</span> (deducted {formatCurrency(row.deduction)})
+          </p>
+        )}
+      </div>
+    )},
     { key: 'bankDetails', label: 'Bank Details', render: (_: any, row: any) => (
       <div className="text-[10px] leading-tight">
         <p className="font-bold">{row.bankDetails.bankName}</p>

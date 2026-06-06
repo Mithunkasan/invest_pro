@@ -375,3 +375,98 @@ export async function buyMembershipPlanAction(planId: string): Promise<ApiRespon
     return { success: false, message: 'Failed to process upgrade' }
   }
 }
+
+// ── Upload Profile Picture to Cloudinary ───────────────────────────────────────
+export async function uploadProfilePictureAction(formData: FormData): Promise<ApiResponse<{ profilePictureUrl: string }>> {
+  const session = await getSession()
+  if (!session) return { success: false, message: 'Unauthorized' }
+
+  const file = formData.get('profilePic') as File | null
+  if (!file || file.size === 0) {
+    return { success: false, message: 'No file uploaded' }
+  }
+
+  try {
+    let profilePictureUrl = ''
+
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.replace(/['"]/g, '')
+    const apiKey = process.env.CLOUDINARY_API_KEY?.replace(/['"]/g, '')
+    const apiSecret = process.env.CLOUDINARY_API_SECRET?.replace(/['"]/g, '')
+
+    const isPlaceholder = (val: string | undefined) => {
+      if (!val) return true
+      const clean = val.trim().toLowerCase()
+      return (
+        clean.includes('your_') || 
+        clean.includes('placeholder') || 
+        clean.includes('***') || 
+        clean === ''
+      )
+    }
+
+    const isCloudinaryConfigured = 
+      cloudName && !isPlaceholder(cloudName) &&
+      apiKey && !isPlaceholder(apiKey) &&
+      apiSecret && !isPlaceholder(apiSecret)
+
+    if (isCloudinaryConfigured) {
+      try {
+        const fileBuffer = Buffer.from(await file.arrayBuffer())
+        profilePictureUrl = await uploadToCloudinary(fileBuffer, `profile_${session.id}`)
+      } catch (err) {
+        console.error('Cloudinary upload failed for profile pic, falling back:', err)
+      }
+    }
+
+    // Fallback if Cloudinary is not configured or failed
+    if (!profilePictureUrl) {
+      try {
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads')
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true })
+        }
+        const ext = path.extname(file.name) || '.png'
+        const fileName = `profile_${session.id}_${Date.now()}${ext}`
+        const filePath = path.join(uploadDir, fileName)
+        const fileBuffer = Buffer.from(await file.arrayBuffer())
+        await fs.promises.writeFile(filePath, fileBuffer)
+        profilePictureUrl = `/uploads/${fileName}`
+      } catch (writeError) {
+        console.warn('Local filesystem write failed. Falling back to data url:', writeError)
+        const fileBuffer = Buffer.from(await file.arrayBuffer())
+        const base64 = fileBuffer.toString('base64')
+        profilePictureUrl = `data:${file.type || 'image/png'};base64,${base64}`
+      }
+    }
+
+    // Update user in database
+    await prisma.user.update({
+      where: { id: session.id },
+      data: { profilePictureUrl }
+    })
+
+    revalidatePath('/dashboard/profile')
+    revalidatePath('/dashboard')
+    
+    return { success: true, message: 'Profile picture uploaded successfully', data: { profilePictureUrl } }
+  } catch (error: any) {
+    console.error('Error uploading profile picture:', error)
+    return { success: false, message: error.message || 'Failed to upload profile picture' }
+  }
+}
+
+// ── Mark First-Time Profile Picture Popup As Seen ──────────────────────────────
+export async function markProfilePicturePopupAsSeenAction(): Promise<ApiResponse> {
+  const session = await getSession()
+  if (!session) return { success: false, message: 'Unauthorized' }
+
+  try {
+    await prisma.user.update({
+      where: { id: session.id },
+      data: { hasSeenProfilePicturePopup: true }
+    })
+    return { success: true, message: 'Flag updated successfully' }
+  } catch (e) {
+    return { success: false, message: 'Failed to update flag' }
+  }
+}

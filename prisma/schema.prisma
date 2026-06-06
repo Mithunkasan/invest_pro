@@ -19,6 +19,8 @@ model User {
   email        String   @unique
   phone        String?  @unique
   passwordHash String
+  profilePictureUrl         String?
+  hasSeenProfilePicturePopup Boolean @default(false)
   role         Role     @default(USER)
   status       UserStatus @default(ACTIVE)
   memberType   MemberType @default(PREMIUM)
@@ -208,6 +210,8 @@ model Withdrawal {
   id           String           @id @default(cuid())
   userId       String
   amount       Float
+  deduction    Float            @default(0.0)
+  netAmount    Float            @default(0.0)
   walletType   WalletType       @default(MAIN)
   status       WithdrawalStatus @default(PENDING)
   bankDetails  Json             // { bankName, accountNo, ifsc, accountName }
@@ -405,6 +409,7 @@ model SystemSettings {
   directorRankRequiredTLs Int      @default(5)
   directorRankMaxUsers    Int      @default(5)
   directorRankEnabled     Boolean  @default(true)
+  withdrawalDeductionPercent Float   @default(20.0)
   heroMembers             String   @default("25,689+")
   heroActive              String   @default("8,932+")
   heroPaid                String   @default("₹12.45 Cr+")

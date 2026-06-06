@@ -1,35 +1,88 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, Check, Users, DollarSign } from 'lucide-react'
+import { Copy, Check, Users } from 'lucide-react'
 import { DataTable } from '@/components/dashboard/DataTable'
 import { formatCurrency, formatDate, generateReferralLink } from '@/utils/formatters'
 import { StatsCard } from './StatsCard'
 
+interface TeamMember {
+  id: string
+  name: string
+  phone: string | null
+  level: number
+  totalEarning: number
+  walletBalance: number
+  rank: string
+}
+
 interface ReferralClientProps {
   referralCode: string
-  referrals: Array<{ id: string; commission: number; level: number; createdAt: string; referred: { name: string; email: string; createdAt: string } }>
-  totalCommission: number
+  team: TeamMember[]
   totalReferrals: number
   referralCommissionStructure: string
 }
 
 const cols = [
-  { key: 'referred', label: 'Member', render: (_: unknown, row: Record<string, unknown>) => {
-    const r = row.referred as { name: string; email: string }
-    return (
-      <div>
-        <p className="text-sm font-medium">{r.name}</p>
-        <p className="text-xs text-muted-foreground">{r.email}</p>
-      </div>
+  { 
+    key: 'name', 
+    label: 'Name', 
+    sortable: true, 
+    render: (v: unknown) => <span className="font-semibold text-white/95">{String(v)}</span> 
+  },
+  { 
+    key: 'level', 
+    label: 'Level', 
+    sortable: true, 
+    render: (v: unknown) => (
+      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md border shadow-sm ${
+        Number(v) === 1 
+          ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' 
+          : 'bg-zinc-800/50 text-zinc-400 border-zinc-700/30'
+      }`}>
+        {Number(v) === 1 ? 'Direct (L1)' : `Indirect (L${v})`}
+      </span>
     )
-  }},
-  { key: 'commission', label: 'Commission Earned', render: (v: unknown) => <span className="text-green-500 font-semibold">{formatCurrency(Number(v))}</span> },
-  { key: 'level', label: 'Level', render: (v: unknown) => <span className="text-xs">Level {String(v)}</span> },
-  { key: 'createdAt', label: 'Joined', render: (v: unknown) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
+  },
+  { 
+    key: 'phone', 
+    label: 'Mobile No', 
+    render: (v: unknown, row: any) => (
+      <span className="font-mono text-xs text-white/80">{row.level === 1 ? String(v || '—') : '—'}</span>
+    )
+  },
+  { 
+    key: 'totalEarning', 
+    label: 'Total Earning', 
+    sortable: true, 
+    render: (v: unknown, row: any) => (
+      <span className="font-medium text-xs text-green-400">{row.level === 1 ? formatCurrency(Number(v)) : '—'}</span>
+    )
+  },
+  { 
+    key: 'walletBalance', 
+    label: 'Available Wallet', 
+    sortable: true, 
+    render: (v: unknown, row: any) => (
+      <span className="font-medium text-xs text-white/80">{row.level === 1 ? formatCurrency(Number(v)) : '—'}</span>
+    )
+  },
+  { 
+    key: 'rank', 
+    label: 'Rank', 
+    sortable: true, 
+    render: (v: unknown) => (
+      <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{String(v)}</span>
+    )
+  },
 ]
 
-export function ReferralClient({ referralCode, referrals, totalCommission, totalReferrals, referralCommissionStructure }: ReferralClientProps) {
+export function ReferralClient({ 
+  referralCode, 
+  team, 
+  totalReferrals, 
+  referralCommissionStructure 
+}: ReferralClientProps) {
   const referralLink = generateReferralLink(referralCode)
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -44,15 +97,20 @@ export function ReferralClient({ referralCode, referrals, totalCommission, total
       <h1 className="text-2xl font-bold">Referral Program</h1>
       <p className="text-muted-foreground text-sm">Earn up to 10% commission by referring friends and family.</p>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <StatsCard title="Total Referrals" value={totalReferrals} isCurrency={false} icon={<Users className="w-5 h-5 text-purple-500" />} iconBg="bg-purple-500/10" />
-        <StatsCard title="Total Earnings" value={totalCommission} icon={<DollarSign className="w-5 h-5 text-gold-500" />} iconBg="bg-gold-500/10" />
+      {/* Stats - Display only Total Referrals */}
+      <div className="grid grid-cols-1 max-w-sm gap-4">
+        <StatsCard 
+          title="Total Referrals" 
+          value={totalReferrals} 
+          isCurrency={false} 
+          icon={<Users className="w-5 h-5 text-purple-500" />} 
+          iconBg="bg-purple-500/10" 
+        />
       </div>
 
       {/* Share Links */}
       <div className="premium-card p-6 space-y-4">
-        <h2 className="font-semibold">Your Referral Details</h2>
+        <h2 className="font-semibold text-white/95">Your Referral Details</h2>
 
         <div>
           <label className="text-sm text-muted-foreground block mb-1.5">Referral Code</label>
@@ -89,7 +147,7 @@ export function ReferralClient({ referralCode, referrals, totalCommission, total
 
       {/* Commission Structure */}
       <div className="premium-card p-6">
-        <h2 className="font-semibold mb-4">Commission Structure</h2>
+        <h2 className="font-semibold mb-4 text-white/95">Commission Structure</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 text-center">
           {(referralCommissionStructure || '10,5,3')
             .split(',')
@@ -97,8 +155,8 @@ export function ReferralClient({ referralCode, referrals, totalCommission, total
             .filter(Boolean)
             .map((rate, idx) => (
               <div key={idx} className="p-3 rounded-xl bg-muted/50 border border-muted/30">
-                <p className="text-xs text-muted-foreground font-semibold">Level {idx + 1}</p>
-                <p className="text-2xl font-black text-primary my-1">{rate}%</p>
+                <p className="text-xs text-muted-foreground font-semibold font-mono">Level {idx + 1}</p>
+                <p className="text-2xl font-black text-primary my-1 font-mono">{rate}%</p>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
                   {idx === 0 ? 'Direct Referrals' : idx === 1 ? 'Indirect Upline' : 'Network Upline'}
                 </p>
@@ -107,10 +165,16 @@ export function ReferralClient({ referralCode, referrals, totalCommission, total
         </div>
       </div>
 
-      {/* Team Table */}
+      {/* My Team Section */}
       <div className="premium-card p-6">
-        <h2 className="font-semibold mb-4">My Team ({totalReferrals})</h2>
-        <DataTable data={referrals as unknown as Record<string, unknown>[]} columns={cols as Parameters<typeof DataTable>[0]['columns']} rowKey="id" searchPlaceholder="Search team..." emptyMessage="No referrals yet. Share your link to start earning!" />
+        <h2 className="font-semibold mb-4 text-white/95">My Team ({team.length})</h2>
+        <DataTable 
+          data={team as unknown as Record<string, unknown>[]} 
+          columns={cols as Parameters<typeof DataTable>[0]['columns']} 
+          rowKey="id" 
+          searchPlaceholder="Search team members..." 
+          emptyMessage="No team members yet. Share your referral link to build your team!" 
+        />
       </div>
     </div>
   )
