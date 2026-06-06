@@ -48,11 +48,13 @@ function RegisterForm() {
     <div className="glass-card p-8">
       {/* Logo */}
       <div className="text-center mb-6">
-        <Link href="/" className="inline-flex items-center gap-2 font-bold text-xl mb-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 flex items-center justify-center">
-            <TrendingUp className="w-5 h-5 text-white" />
+        <Link href="/" className="inline-flex items-center gap-2.5 font-black text-2xl mb-3 group">
+          <div className="w-11 h-11 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-115">
+            <img src="/logo3.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
           </div>
-          <span className="text-white text-2xl">InvestPro</span>
+          <span className="bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent font-black tracking-wider">
+            VR Galaxy
+          </span>
         </Link>
         <h1 className="text-2xl font-bold text-white mt-2">Create Account</h1>
         <p className="text-white/60 text-sm mt-1">Start your investment journey today</p>
