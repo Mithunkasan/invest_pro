@@ -224,9 +224,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
                     {t('liveStats')}
                   </span>
                 </div>
-
-                {/* Clean inline stats row matching the reference layout */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-5 gap-x-0 w-full">
+                <div className="grid grid-cols-2 sm:grid-cols-[auto_auto_auto_auto] gap-y-5 gap-x-0 w-full">
                   {[
                     { val: membersVal, label: t('stats.members') },
                     { val: activeVal,  label: t('stats.active') },
@@ -240,8 +238,8 @@ export function HeroSection({ stats }: HeroSectionProps) {
                       } sm:pl-6 sm:pr-6 sm:first:pl-0 sm:border-l-0 sm:border-r sm:border-white/10 sm:last:border-0`}
                     >
                       <span
-                        className="font-black text-white leading-none mb-1.5"
-                        style={{ fontSize: 'clamp(1.1rem, 2.2vw, 1.6rem)' }}
+                        className="font-black text-white leading-none mb-1.5 break-words"
+                        style={{ fontSize: 'clamp(1.0rem, 2.0vw, 1.45rem)' }}
                       >
                         {val}
                       </span>
@@ -255,7 +253,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
                   ))}
                 </div>
               </motion.div>
-
+ 
               {/* Mobile social icons */}
               <div className="flex items-center gap-4 mt-6 lg:hidden" aria-label="Social links">
                 {[
@@ -274,17 +272,27 @@ export function HeroSection({ stats }: HeroSectionProps) {
                 ))}
               </div>
             </div>
-
+ 
             {/* ── RIGHT COLUMN (Display shield.png) ── */}
             <div className="lg:col-span-6 flex justify-center items-center w-full min-w-0 relative z-30 mt-6 lg:mt-0">
-              <motion.img
-                src="/shield.png"
-                alt="Galaxy Shield"
+              <motion.div
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
-                className="w-full max-w-[450px] sm:max-w-[540px] lg:max-w-[580px] xl:max-w-[680px] h-auto object-contain drop-shadow-[0_0_75px_rgba(99,102,241,0.35)] select-none pointer-events-none"
-              />
+                className="w-full flex justify-center items-center"
+              >
+                <motion.img
+                  src="/shield.png"
+                  alt="Galaxy Shield"
+                  animate={{ y: [0, -12, 0] }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 6,
+                    ease: 'easeInOut'
+                  }}
+                  className="w-full max-w-[280px] sm:max-w-[340px] lg:max-w-[380px] xl:max-w-[460px] 2xl:max-w-[520px] h-auto object-contain drop-shadow-[0_0_75px_rgba(99,102,241,0.35)] select-none pointer-events-none transform-gpu"
+                />
+              </motion.div>
             </div>
 
           </div>
