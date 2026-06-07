@@ -16,11 +16,11 @@ interface Star {
 
 export function AnimatedGalaxyBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [scrollY, setScrollY] = useState(0)
+  const scrollYRef = useRef(0)
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrollY(window.scrollY)
+      scrollYRef.current = window.scrollY
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
@@ -88,7 +88,7 @@ export function AnimatedGalaxyBackground() {
         }
 
         // Parallax calculations (Scroll shifts stars upward based on depth)
-        let drawY = (star.y - scrollY * star.depth) % canvas.height
+        let drawY = (star.y - scrollYRef.current * star.depth) % canvas.height
         if (drawY < 0) drawY += canvas.height
 
         // Draw star
@@ -161,10 +161,10 @@ export function AnimatedGalaxyBackground() {
       window.removeEventListener('resize', resizeCanvas)
       cancelAnimationFrame(animationFrameId)
     }
-  }, [scrollY])
+  }, [])
 
   return (
-    <div className="absolute inset-0 pointer-events-none select-none overflow-hidden z-0 bg-[#020205]">
+    <div data-floating-background="galaxy" className="absolute inset-0 pointer-events-none select-none overflow-hidden z-0 bg-[#020205]">
       {/* ── Fixed Canvas for Twinkling Stars ── */}
       <canvas
         ref={canvasRef}

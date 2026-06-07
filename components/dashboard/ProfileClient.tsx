@@ -5,19 +5,29 @@ import { User, Lock, Shield, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDate } from '@/utils/formatters'
 import { logoutAction } from '@/actions/auth'
-import { uploadProfilePictureAction } from '@/actions/user'
+import { updateProfileAction, uploadProfilePictureAction } from '@/actions/user'
 
 interface ProfileClientProps {
   user: {
     id: string; name: string; email: string; phone: string | null
     status: string; createdAt: string; referralCode: string
     profilePictureUrl?: string | null
+    dateOfBirth?: string | null
+    addressLine?: string | null
+    city?: string | null
+    state?: string | null
+    pinCode?: string | null
   }
 }
 
 export function ProfileClient({ user }: ProfileClientProps) {
   const [name, setName] = useState(user.name)
   const [phone, setPhone] = useState(user.phone || '')
+  const [dateOfBirth, setDateOfBirth] = useState(user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : '')
+  const [addressLine, setAddressLine] = useState(user.addressLine || '')
+  const [city, setCity] = useState(user.city || '')
+  const [state, setState] = useState(user.state || '')
+  const [pinCode, setPinCode] = useState(user.pinCode || '')
   const [profilePicUrl, setProfilePicUrl] = useState(user.profilePictureUrl || '')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -28,8 +38,16 @@ export function ProfileClient({ user }: ProfileClientProps) {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    await new Promise(r => setTimeout(r, 1000))
-    setMsg('Profile updated successfully!')
+    const formData = new FormData()
+    formData.set('name', name)
+    formData.set('phone', phone)
+    formData.set('dateOfBirth', dateOfBirth)
+    formData.set('addressLine', addressLine)
+    formData.set('city', city)
+    formData.set('state', state)
+    formData.set('pinCode', pinCode)
+    const result = await updateProfileAction(formData)
+    setMsg(result.message)
     setSaving(false)
     setTimeout(() => setMsg(''), 3000)
   }
@@ -100,15 +118,35 @@ export function ProfileClient({ user }: ProfileClientProps) {
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium block mb-1.5">Full Name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="form-input" />
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="form-input" required />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1.5">Phone Number</label>
-              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="form-input" />
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="form-input" required />
+            </div>
+            <div>
+              <label className="text-sm font-medium block mb-1.5">Date of Birth</label>
+              <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="form-input" required />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1.5">Email (Read-only)</label>
               <input type="email" value={user.email} readOnly className="form-input opacity-60 cursor-not-allowed" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-sm font-medium block mb-1.5">Address</label>
+              <input type="text" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} className="form-input" required />
+            </div>
+            <div>
+              <label className="text-sm font-medium block mb-1.5">City</label>
+              <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="form-input" required />
+            </div>
+            <div>
+              <label className="text-sm font-medium block mb-1.5">State</label>
+              <input type="text" value={state} onChange={(e) => setState(e.target.value)} className="form-input" required />
+            </div>
+            <div>
+              <label className="text-sm font-medium block mb-1.5">PIN Code</label>
+              <input type="text" value={pinCode} onChange={(e) => setPinCode(e.target.value)} className="form-input" required />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1.5">Referral Code</label>

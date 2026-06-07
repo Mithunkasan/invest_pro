@@ -1,13 +1,14 @@
 'use client'
 
-import { useTransition, useState, useMemo } from 'react'
+import { useTransition, useState, useMemo, useEffect } from 'react'
 import { DataTable } from '@/components/dashboard/DataTable'
 import { formatDate, formatCurrency, getStatusColor } from '@/utils/formatters'
 import { Button } from '@/components/ui/button'
-import { toggleUserStatus, toggleUserRankAction } from '@/actions/admin'
+import { toggleUserStatus, toggleUserRankAction, upgradeUserToPremiumAction } from '@/actions/admin'
 import { toast } from '@/hooks/use-toast'
 import { Search, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ModalPortal } from '@/components/common/ModalPortal'
 
 interface UsersTableProps {
   users: any[]
@@ -19,6 +20,28 @@ export function UsersTable({ users }: UsersTableProps) {
   const [filterMembership, setFilterMembership] = useState('ALL')
   const [filterStatus, setFilterStatus] = useState('ALL')
   const [selectedUser, setSelectedUser] = useState<any | null>(null)
+
+  useEffect(() => {
+    if (selectedUser) {
+      document.body.classList.add('modal-open')
+    } else {
+      document.body.classList.remove('modal-open')
+    }
+    return () => {
+      document.body.classList.remove('modal-open')
+    }
+  }, [selectedUser])
+
+  useEffect(() => {
+    if (!selectedUser) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedUser(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedUser])
 
   // Find the selected user in the current list to keep reactive updates
   const currentUser = useMemo(() => {
@@ -95,6 +118,17 @@ export function UsersTable({ users }: UsersTableProps) {
     })
   }
 
+  const handleUpgradeToPremium = (userId: string) => {
+    startTransition(async () => {
+      const res = await upgradeUserToPremiumAction(userId)
+      if (res.success) {
+        toast({ title: 'Success', description: res.message })
+      } else {
+        toast({ title: 'Error', description: res.message, variant: 'destructive' })
+      }
+    })
+  }
+
   const cols = [
     { key: 'name', label: 'Name', sortable: true, render: (v: unknown, row: any) => (
       <div>
@@ -156,6 +190,17 @@ export function UsersTable({ users }: UsersTableProps) {
         >
           Manage Ranks
         </Button>
+        {row.memberType === 'BASIC' && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-[10px] border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+            onClick={() => handleUpgradeToPremium(id)}
+            disabled={isPending}
+          >
+            Upgrade Premium
+          </Button>
+        )}
         <Button 
           size="sm" 
           variant={row.status === 'ACTIVE' ? 'destructive' : 'default'} 
@@ -239,146 +284,148 @@ export function UsersTable({ users }: UsersTableProps) {
         emptyMessage="No users found matching current filters" 
       />
 
-      {/* Rank & Badge Manager Modal */}
+      {/* Rank & Badge Manager Modal — portaled to document.body to escape
+          the <main z-10> stacking context that causes sidebar-hover flicker */}
       <AnimatePresence>
         {currentUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
+          <ModalPortal>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+              style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}
               onClick={() => setSelectedUser(null)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-
-            {/* Modal Box */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: 'spring', duration: 0.4 }}
-              className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border/80 bg-background p-6 shadow-2xl"
             >
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-muted pb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white">Manage Ranks & Badges</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Assign, approve, or revoke ranks manually for <span className="text-primary font-semibold">{currentUser.name}</span>
-                  </p>
-                </div>
-                <button
-                  onClick={() => setSelectedUser(null)}
-                  className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-white transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Scrollable Content */}
-              <div className="mt-4 max-h-[60vh] overflow-y-auto pr-1 space-y-3.5 scrollbar-thin">
-                {/* User email sub-header */}
-                <div className="text-[11px] font-mono text-muted-foreground bg-muted/20 px-3 py-1.5 rounded-lg border border-border/40">
-                  User ID: {currentUser.id}<br/>
-                  Email: {currentUser.email}
-                </div>
-
-                {/* Toggles list */}
-                {[
-                  {
-                    key: 'starPerformer',
-                    icon: '⭐',
-                    label: 'Star Performer Badge',
-                    desc: 'Awarded for ₹5,000+ cumulative referral commission.',
-                    color: 'text-amber-500 bg-amber-500/10 border-amber-500/20'
-                  },
-                  {
-                    key: 'doubleStarPerformer',
-                    icon: '⭐⭐',
-                    label: 'Double Star Performer Badge',
-                    desc: 'Awarded for ₹25,000+ cumulative referral commission.',
-                    color: 'text-amber-400 bg-amber-400/10 border-amber-400/20'
-                  },
-                  {
-                    key: 'elitePerformer',
-                    icon: '💎',
-                    label: 'Elite Performer Badge',
-                    desc: 'Awarded for ₹50,000+ cumulative referral commission.',
-                    color: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20'
-                  },
-                  {
-                    key: 'tlRank',
-                    icon: '🏆',
-                    label: 'Team Leader (TL) Rank',
-                    desc: 'Awarded for 5 active referrals & ₹1,00,000+ commission.',
-                    color: 'text-purple-400 bg-purple-400/10 border-purple-400/20'
-                  },
-                  {
-                    key: 'tlShareholder',
-                    icon: '📊',
-                    label: 'TL 1% Business Shareholder',
-                    desc: 'Qualifies user to receive 1% business pool rewards (Max 25).',
-                    color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20'
-                  },
-                  {
-                    key: 'directorRank',
-                    icon: '👑',
-                    label: 'Director Rank',
-                    desc: 'Awarded for referring 5 Team Leaders.',
-                    color: 'text-rose-400 bg-rose-400/10 border-rose-400/20'
-                  },
-                  {
-                    key: 'directorShareholder',
-                    icon: '📊',
-                    label: 'Director 1% Business Shareholder',
-                    desc: 'Qualifies user to receive 1% business pool rewards (Max 5).',
-                    color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20'
-                  }
-                ].map((item) => {
-                  const isChecked = !!currentUser[item.key]
-                  return (
-                    <div
-                      key={item.key}
-                      className="flex items-center justify-between p-3 rounded-xl border border-muted/50 bg-background/50 hover:bg-muted/10 transition-colors"
-                    >
-                      <div className="flex gap-3 items-start mr-4">
-                        <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${item.color} font-bold text-sm`}>
-                          {item.icon}
-                        </span>
-                        <div>
-                          <h4 className="text-xs font-semibold text-white/90">{item.label}</h4>
-                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-normal">{item.desc}</p>
-                        </div>
-                      </div>
-
-                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          checked={isChecked}
-                          onChange={() => handleToggleRank(currentUser.id, item.key as any, isChecked)}
-                          disabled={isPending}
-                        />
-                        <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
+              {/* Modal Box */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: 'spring', duration: 0.4 }}
+                className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border/80 bg-background p-6 shadow-2xl text-left cursor-default"
+                onClick={(e) => e.stopPropagation()}
+              >
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-muted pb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-white">Manage Ranks &amp; Badges</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Assign, approve, or revoke ranks manually for <span className="text-primary font-semibold">{currentUser.name}</span>
+                      </p>
                     </div>
-                  )
-                })}
-              </div>
+                    <button
+                      onClick={() => setSelectedUser(null)}
+                      className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-white transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
 
-              {/* Footer */}
-              <div className="mt-6 flex justify-end border-t border-muted pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedUser(null)}
-                  className="px-4 font-semibold text-xs h-9"
-                >
-                  Close
-                </Button>
-              </div>
+                  {/* Scrollable Content */}
+                  <div className="mt-4 max-h-[60vh] overflow-y-auto pr-1 space-y-3.5 scrollbar-thin">
+                    {/* User email sub-header */}
+                    <div className="text-[11px] font-mono text-muted-foreground bg-muted/20 px-3 py-1.5 rounded-lg border border-border/40">
+                      User ID: {currentUser.id}<br/>
+                      Email: {currentUser.email}
+                    </div>
+
+                    {/* Toggles list */}
+                    {[
+                      {
+                        key: 'starPerformer',
+                        icon: '⭐',
+                        label: 'Star Performer Badge',
+                        desc: 'Awarded for ₹5,000+ cumulative referral commission.',
+                        color: 'text-amber-500 bg-amber-500/10 border-amber-500/20'
+                      },
+                      {
+                        key: 'doubleStarPerformer',
+                        icon: '⭐⭐',
+                        label: 'Double Star Performer Badge',
+                        desc: 'Awarded for ₹25,000+ cumulative referral commission.',
+                        color: 'text-amber-400 bg-amber-400/10 border-amber-400/20'
+                      },
+                      {
+                        key: 'elitePerformer',
+                        icon: '💎',
+                        label: 'Elite Performer Badge',
+                        desc: 'Awarded for ₹50,000+ cumulative referral commission.',
+                        color: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20'
+                      },
+                      {
+                        key: 'tlRank',
+                        icon: '🏆',
+                        label: 'Team Leader (TL) Rank',
+                        desc: 'Awarded for 5 active referrals & ₹1,00,000+ commission.',
+                        color: 'text-purple-400 bg-purple-400/10 border-purple-400/20'
+                      },
+                      {
+                        key: 'tlShareholder',
+                        icon: '📊',
+                        label: 'TL 1% Business Shareholder',
+                        desc: 'Qualifies user to receive 1% business pool rewards (Max 25).',
+                        color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20'
+                      },
+                      {
+                        key: 'directorRank',
+                        icon: '👑',
+                        label: 'Director Rank',
+                        desc: 'Awarded for referring 5 Team Leaders.',
+                        color: 'text-rose-400 bg-rose-400/10 border-rose-400/20'
+                      },
+                      {
+                        key: 'directorShareholder',
+                        icon: '📊',
+                        label: 'Director 1% Business Shareholder',
+                        desc: 'Qualifies user to receive 1% business pool rewards (Max 5).',
+                        color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20'
+                      }
+                    ].map((item) => {
+                      const isChecked = !!currentUser[item.key]
+                      return (
+                        <div
+                          key={item.key}
+                          className="flex items-center justify-between p-3 rounded-xl border border-muted/50 bg-background/50 hover:bg-muted/10 transition-colors"
+                        >
+                          <div className="flex gap-3 items-start mr-4">
+                            <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${item.color} font-bold text-sm`}>
+                              {item.icon}
+                            </span>
+                            <div>
+                              <h4 className="text-xs font-semibold text-white/90">{item.label}</h4>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 leading-normal">{item.desc}</p>
+                            </div>
+                          </div>
+
+                          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                            <input
+                              type="checkbox"
+                              className="sr-only peer"
+                              checked={isChecked}
+                              onChange={() => handleToggleRank(currentUser.id, item.key as any, isChecked)}
+                              disabled={isPending}
+                            />
+                            <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                          </label>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="mt-6 flex justify-end border-t border-muted pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedUser(null)}
+                      className="px-4 font-semibold text-xs h-9"
+                    >
+                      Close
+                    </Button>
+                  </div>
+              </motion.div>
             </motion.div>
-          </div>
+          </ModalPortal>
         )}
       </AnimatePresence>
     </div>

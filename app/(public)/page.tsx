@@ -18,10 +18,11 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const [userCount, totalAum, settings] = await Promise.all([
+  const [userCount, totalAum, settings, membershipPlans] = await Promise.all([
     prisma.user.count(),
     prisma.investment.aggregate({ _sum: { amount: true } }),
-    prisma.systemSettings.findUnique({ where: { id: 'default' } })
+    prisma.systemSettings.findUnique({ where: { id: 'default' } }),
+    prisma.membershipPlan.findMany({ where: { isActive: true }, orderBy: { price: 'asc' } })
   ])
 
   const stats = {
@@ -30,6 +31,18 @@ export default async function HomePage() {
     returns: '1.5% - 3.0%',
     experience: '5+'
   }
+
+  const formattedPlans = membershipPlans.map((p, index) => ({
+    id: p.name.toLowerCase().replace(/\s+/g, '-'),
+    name: p.name.toUpperCase(),
+    price: `₹${p.price.toLocaleString('en-IN')}`,
+    period: p.durationDays === -1 ? 'One Time' : `${p.durationDays} Days`,
+    popular: index === Math.floor(membershipPlans.length / 2), // Make the middle plan popular by default
+    ctaLabel: `Join ${p.name}`,
+    ctaHref: `/register?plan=${encodeURIComponent(p.name)}`,
+    features: p.features,
+    color: p.color
+  }))
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   
@@ -76,7 +89,7 @@ export default async function HomePage() {
         <ScrollingStatsBar />
         <WhyUsSection />
         {/* <StatsSection stats={stats} /> */}
-        <PlansSection />
+        <PlansSection plans={formattedPlans} />
         <HowItWorksLeaderboard />
         <FeaturesSection />
         <Testimonials />

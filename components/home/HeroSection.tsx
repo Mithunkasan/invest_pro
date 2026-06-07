@@ -72,7 +72,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
       <motion.img
         src="/planet2.png"
         alt="Rotating Planet 2"
-        className="absolute right-[-8%] lg:right-[5%] bottom-[8%] lg:bottom-[15%] w-[90px] sm:w-[150px] lg:w-[230px] h-auto pointer-events-none z-10 opacity-65"
+        className="absolute right-[-8%] lg:right-[5%] top-[15%] lg:top-[18%] w-[75px] sm:w-[130px] lg:w-[190px] h-auto pointer-events-none z-10 opacity-65"
         animate={{ rotate: -360 }}
         transition={{
           repeat: Infinity,

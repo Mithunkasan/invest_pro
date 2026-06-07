@@ -10,7 +10,7 @@ import { formatCurrency } from '@/utils/formatters'
 interface UserItem {
   email: string
   name: string
-  memberType: 'FREE' | 'PREMIUM'
+  memberType: 'FREE' | 'BASIC' | 'PREMIUM'
 }
 
 interface BonusLog {

@@ -49,7 +49,7 @@ export function MoneyBackground() {
   }, [])
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0 min-h-full w-full">
+    <div data-floating-background="money" className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0 min-h-full w-full">
       {particles.map((p) => (
         <div
           key={p.id}

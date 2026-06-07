@@ -34,7 +34,7 @@ export async function loginAction(
     return { success: false, message: 'Your account has been suspended. Please contact support.' }
   }
 
-  await setSession({ id: user.id, email: user.email, name: user.name, role: 'USER', type: 'user', memberType: user.memberType as 'FREE' | 'PREMIUM' })
+  await setSession({ id: user.id, email: user.email, name: user.name, role: 'USER', type: 'user', memberType: user.memberType as 'FREE' | 'BASIC' | 'PREMIUM' })
   redirect('/dashboard')
 }
 

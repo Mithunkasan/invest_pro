@@ -52,6 +52,10 @@ export default async function UserMembershipPage() {
     redirect('/login')
   }
 
+  if (user.memberType === 'FREE') {
+    redirect('/dashboard/kyc')
+  }
+
   // Determine current active plan
   const currentPlan = user.membershipPlan || {
     id: 'free-fallback',

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
 import { syncWalletMainBalance, deductFromWallets } from './walletUtils'
+import { BASIC_MEMBERSHIP_AMOUNT, ensureBasicMembershipPlan, getBasicMembershipExpiry } from '@/lib/basicMembership'
 
 // ── User Management ───────────────────────────────────────────────────────────
 export async function toggleUserStatus(userId: string): Promise<ApiResponse> {
@@ -330,7 +331,7 @@ export async function handleWithdrawal(withdrawalId: string, action: 'APPROVE' |
 }
 
 // ── KYC Management ────────────────────────────────────────────────────────────
-export async function handleKYC(kycId: string, action: 'APPROVED' | 'REJECTED', remarks?: string): Promise<ApiResponse> {
+async function handleKYCLegacy(kycId: string, action: 'APPROVED' | 'REJECTED', remarks?: string): Promise<ApiResponse> {
   const admin = await getAdminSession()
   if (!admin) return { success: false, message: 'Unauthorized' }
 
@@ -356,6 +357,79 @@ export async function handleKYC(kycId: string, action: 'APPROVED' | 'REJECTED', 
     revalidatePath('/admin/dashboard')
     return { success: true, message: `KYC ${action.toLowerCase()} successfully` }
   } catch (error) {
+    return { success: false, message: 'Failed to process KYC' }
+  }
+}
+
+void handleKYCLegacy
+
+export async function handleKYC(kycId: string, action: 'APPROVED' | 'REJECTED', remarks?: string): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  try {
+    const kyc = await prisma.kYC.findUnique({
+      where: { id: kycId },
+      include: { user: true },
+    })
+    if (!kyc) return { success: false, message: 'KYC request not found' }
+
+    const reviewedAt = new Date()
+    const shouldActivateBasic = action === 'APPROVED' && kyc.user.memberType === 'FREE'
+    const basicPlan = shouldActivateBasic ? await ensureBasicMembershipPlan() : null
+
+    await prisma.$transaction(async (tx) => {
+      await tx.kYC.update({
+        where: { id: kycId },
+        data: { status: action, reviewedById: admin.id, reviewedAt, remarks },
+      })
+
+      if (shouldActivateBasic && basicPlan) {
+        await tx.user.update({
+          where: { id: kyc.userId },
+          data: {
+            memberType: 'BASIC',
+            membershipPlanId: basicPlan.id,
+            basicMembershipAmount: BASIC_MEMBERSHIP_AMOUNT,
+            basicMembershipActivatedAt: reviewedAt,
+            basicMembershipExpiresAt: getBasicMembershipExpiry(reviewedAt),
+            lastDailyYieldAt: reviewedAt,
+          },
+        })
+
+        await tx.transaction.create({
+          data: {
+            userId: kyc.userId,
+            type: 'INVESTMENT',
+            amount: BASIC_MEMBERSHIP_AMOUNT,
+            status: 'COMPLETED',
+            description: 'Basic Membership activated after KYC approval',
+            walletType: 'MAIN',
+          },
+        })
+      }
+
+      await tx.notification.create({
+        data: {
+          userId: kyc.userId,
+          title: action === 'APPROVED' ? 'KYC Verified' : 'KYC Rejected',
+          message: action === 'APPROVED'
+            ? shouldActivateBasic
+              ? 'Your KYC is approved. Basic Membership is now active with a Rs. 2,500 deposit amount.'
+              : 'Your identity verification is complete.'
+            : `Your KYC was rejected. ${remarks || ''}`,
+          type: action === 'APPROVED' ? 'SUCCESS' : 'ERROR',
+        },
+      })
+    })
+
+    revalidatePath('/admin/dashboard/kyc')
+    revalidatePath('/admin/dashboard')
+    revalidatePath('/dashboard')
+    revalidatePath('/dashboard/membership')
+    return { success: true, message: `KYC ${action.toLowerCase()} successfully` }
+  } catch (error) {
+    console.error('KYC approval error:', error)
     return { success: false, message: 'Failed to process KYC' }
   }
 }
@@ -413,6 +487,7 @@ export async function getSystemSettings(): Promise<any> {
           directorRankMaxUsers: 5,
           directorRankEnabled: true,
           withdrawalDeductionPercent: 20.0,
+          basicDailyYieldPercent: 0.2,
           heroMembers: '25,689+',
           heroActive: '8,932+',
           heroPaid: '₹12.45 Cr+',
@@ -456,6 +531,7 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         directorRankMaxUsers: Number(data.directorRankMaxUsers || 5),
         directorRankEnabled: Boolean(data.directorRankEnabled),
         withdrawalDeductionPercent: Number(data.withdrawalDeductionPercent ?? 20.0),
+        basicDailyYieldPercent: Number(data.basicDailyYieldPercent ?? 0.2),
         heroMembers: String(data.heroMembers),
         heroActive: String(data.heroActive),
         heroPaid: String(data.heroPaid),
@@ -483,6 +559,7 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         directorRankMaxUsers: Number(data.directorRankMaxUsers || 5),
         directorRankEnabled: Boolean(data.directorRankEnabled),
         withdrawalDeductionPercent: Number(data.withdrawalDeductionPercent ?? 20.0),
+        basicDailyYieldPercent: Number(data.basicDailyYieldPercent ?? 0.2),
         heroMembers: String(data.heroMembers),
         heroActive: String(data.heroActive),
         heroPaid: String(data.heroPaid),
@@ -891,6 +968,87 @@ export async function sendAdminBonusAction(
   } catch (error: any) {
     console.error('Error sending admin bonus:', error)
     return { success: false, message: error.message || 'Failed to send admin bonus' }
+  }
+}
+
+export async function assignOfflineTaskAction(formData: FormData): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  const userId = String(formData.get('userId') || '')
+  const title = String(formData.get('title') || '').trim()
+  const description = String(formData.get('description') || '').trim()
+  const dueAtValue = String(formData.get('dueAt') || '')
+  const dueAt = dueAtValue ? new Date(dueAtValue) : null
+
+  if (!userId || !title || !description || !dueAt || Number.isNaN(dueAt.getTime()) || dueAt <= new Date()) {
+    return { success: false, message: 'Please enter a member, task details, and a future due time.' }
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.offlineTask.create({
+        data: { userId, title, description, dueAt },
+      })
+      await tx.notification.create({
+        data: {
+          userId,
+          title: 'New Offline Task Assigned',
+          message: `Admin assigned "${title}". Complete it before ${dueAt.toLocaleString('en-IN')}.`,
+          type: 'INFO',
+          link: '/dashboard/tasks',
+        },
+      })
+    })
+
+    revalidatePath('/admin/dashboard/tasks')
+    revalidatePath('/dashboard/tasks')
+    return { success: true, message: 'Task assigned successfully.' }
+  } catch (error) {
+    console.error('Task assignment error:', error)
+    return { success: false, message: 'Failed to assign task.' }
+  }
+}
+
+export async function upgradeUserToPremiumAction(userId: string): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) return { success: false, message: 'User not found' }
+    if (user.memberType === 'PREMIUM') return { success: false, message: 'User is already Premium.' }
+
+    const premiumPlan = await prisma.membershipPlan.findFirst({
+      where: { isActive: true, price: { gt: BASIC_MEMBERSHIP_AMOUNT } },
+      orderBy: { price: 'asc' },
+    })
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          memberType: 'PREMIUM',
+          membershipPlanId: premiumPlan?.id || user.membershipPlanId,
+        },
+      })
+      await tx.notification.create({
+        data: {
+          userId,
+          title: 'Premium Membership Activated',
+          message: 'Admin has upgraded your account from Basic Membership to Premium Membership.',
+          type: 'SUCCESS',
+        },
+      })
+    })
+
+    revalidatePath('/admin/dashboard/users')
+    revalidatePath('/dashboard')
+    revalidatePath('/dashboard/membership')
+    return { success: true, message: 'User upgraded to Premium Membership.' }
+  } catch (error) {
+    console.error('Premium upgrade error:', error)
+    return { success: false, message: 'Failed to upgrade user.' }
   }
 }
 

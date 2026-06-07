@@ -62,7 +62,7 @@ export default async function WalletPage() {
         </div>
 
         {/* Sub-wallets breakdown list below the balance */}
-        <div className="mt-6 pt-4 border-t border-white/10">
+        {!isFree && <div className="mt-6 pt-4 border-t border-white/10">
           <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-3">Sub-Wallets Breakdown</p>
           <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
             <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
@@ -90,19 +90,19 @@ export default async function WalletPage() {
               <p className="text-sm font-bold text-orange-400 mt-0.5">{formatCurrency(wallet?.bonusBalance || 0)}</p>
             </div>
           </div>
-        </div>
+        </div>}
       </div>
  
       {/* Wallet Breakdown Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { label: 'Main Wallet', value: wallet?.mainBalance || 0, icon: Wallet, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Combined total of all wallets', show: true },
-          { label: 'Deposit Wallet', value: wallet?.depositBalance || 0, icon: Wallet, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'User deposited amount', show: true },
-          { label: 'Reward Wallet', value: wallet?.rewardBalance || 0, icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-500/10', desc: 'Claimed reward balances', show: true },
-          { label: 'Referral Income Wallet', value: wallet?.referralBalance || 0, icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Commission from direct referrals', show: true },
-          { label: 'Level Income Wallet', value: wallet?.levelBalance || 0, icon: ArrowDownToLine, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Commission from multi-level referrals', show: true },
-          { label: 'Share Wallet', value: wallet?.shareBalance || 0, icon: TrendingUp, color: 'text-cyan-500', bg: 'bg-cyan-500/10', desc: 'Income as active member TL/Director Rank', show: true },
-          { label: 'Bonus Wallet', value: wallet?.bonusBalance || 0, icon: Wallet, color: 'text-orange-500', bg: 'bg-orange-500/10', desc: 'Platform bonus credits', show: true },
+          { label: 'Deposit Wallet', value: wallet?.depositBalance || 0, icon: Wallet, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'User deposited amount', show: !isFree },
+          { label: 'Reward Wallet', value: wallet?.rewardBalance || 0, icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-500/10', desc: 'Claimed reward balances', show: !isFree },
+          { label: 'Referral Income Wallet', value: wallet?.referralBalance || 0, icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Commission from direct referrals', show: !isFree },
+          { label: 'Level Income Wallet', value: wallet?.levelBalance || 0, icon: ArrowDownToLine, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Commission from multi-level referrals', show: !isFree },
+          { label: 'Share Wallet', value: wallet?.shareBalance || 0, icon: TrendingUp, color: 'text-cyan-500', bg: 'bg-cyan-500/10', desc: 'Income as active member TL/Director Rank', show: !isFree },
+          { label: 'Bonus Wallet', value: wallet?.bonusBalance || 0, icon: Wallet, color: 'text-orange-500', bg: 'bg-orange-500/10', desc: 'Platform bonus credits', show: !isFree },
         ].filter(w => w.show).map((w) => (
           <div key={w.label} className="premium-card p-5">
             <div className={`w-10 h-10 rounded-xl ${w.bg} flex items-center justify-center mb-3`}>

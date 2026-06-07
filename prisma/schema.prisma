@@ -21,6 +21,12 @@ model User {
   passwordHash String
   profilePictureUrl         String?
   hasSeenProfilePicturePopup Boolean @default(false)
+  dateOfBirth  DateTime?
+  addressLine  String?
+  city         String?
+  state        String?
+  pinCode      String?
+  profileCompleted Boolean @default(false)
   role         Role     @default(USER)
   status       UserStatus @default(ACTIVE)
   memberType   MemberType @default(PREMIUM)
@@ -40,6 +46,7 @@ model User {
   kyc           KYC?
   notifications Notification[]
   gift          Gift?
+  assignedTasks OfflineTask[]
 
   // Badges & Rank
   starPerformer       Boolean   @default(false)
@@ -55,6 +62,10 @@ model User {
   // Active Membership Plan
   membershipPlanId String?
   membershipPlan   MembershipPlan? @relation("UserMembershipPlan", fields: [membershipPlanId], references: [id])
+  basicMembershipAmount Float @default(0)
+  basicMembershipActivatedAt DateTime?
+  basicMembershipExpiresAt DateTime?
+  lastDailyYieldAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -305,6 +316,7 @@ enum Role {
 
 enum MemberType {
   FREE
+  BASIC
   PREMIUM
 }
 
@@ -385,6 +397,12 @@ enum NotificationType {
   ERROR
 }
 
+enum OfflineTaskStatus {
+  ASSIGNED
+  COMPLETED
+  EXPIRED
+}
+
 // ============================================================
 // SYSTEM SETTINGS MODEL
 // ============================================================
@@ -410,6 +428,7 @@ model SystemSettings {
   directorRankMaxUsers    Int      @default(5)
   directorRankEnabled     Boolean  @default(true)
   withdrawalDeductionPercent Float   @default(20.0)
+  basicDailyYieldPercent     Float   @default(0.2)
   heroMembers             String   @default("25,689+")
   heroActive              String   @default("8,932+")
   heroPaid                String   @default("₹12.45 Cr+")
@@ -476,4 +495,26 @@ model Gift {
 
   @@index([userId])
   @@index([deliveryStatus])
+}
+
+// ============================================================
+// OFFLINE TASK MODEL
+// ============================================================
+model OfflineTask {
+  id          String            @id @default(cuid())
+  userId      String
+  title       String
+  description String
+  dueAt       DateTime
+  status      OfflineTaskStatus @default(ASSIGNED)
+  completedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([dueAt])
 }

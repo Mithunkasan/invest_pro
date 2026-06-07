@@ -1,61 +1,21 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useRef } from 'react'
+import { motion } from 'framer-motion'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
-/* ── Plan Data ─────────────────────────────────────────────────── */
-const PLANS = [
-  {
-    id: 'silver',
-    name: 'SILVER',
-    price: '₹999',
-    period: 'One Time',
-    popular: false,
-    ctaLabel: 'Join Silver',
-    ctaHref: '/register?plan=silver',
-    features: [
-      'Member ID Activation',
-      'Access to Part-Time Jobs',
-      'Refer & Earn',
-      'Basic Support',
-      'Weekly Payouts',
-    ],
-  },
-  {
-    id: 'gold',
-    name: 'GOLD',
-    price: '₹2,499',
-    period: 'One Time',
-    popular: true,
-    ctaLabel: 'Join Gold',
-    ctaHref: '/register?plan=gold',
-    features: [
-      'All Silver Benefits',
-      'Higher Referral Rewards',
-      'Priority Support',
-      'Daily Topup Earnings',
-      'Bonus & Incentives',
-    ],
-  },
-  {
-    id: 'platinum',
-    name: 'PLATINUM',
-    price: '₹4,999',
-    period: 'One Time',
-    popular: false,
-    ctaLabel: 'Join Platinum',
-    ctaHref: '/register?plan=platinum',
-    features: [
-      'All Gold Benefits',
-      'Maximum Referral Rewards',
-      'VIP Support',
-      'Exclusive Bonuses',
-      'Leadership Rewards',
-    ],
-  },
-]
+export interface PlanData {
+  id: string
+  name: string
+  price: string
+  period: string
+  popular: boolean
+  ctaLabel: string
+  ctaHref: string
+  features: string[]
+  color?: string
+}
 
 /* ── SVG Gem Icons ─────────────────────────────────────────────── */
 
@@ -166,9 +126,10 @@ const PlatinumGem = () => (
 )
 
 /* ── Gem selector ──────────────────────────────────────────────── */
-function PlanGem({ id }: { id: string }) {
-  if (id === 'silver')   return <SilverGem />
-  if (id === 'gold')     return <GoldGem />
+function PlanGem({ name }: { name: string }) {
+  const lower = name.toLowerCase()
+  if (lower.includes('silver'))   return <SilverGem />
+  if (lower.includes('gold'))     return <GoldGem />
   return <PlatinumGem />
 }
 
@@ -202,38 +163,39 @@ const PLAN_STYLES = {
     bgCls:      'bg-gradient-to-b from-[#100d22] to-[#080512]',
     btnCls:     'text-white font-extrabold',
     btnStyle:   { background: 'linear-gradient(135deg,#9333ea,#7c3aed,#6d28d9)' } as React.CSSProperties,
-    glowStyle:  {} as React.CSSProperties,
+    glowStyle:  { boxShadow: '0 0 0 2px #a855f7, 0 0 40px rgba(168,85,247,0.25), 0 0 80px rgba(168,85,247,0.12)' } as React.CSSProperties,
   },
 } as const
 
-type PlanId = keyof typeof PLAN_STYLES
+function getPlanStyle(plan: PlanData) {
+  const lower = plan.name.toLowerCase()
+  if (lower.includes('silver')) return PLAN_STYLES.silver
+  if (lower.includes('gold')) return PLAN_STYLES.gold
+  
+  // Fallback to platinum style but we can override the button color if the plan has a custom color
+  const baseStyle = { ...PLAN_STYLES.platinum }
+  if (plan.color && !lower.includes('platinum')) {
+    baseStyle.btnStyle = { background: plan.color } as React.CSSProperties
+    baseStyle.glowStyle = { boxShadow: `0 0 0 2px ${plan.color}, 0 0 40px ${plan.color}40` } as React.CSSProperties
+  }
+  return baseStyle
+}
 
 /* ── Card Component ────────────────────────────────────────────── */
-function PlanCard({
-  plan,
-  isCenter,
-  position,
-}: {
-  plan: (typeof PLANS)[number]
-  isCenter: boolean
-  position: 'left' | 'center' | 'right'
-}) {
-  const s = PLAN_STYLES[plan.id as PlanId]
+function PlanCard({ plan }: { plan: PlanData }) {
+  const s = getPlanStyle(plan)
 
   return (
     /* Outer wrapper adds top space so the badge overflows above without being clipped */
-    <div className={plan.popular ? 'pt-4' : ''}>
+    <div className="h-full pt-4">
     <motion.article
       layout
-      initial={false}
-      animate={{
-        scale:   isCenter ? 1 : 0.9,
-        opacity: isCenter ? 1 : 0.6,
-        y:       isCenter ? 0 : 20,
-      }}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
       transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-      className={`relative flex flex-col rounded-2xl border ${s.borderCls} ${s.bgCls}`}
-      style={isCenter && plan.popular ? s.glowStyle : {}}
+      className={`relative flex flex-col h-full rounded-2xl border ${s.borderCls} ${s.bgCls}`}
+      style={plan.popular ? s.glowStyle : {}}
       aria-label={`${plan.name} membership plan`}
     >
       {/* MOST POPULAR badge — sits above the card top edge, fully visible */}
@@ -248,37 +210,38 @@ function PlanCard({
         </div>
       )}
 
-      <div className="flex flex-col flex-1 p-6 sm:p-7 pt-8">
+      <div className="flex flex-col flex-1 p-5 sm:p-6 pt-7">
         {/* Icon + Name row */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0">
-            <PlanGem id={plan.id} />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0">
+            <PlanGem name={plan.name} />
           </div>
           <h3
-            className={`text-2xl sm:text-3xl font-black tracking-widest ${s.nameCls}`}
-            style={{ letterSpacing: '0.12em' }}
+            className={`text-xl sm:text-2xl font-black tracking-widest ${s.nameCls}`}
+            style={{ letterSpacing: '0.1em' }}
           >
             {plan.name}
           </h3>
         </div>
 
         {/* Price */}
-        <div className="mb-5">
-          <p className={`text-4xl sm:text-5xl font-black ${s.priceCls} leading-none`}>
+        <div className="mb-4">
+          <p className={`text-3xl sm:text-4xl font-black ${s.priceCls} leading-none`}>
             {plan.price}
           </p>
-          <p className="text-slate-400 text-sm font-medium mt-1">{plan.period}</p>
+          <p className="text-slate-400 text-xs sm:text-sm font-medium mt-1.5">{plan.period}</p>
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-white/[0.07] mb-5" />
+        <div className="h-px bg-white/[0.07] mb-4" />
 
         {/* Features list */}
-        <ul className="space-y-3 flex-1 mb-6" role="list">
+        <ul className="space-y-3 flex-1 mb-5" role="list">
           {plan.features.map((feat) => (
-            <li key={feat} className="flex items-center gap-2.5 text-sm sm:text-[0.9rem] text-slate-300">
+            <li key={feat} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-300">
               <Check
-                className={`w-4 h-4 shrink-0 ${s.checkCls}`}
+                className={`w-4 h-4 shrink-0 ${s.checkCls || 'text-purple-400'}`}
+                style={plan.color && !plan.name.toLowerCase().includes('platinum') && !plan.name.toLowerCase().includes('silver') && !plan.name.toLowerCase().includes('gold') ? { color: plan.color } : {}}
                 strokeWidth={3}
                 aria-hidden="true"
               />
@@ -290,7 +253,7 @@ function PlanCard({
         {/* CTA Button */}
         <Link href={plan.ctaHref} className="block mt-auto" aria-label={`${plan.ctaLabel} membership`}>
           <button
-            className={`w-full py-3.5 rounded-xl text-sm sm:text-base font-bold transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] ${s.btnCls}`}
+            className={`w-full py-3 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] ${s.btnCls}`}
             style={s.btnStyle}
           >
             {plan.ctaLabel}
@@ -303,18 +266,34 @@ function PlanCard({
 }
 
 /* ── Main Section ──────────────────────────────────────────────── */
-export function PlansSection() {
-  const [activeIndex, setActiveIndex] = useState(1) // Gold is center by default
+export function PlansSection({ plans = [] }: { plans?: PlanData[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
 
-  const prev = useCallback(() =>
-    setActiveIndex((i) => (i - 1 + PLANS.length) % PLANS.length), [])
-  const next = useCallback(() =>
-    setActiveIndex((i) => (i + 1) % PLANS.length), [])
+  const handleScroll = () => {
+    if (!scrollRef.current) return
+    const scrollLeft = scrollRef.current.scrollLeft
+    const width = scrollRef.current.offsetWidth
+    const newIndex = Math.round(scrollLeft / width)
+    setActiveIndex(newIndex)
+  }
 
-  /* Ordered so active is always in center slot */
-  const leftIdx   = (activeIndex - 1 + PLANS.length) % PLANS.length
-  const rightIdx  = (activeIndex + 1) % PLANS.length
-  const orderedPlans = [PLANS[leftIdx], PLANS[activeIndex], PLANS[rightIdx]]
+  const scroll = (direction: 'left' | 'right') => {
+    if (!scrollRef.current) return
+    const width = scrollRef.current.offsetWidth > 400 ? 340 : scrollRef.current.offsetWidth
+    const scrollAmount = direction === 'left' ? -width : width
+    scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+  }
+
+  const scrollTo = (index: number) => {
+    if (!scrollRef.current) return
+    const itemWidth = scrollRef.current.scrollWidth / plans.length
+    scrollRef.current.scrollTo({ left: itemWidth * index, behavior: 'smooth' })
+  }
+
+  if (!plans || plans.length === 0) {
+    return null
+  }
 
   return (
     <section
@@ -359,95 +338,52 @@ export function PlansSection() {
           </motion.h2>
         </div>
 
-        {/* ── Carousel (desktop 3-up, mobile single) ── */}
-        <div className="flex items-center justify-center gap-3 sm:gap-5 lg:gap-6">
-
+        {/* ── Carousel Layout (Responsive) ── */}
+        <div className="relative flex items-center w-full max-w-[1400px] mx-auto sm:px-16">
+          
           {/* Left Arrow */}
           <button
-            onClick={prev}
+            onClick={() => scroll('left')}
+            className="hidden sm:flex absolute left-2 z-20 shrink-0 w-11 h-11 rounded-full items-center justify-center bg-[#0d1225] border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-200 shadow-[0_0_15px_rgba(0,0,0,0.5)]"
             aria-label="Previous plan"
-            className="shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-white/[0.05] border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/25 transition-all duration-200 z-20"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
 
-          {/* Cards container */}
-          <div className="flex-1 min-w-0">
-            {/* ── Mobile: single card ── */}
-            <div className="block sm:hidden">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={PLANS[activeIndex].id}
-                  initial={{ opacity: 0, x: 40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -40 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <PlanCard
-                    plan={PLANS[activeIndex]}
-                    isCenter={true}
-                    position="center"
-                  />
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* ── Tablet / Desktop: 3-card layout ── */}
-            <div
-              className="hidden sm:grid gap-3 lg:gap-5"
-              style={{ gridTemplateColumns: '1fr 1.18fr 1fr', alignItems: 'center' }}
-            >
-              {orderedPlans.map((plan, idx) => {
-                const pos = idx === 0 ? 'left' : idx === 2 ? 'right' : 'center'
-                return (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    isCenter={idx === 1}
-                    position={pos}
-                  />
-                )
-              })}
-            </div>
+          {/* Cards Container */}
+          <div 
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex overflow-x-auto snap-x snap-mandatory gap-4 sm:gap-6 pb-4 items-stretch w-max max-w-full mx-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-4 sm:px-2 scroll-smooth"
+          >
+            {plans.map((plan) => (
+              <div key={plan.id} className="snap-center shrink-0 w-[85vw] sm:w-[320px] md:w-[280px] lg:w-[320px] xl:w-[340px] flex">
+                <div className="w-full h-full">
+                  <PlanCard plan={plan} />
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Right Arrow */}
           <button
-            onClick={next}
+            onClick={() => scroll('right')}
+            className="hidden sm:flex absolute right-2 z-20 shrink-0 w-11 h-11 rounded-full items-center justify-center bg-[#0d1225] border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-200 shadow-[0_0_15px_rgba(0,0,0,0.5)]"
             aria-label="Next plan"
-            className="shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-white/[0.05] border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/25 transition-all duration-200 z-20"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
 
-        {/* ── Dot indicators (mobile) ── */}
-        <div className="flex sm:hidden items-center justify-center gap-2 mt-6" role="tablist" aria-label="Plan navigation">
-          {PLANS.map((plan, i) => (
+        {/* ── Dot Indicators ── */}
+        <div className="flex items-center justify-center gap-2 mt-6" role="tablist" aria-label="Plan navigation">
+          {plans.map((plan, i) => (
             <button
               key={plan.id}
               role="tab"
               aria-selected={i === activeIndex}
               aria-label={`Go to ${plan.name} plan`}
-              onClick={() => setActiveIndex(i)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === activeIndex
-                  ? 'w-6 bg-blue-400'
-                  : 'w-1.5 bg-slate-600 hover:bg-slate-500'
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* ── Desktop indicator dots ── */}
-        <div className="hidden sm:flex items-center justify-center gap-2 mt-8" role="tablist" aria-label="Plan navigation">
-          {PLANS.map((plan, i) => (
-            <button
-              key={plan.id}
-              role="tab"
-              aria-selected={i === activeIndex}
-              aria-label={`Go to ${plan.name} plan`}
-              onClick={() => setActiveIndex(i)}
+              onClick={() => scrollTo(i)}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 i === activeIndex
                   ? 'w-8 bg-gradient-to-r from-blue-400 to-purple-400'
@@ -456,6 +392,7 @@ export function PlansSection() {
             />
           ))}
         </div>
+
       </div>
     </section>
   )
