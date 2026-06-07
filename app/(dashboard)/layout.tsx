@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { DashboardLayoutClient } from './dashboard/DashboardLayoutClient'
+import { creditDueBasicDailyYield } from '@/lib/basicMembership'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
@@ -17,17 +18,40 @@ export default async function DashboardLayout({ children }: { children: React.Re
       memberType: true,
       profilePictureUrl: true,
       hasSeenProfilePicturePopup: true,
+      profileCompleted: true,
+      name: true,
+      phone: true,
+      dateOfBirth: true,
+      addressLine: true,
+      city: true,
+      state: true,
+      pinCode: true,
     }
   })
 
-  const isFree = dbUser?.memberType === 'FREE'
+  await creditDueBasicDailyYield(session.id)
 
-  const kyc = isFree ? null : await prisma.kYC.findUnique({
+  const isFree = dbUser?.memberType === 'FREE'
+  const isBasic = dbUser?.memberType === 'BASIC'
+
+  const kyc = isFree || isBasic ? null : await prisma.kYC.findUnique({
     where: { userId: session.id },
     select: { status: true },
   })
 
-  const isKycApproved = isFree ? true : kyc?.status === 'APPROVED'
+  const isKycApproved = isFree || isBasic ? true : kyc?.status === 'APPROVED'
+  const isProfileComplete = Boolean(
+    dbUser?.profileCompleted ||
+    (
+      dbUser?.name?.trim() &&
+      dbUser?.phone?.trim() &&
+      dbUser?.dateOfBirth &&
+      dbUser?.addressLine?.trim() &&
+      dbUser?.city?.trim() &&
+      dbUser?.state?.trim() &&
+      dbUser?.pinCode?.trim()
+    )
+  )
 
   return (
     <DashboardLayoutClient
@@ -37,6 +61,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         memberType: dbUser?.memberType || 'PREMIUM',
         profilePictureUrl: dbUser?.profilePictureUrl,
         hasSeenProfilePicturePopup: dbUser?.hasSeenProfilePicturePopup ?? false,
+        profileCompleted: isProfileComplete,
       }}
       notificationCount={unreadCount}
       isKycApproved={isKycApproved}

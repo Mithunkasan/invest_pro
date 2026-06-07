@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Wallet, ArrowDownToLine, ArrowUpFromLine,
-  History, Users, Bell, ShieldCheck, Settings, X, ChevronRight, Crown, Gift
+  History, Users, Bell, ShieldCheck, Settings, X, ChevronRight, Crown, Gift, ClipboardList, Gamepad2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -24,8 +24,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Game Section', icon: Gamepad2 },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
   { href: '/dashboard/membership', label: 'Membership', icon: Crown },
+  { href: '/dashboard/tasks', label: 'Tasks', icon: ClipboardList },
   { href: '/dashboard/deposit', label: 'Deposit', icon: ArrowDownToLine },
   { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowUpFromLine },
   { href: '/dashboard/transactions', label: 'Transactions', icon: History },
@@ -39,7 +41,7 @@ interface DashboardSidebarProps {
   mobileOpen: boolean
   onClose: () => void
   isKycApproved: boolean
-  user: { name: string; email: string; memberType?: 'FREE' | 'PREMIUM' }
+  user: { name: string; email: string; memberType?: 'FREE' | 'BASIC' | 'PREMIUM' }
 }
 
 export function DashboardSidebar({ mobileOpen, onClose, isKycApproved, user }: DashboardSidebarProps) {
@@ -68,14 +70,14 @@ export function DashboardSidebar({ mobileOpen, onClose, isKycApproved, user }: D
     const isFree = user?.memberType === 'FREE'
 
     if (isFree) {
-      // Free users do NOT see KYC, Membership, Deposit, or Referral
+      // Free users can access games, wallet, membership/KYC upgrade, tasks, and profile.
       baseItems = baseItems.filter((item) => 
-        item.label !== 'KYC' && 
-        item.label !== 'Membership' && 
         item.label !== 'Deposit' && 
-        item.label !== 'Referral'
+        item.label !== 'Referral' &&
+        item.label !== 'Overview'
       )
     } else {
+      baseItems = baseItems.filter((item) => item.label !== 'Game Section')
       // Premium users see the Gift Section
       const membershipIndex = baseItems.findIndex((item) => item.label === 'Membership')
       if (membershipIndex !== -1) {
@@ -227,7 +229,7 @@ export function DashboardSidebar({ mobileOpen, onClose, isKycApproved, user }: D
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              className="lg:hidden fixed inset-0 z-40 bg-black/75"
               onClick={onClose}
             />
             <motion.aside

@@ -15,6 +15,8 @@ export type DepositStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type WithdrawalStatus = 'PENDING' | 'PROCESSING' | 'APPROVED' | 'REJECTED'
 export type KYCStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type NotificationType = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR'
+export type MemberType = 'FREE' | 'BASIC' | 'PREMIUM'
+export type OfflineTaskStatus = 'ASSIGNED' | 'COMPLETED' | 'EXPIRED'
 
 // ── Models ────────────────────────────────────────────────────────────────────
 export interface User {
@@ -24,6 +26,7 @@ export interface User {
   phone?: string | null
   role: Role
   status: UserStatus
+  memberType?: MemberType
   referralCode: string
   referredById?: string | null
   starPerformer?: boolean
@@ -195,6 +198,19 @@ export interface SystemSettings {
   heroActive: string
   heroPaid: string
   heroRate: string
+  basicDailyYieldPercent: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface OfflineTask {
+  id: string
+  userId: string
+  title: string
+  description: string
+  dueAt: Date
+  status: OfflineTaskStatus
+  completedAt?: Date | null
   createdAt: Date
   updatedAt: Date
 }

@@ -323,7 +323,7 @@ export function FloatingMoneyBackground() {
   }
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[10] overflow-hidden select-none">
+    <div data-floating-background="money" className="fixed inset-0 pointer-events-none z-[10] overflow-hidden select-none">
       {items.map((item) => {
         const {
           id,

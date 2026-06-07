@@ -9,6 +9,26 @@ import { uploadToCloudinary } from '@/lib/cloudinary'
 import type { ApiResponse } from '@/types'
 import { deductFromWallets } from './walletUtils'
 
+function isProfileComplete(data: {
+  name?: string | null
+  phone?: string | null
+  dateOfBirth?: Date | null
+  addressLine?: string | null
+  city?: string | null
+  state?: string | null
+  pinCode?: string | null
+}) {
+  return Boolean(
+    data.name?.trim() &&
+    data.phone?.trim() &&
+    data.dateOfBirth &&
+    data.addressLine?.trim() &&
+    data.city?.trim() &&
+    data.state?.trim() &&
+    data.pinCode?.trim()
+  )
+}
+
 // ── Submit Deposit ────────────────────────────────────────────────────────────
 export async function submitDeposit(formData: FormData): Promise<ApiResponse> {
   const session = await getSession()
@@ -452,6 +472,76 @@ export async function uploadProfilePictureAction(formData: FormData): Promise<Ap
   } catch (error: any) {
     console.error('Error uploading profile picture:', error)
     return { success: false, message: error.message || 'Failed to upload profile picture' }
+  }
+}
+
+export async function updateProfileAction(formData: FormData): Promise<ApiResponse> {
+  const session = await getSession()
+  if (!session) return { success: false, message: 'Unauthorized' }
+
+  const name = String(formData.get('name') || '').trim()
+  const phone = String(formData.get('phone') || '').trim()
+  const dateOfBirthValue = String(formData.get('dateOfBirth') || '').trim()
+  const addressLine = String(formData.get('addressLine') || '').trim()
+  const city = String(formData.get('city') || '').trim()
+  const state = String(formData.get('state') || '').trim()
+  const pinCode = String(formData.get('pinCode') || '').trim()
+  const dateOfBirth = dateOfBirthValue ? new Date(dateOfBirthValue) : null
+
+  if (!name || !phone || !dateOfBirth || Number.isNaN(dateOfBirth.getTime()) || !addressLine || !city || !state || !pinCode) {
+    return { success: false, message: 'Please complete all required profile fields.' }
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: session.id },
+      data: {
+        name,
+        phone,
+        dateOfBirth,
+        addressLine,
+        city,
+        state,
+        pinCode,
+        profileCompleted: isProfileComplete({ name, phone, dateOfBirth, addressLine, city, state, pinCode }),
+      },
+    })
+
+    revalidatePath('/dashboard')
+    revalidatePath('/dashboard/profile')
+    return { success: true, message: 'Profile updated successfully.' }
+  } catch (error: any) {
+    if (String(error?.code) === 'P2002') {
+      return { success: false, message: 'This phone number is already linked to another account.' }
+    }
+    return { success: false, message: 'Failed to update profile.' }
+  }
+}
+
+export async function completeOfflineTaskAction(taskId: string): Promise<ApiResponse> {
+  const session = await getSession()
+  if (!session) return { success: false, message: 'Unauthorized' }
+
+  try {
+    const task = await prisma.offlineTask.findUnique({ where: { id: taskId } })
+    if (!task || task.userId !== session.id) return { success: false, message: 'Task not found' }
+    if (task.status !== 'ASSIGNED') return { success: false, message: 'Task is already closed' }
+    if (task.dueAt < new Date()) {
+      await prisma.offlineTask.update({ where: { id: taskId }, data: { status: 'EXPIRED' } })
+      revalidatePath('/dashboard/tasks')
+      return { success: false, message: 'Task time has expired.' }
+    }
+
+    await prisma.offlineTask.update({
+      where: { id: taskId },
+      data: { status: 'COMPLETED', completedAt: new Date() },
+    })
+
+    revalidatePath('/dashboard/tasks')
+    revalidatePath('/admin/dashboard/tasks')
+    return { success: true, message: 'Task marked as completed.' }
+  } catch {
+    return { success: false, message: 'Failed to complete task.' }
   }
 }
 

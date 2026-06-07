@@ -226,7 +226,7 @@
 
   /* Dashboard Sidebar Link */
   .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent;
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors duration-150 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent;
   }
 
   .sidebar-link.active {
@@ -354,4 +354,29 @@
   animation: sway var(--sway-duration, 5s) ease-in-out infinite alternate;
   animation-delay: var(--sway-delay, 0s);
   will-change: transform;
+}
+
+/* ── Global modal states & scroll locks ── */
+body.modal-open {
+  overflow: hidden !important;
+}
+
+body.modal-open main {
+  overflow: hidden !important;
+  /* Do NOT set z-index here — it creates a new stacking context that fights
+     the modal overlay's own z-index and causes flickering when the sidebar
+     triggers hover repaints at the same compositing level. */
+}
+
+/* Suppress ALL pointer/hover events on the sidebar while a modal is open.
+   Sidebar link hover transitions (transition-all) fire GPU repaints that
+   compete with the modal's rendering layer and cause visible flickering. */
+body.modal-open aside {
+  pointer-events: none !important;
+}
+
+/* Disable background animated canvas and floating money elements when a
+   modal is open to eliminate GPU load and mouse lag */
+body.modal-open [data-floating-background] {
+  display: none !important;
 }

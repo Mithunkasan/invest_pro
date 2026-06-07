@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Filter, Eye, Truck, Package, CheckCircle, Clock, X,
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { updateGiftTrackingAction } from '@/actions/adminGift'
 import { formatDate } from '@/utils/formatters'
+import { ModalPortal } from '@/components/common/ModalPortal'
 
 interface GiftAdminItem {
   id: string
@@ -44,6 +45,28 @@ export function GiftsAdminClient({ gifts: initialGifts }: GiftsAdminClientProps)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [selectedGift, setSelectedGift] = useState<GiftAdminItem | null>(null)
+
+  useEffect(() => {
+    if (selectedGift) {
+      document.body.classList.add('modal-open')
+    } else {
+      document.body.classList.remove('modal-open')
+    }
+    return () => {
+      document.body.classList.remove('modal-open')
+    }
+  }, [selectedGift])
+
+  useEffect(() => {
+    if (!selectedGift) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedGift(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedGift])
   
   // Update Form State
   const [loading, setLoading] = useState(false)
@@ -268,23 +291,24 @@ export function GiftsAdminClient({ gifts: initialGifts }: GiftsAdminClientProps)
       {/* ── Slide-out Details Drawer ── */}
       <AnimatePresence>
         {selectedGift && (
-          <>
-            {/* Drawer Backdrop Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-              onClick={() => setSelectedGift(null)}
-            />
-            {/* Drawer Panel */}
-            <motion.aside
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed top-0 bottom-0 right-0 z-50 w-full max-w-md bg-slate-950 border-l border-white/5 text-white/90 shadow-2xl flex flex-col h-full"
-            >
+          <ModalPortal>
+            <>
+              {/* Drawer Backdrop Overlay */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9998] bg-black/75"
+                onClick={() => setSelectedGift(null)}
+              />
+              {/* Drawer Panel */}
+              <motion.aside
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="fixed top-0 bottom-0 right-0 z-[9999] w-full max-w-md bg-slate-950 border-l border-white/5 text-white/90 shadow-2xl flex flex-col h-full"
+              >
               {/* Header */}
               <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
                 <div>
@@ -439,7 +463,8 @@ export function GiftsAdminClient({ gifts: initialGifts }: GiftsAdminClientProps)
 
               </div>
             </motion.aside>
-          </>
+            </>
+          </ModalPortal>
         )}
       </AnimatePresence>
     </div>

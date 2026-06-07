@@ -1,7 +1,8 @@
 'use client'
 
-import { useTransition, useState, useMemo } from 'react'
+import { useTransition, useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { ModalPortal } from '@/components/common/ModalPortal'
 import { DataTable } from '@/components/dashboard/DataTable'
 import { formatDate, formatCurrency, getStatusColor } from '@/utils/formatters'
 import { Button } from '@/components/ui/button'
@@ -525,6 +526,28 @@ export function WalletsTable({ data }: TableProps) {
     })
   }
 
+  useEffect(() => {
+    if (selectedWallet) {
+      document.body.classList.add('modal-open')
+    } else {
+      document.body.classList.remove('modal-open')
+    }
+    return () => {
+      document.body.classList.remove('modal-open')
+    }
+  }, [selectedWallet])
+
+  useEffect(() => {
+    if (!selectedWallet) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedWallet(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedWallet])
+
   const cols = [
     { key: 'user.name', label: 'User', render: (_: any, row: any) => (
       <div>
@@ -558,87 +581,94 @@ export function WalletsTable({ data }: TableProps) {
 
       {/* Adjust Balance Glassmorphic Dialog Modal */}
       {selectedWallet && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div 
-            className="premium-card p-6 w-full max-w-md bg-card/95 border border-border shadow-2xl relative space-y-4 animate-in fade-in zoom-in-95 duration-300"
+        <ModalPortal>
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}
+            onClick={() => setSelectedWallet(null)}
           >
-            <h3 className="text-lg font-bold text-white/90">Adjust Wallet Balance</h3>
-            <p className="text-xs text-muted-foreground">Adjusting wallets for <span className="text-primary font-bold">{selectedWallet.name}</span></p>
+          <div 
+            className="p-6 w-full max-w-md bg-card/95 border border-border rounded-2xl shadow-2xl relative space-y-4 text-left cursor-default animate-in fade-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+              <h3 className="text-lg font-bold text-white/90">Adjust Wallet Balance</h3>
+              <p className="text-xs text-muted-foreground">Adjusting wallets for <span className="text-primary font-bold">{selectedWallet.name}</span></p>
 
-            <form onSubmit={handleAdjustSubmit} className="space-y-4 pt-2">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Wallet Type</label>
-                <select 
-                  className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground focus:ring-1 focus:ring-primary outline-none"
-                  value={adjustData.walletType}
-                  onChange={(e) => setAdjustData(prev => ({ ...prev, walletType: e.target.value as any }))}
-                  disabled={isPending}
-                >
-                  <option value="MAIN">Main Wallet</option>
-                  <option value="REWARD">Reward Wallet</option>
-                  <option value="REFERRAL">Referral Income</option>
-                  <option value="LEVEL">Level Income</option>
-                  <option value="SHARE">Share Wallet</option>
-                  <option value="BONUS">Bonus Wallet</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Operation</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button 
-                    type="button"
-                    className={`h-9 rounded-lg text-xs font-bold transition-all ${adjustData.operation === 'ADD' ? 'bg-green-600 text-white shadow-md' : 'bg-muted text-muted-foreground'}`}
-                    onClick={() => setAdjustData(prev => ({ ...prev, operation: 'ADD' }))}
+              <form onSubmit={handleAdjustSubmit} className="space-y-4 pt-2">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground">Wallet Type</label>
+                  <select 
+                    className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground focus:ring-1 focus:ring-primary outline-none"
+                    value={adjustData.walletType}
+                    onChange={(e) => setAdjustData(prev => ({ ...prev, walletType: e.target.value as any }))}
                     disabled={isPending}
                   >
-                    Add Balance (+)
-                  </button>
-                  <button 
-                    type="button"
-                    className={`h-9 rounded-lg text-xs font-bold transition-all ${adjustData.operation === 'SUBTRACT' ? 'bg-red-600 text-white shadow-md' : 'bg-muted text-muted-foreground'}`}
-                    onClick={() => setAdjustData(prev => ({ ...prev, operation: 'SUBTRACT' }))}
-                    disabled={isPending}
-                  >
-                    Subtract Balance (-)
-                  </button>
+                    <option value="MAIN">Main Wallet</option>
+                    <option value="REWARD">Reward Wallet</option>
+                    <option value="REFERRAL">Referral Income</option>
+                    <option value="LEVEL">Level Income</option>
+                    <option value="SHARE">Share Wallet</option>
+                    <option value="BONUS">Bonus Wallet</option>
+                  </select>
                 </div>
-              </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Amount (₹)</label>
-                <input 
-                  type="number"
-                  step="0.01"
-                  required
-                  placeholder="Enter adjustment amount"
-                  className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
-                  value={adjustData.amount}
-                  onChange={(e) => setAdjustData(prev => ({ ...prev, amount: e.target.value }))}
-                  disabled={isPending}
-                />
-              </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground">Operation</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      type="button"
+                      className={`h-9 rounded-lg text-xs font-bold transition-all ${adjustData.operation === 'ADD' ? 'bg-green-600 text-white shadow-md' : 'bg-muted text-muted-foreground'}`}
+                      onClick={() => setAdjustData(prev => ({ ...prev, operation: 'ADD' }))}
+                      disabled={isPending}
+                    >
+                      Add Balance (+)
+                    </button>
+                    <button 
+                      type="button"
+                      className={`h-9 rounded-lg text-xs font-bold transition-all ${adjustData.operation === 'SUBTRACT' ? 'bg-red-600 text-white shadow-md' : 'bg-muted text-muted-foreground'}`}
+                      onClick={() => setAdjustData(prev => ({ ...prev, operation: 'SUBTRACT' }))}
+                      disabled={isPending}
+                    >
+                      Subtract Balance (-)
+                    </button>
+                  </div>
+                </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  onClick={() => setSelectedWallet(null)} 
-                  disabled={isPending}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isPending}
-                  className={adjustData.operation === 'ADD' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
-                >
-                  {isPending ? 'Processing...' : 'Apply Adjustment'}
-                </Button>
-              </div>
-            </form>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground">Amount (₹)</label>
+                  <input 
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder="Enter adjustment amount"
+                    className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+                    value={adjustData.amount}
+                    onChange={(e) => setAdjustData(prev => ({ ...prev, amount: e.target.value }))}
+                    disabled={isPending}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    onClick={() => setSelectedWallet(null)} 
+                    disabled={isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={isPending}
+                    className={adjustData.operation === 'ADD' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+                  >
+                    {isPending ? 'Processing...' : 'Apply Adjustment'}
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </>
   )
@@ -786,6 +816,28 @@ export function MembershipsTable({ data }: TableProps) {
     })
   }
 
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.classList.add('modal-open')
+    } else {
+      document.body.classList.remove('modal-open')
+    }
+    return () => {
+      document.body.classList.remove('modal-open')
+    }
+  }, [isModalOpen])
+
+  useEffect(() => {
+    if (!isModalOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isModalOpen])
+
   const cols = [
     { key: 'name', label: 'Plan Name', sortable: true, render: (v: any, row: any) => (
       <div>
@@ -869,280 +921,287 @@ export function MembershipsTable({ data }: TableProps) {
 
       {/* Add / Edit Glassmorphic Dialog Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div 
-            className="premium-card p-6 w-full max-w-2xl bg-brand-950 border border-brand-800 shadow-2xl relative space-y-4 my-8 animate-in fade-in zoom-in-95 duration-300"
+        <ModalPortal>
+          <div
+            className="fixed inset-0 z-[9999] flex items-start justify-center p-4 py-8 overflow-y-auto"
+            style={{ backgroundColor: 'rgba(0,0,0,0.80)' }}
+            onClick={() => setModalOpen(false)}
           >
-            <button 
-              onClick={() => setModalOpen(false)}
-              className="absolute top-4 right-4 w-7 h-7 rounded-full bg-brand-900/60 border border-brand-800 flex items-center justify-center hover:bg-brand-800 text-brand-300 hover:text-white transition-colors"
-              type="button"
-            >
-              <X className="w-4 h-4" />
-            </button>
+          <div 
+            className="p-6 w-full max-w-2xl bg-brand-950 border border-brand-800 rounded-2xl shadow-2xl relative space-y-4 text-left cursor-default animate-in fade-in zoom-in-95 duration-300 my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+              <button 
+                onClick={() => setModalOpen(false)}
+                className="absolute top-4 right-4 w-7 h-7 rounded-full bg-brand-900/60 border border-brand-800 flex items-center justify-center hover:bg-brand-800 text-brand-300 hover:text-white transition-colors"
+                type="button"
+              >
+                <X className="w-4 h-4" />
+              </button>
 
-            <h3 className="text-xl font-black text-white flex items-center gap-2">
-              <PlusCircle className="w-6 h-6 text-amber-500" />
-              {selectedPlan ? 'Modify Membership Plan' : 'Create New Membership Plan'}
-            </h3>
-            <p className="text-xs text-muted-foreground -mt-2">
-              {selectedPlan ? `Updating details for: ${selectedPlan.name}` : 'Set up parameters and perks for this new tier.'}
-            </p>
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <PlusCircle className="w-6 h-6 text-amber-500" />
+                {selectedPlan ? 'Modify Membership Plan' : 'Create New Membership Plan'}
+              </h3>
+              <p className="text-xs text-muted-foreground -mt-2">
+                {selectedPlan ? `Updating details for: ${selectedPlan.name}` : 'Set up parameters and perks for this new tier.'}
+              </p>
 
-            <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-              {/* Primary Config Section */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">Plan Name</label>
-                  <input 
-                    type="text"
-                    required
-                    placeholder="e.g. Diamond Elite"
-                    className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    disabled={isPending}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">Price (₹)</label>
-                  <input 
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    placeholder="e.g. 4999"
-                    className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
-                    value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    disabled={isPending}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
-                    <span>Duration in Days</span>
-                    <span className="text-[10px] text-amber-500 font-bold">Use -1 for Lifetime</span>
-                  </label>
-                  <input 
-                    type="number"
-                    required
-                    placeholder="e.g. 365"
-                    className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
-                    value={formData.durationDays}
-                    onChange={(e) => setFormData(prev => ({ ...prev, durationDays: e.target.value }))}
-                    disabled={isPending}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">Deposit Bonus Yield (%)</label>
-                  <input 
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    required
-                    placeholder="e.g. 2.5"
-                    className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
-                    value={formData.depositBonus}
-                    onChange={(e) => setFormData(prev => ({ ...prev, depositBonus: e.target.value }))}
-                    disabled={isPending}
-                  />
-                </div>
-              </div>
-
-              {/* Referral Configs */}
-              <div className="p-3.5 bg-brand-900/20 border border-brand-850 rounded-xl space-y-3">
-                <p className="text-xs font-bold text-purple-400 uppercase tracking-wider">Multi-Level Referral Commissions</p>
-                <div className="grid grid-cols-3 gap-3">
+              <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+                {/* Primary Config Section */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-brand-300">Level 1 (%)</label>
-                    <input 
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      required
-                      className="w-full h-9 px-2 rounded-lg bg-background border border-border text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
-                      value={formData.referralLevel1}
-                      onChange={(e) => setFormData(prev => ({ ...prev, referralLevel1: e.target.value }))}
-                      disabled={isPending}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-brand-300">Level 2 (%)</label>
-                    <input 
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      required
-                      className="w-full h-9 px-2 rounded-lg bg-background border border-border text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
-                      value={formData.referralLevel2}
-                      onChange={(e) => setFormData(prev => ({ ...prev, referralLevel2: e.target.value }))}
-                      disabled={isPending}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-brand-300">Level 3 (%)</label>
-                    <input 
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      required
-                      className="w-full h-9 px-2 rounded-lg bg-background border border-border text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
-                      value={formData.referralLevel3}
-                      onChange={(e) => setFormData(prev => ({ ...prev, referralLevel3: e.target.value }))}
-                      disabled={isPending}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Service Configs */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">Withdrawal Time Description</label>
-                  <input 
-                    type="text"
-                    required
-                    placeholder="e.g. 2 Hours, 24-48 Hours"
-                    className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
-                    value={formData.withdrawalTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, withdrawalTime: e.target.value }))}
-                    disabled={isPending}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">Support Tier Description</label>
-                  <input 
-                    type="text"
-                    required
-                    placeholder="e.g. 24/7 Premium, Standard Email"
-                    className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
-                    value={formData.support}
-                    onChange={(e) => setFormData(prev => ({ ...prev, support: e.target.value }))}
-                    disabled={isPending}
-                  />
-                </div>
-              </div>
-
-              {/* Styling & Features row */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
-                <div className="space-y-1 sm:col-span-1">
-                  <label className="text-xs font-semibold text-muted-foreground">Accent Hex Color</label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="color"
-                      className="w-10 h-10 rounded-lg bg-transparent border-0 cursor-pointer outline-none shrink-0"
-                      value={formData.color}
-                      onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                      disabled={isPending}
-                    />
+                    <label className="text-xs font-semibold text-muted-foreground">Plan Name</label>
                     <input 
                       type="text"
                       required
-                      placeholder="#3B82F6"
-                      className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary font-mono uppercase"
-                      value={formData.color}
-                      onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                      placeholder="e.g. Diamond Elite"
+                      className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      disabled={isPending}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground">Price (₹)</label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      placeholder="e.g. 4999"
+                      className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+                      value={formData.price}
+                      onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
                       disabled={isPending}
                     />
                   </div>
                 </div>
 
-                <div className="sm:col-span-2 space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Plan Status</label>
-                  <div className="flex items-center gap-3 h-10 pl-1">
-                    <label className="relative flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer"
-                        checked={formData.isActive}
-                        onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                        disabled={isPending}
-                      />
-                      <div className="w-11 h-6 bg-brand-900 border border-brand-800 rounded-full peer peer-focus:ring-1 peer-focus:ring-primary peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-brand-300 after:border-brand-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-white peer-checked:after:border-white"></div>
-                      <span className="ml-3 text-sm font-medium text-brand-200">This plan is active and public</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
+                      <span>Duration in Days</span>
+                      <span className="text-[10px] text-amber-500 font-bold">Use -1 for Lifetime</span>
                     </label>
+                    <input 
+                      type="number"
+                      required
+                      placeholder="e.g. 365"
+                      className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+                      value={formData.durationDays}
+                      onChange={(e) => setFormData(prev => ({ ...prev, durationDays: e.target.value }))}
+                      disabled={isPending}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground">Deposit Bonus Yield (%)</label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      placeholder="e.g. 2.5"
+                      className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+                      value={formData.depositBonus}
+                      onChange={(e) => setFormData(prev => ({ ...prev, depositBonus: e.target.value }))}
+                      disabled={isPending}
+                    />
                   </div>
                 </div>
-              </div>
 
-              {/* Dynamic Features List Builder */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground">Custom Plan Features & Benefits</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="e.g. Free stock market premium guides"
-                    className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
-                    value={newFeatureText}
-                    onChange={(e) => setNewFeatureText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        handleAddFeature()
-                      }
-                    }}
-                    disabled={isPending}
-                  />
+                {/* Referral Configs */}
+                <div className="p-3.5 bg-brand-900/20 border border-brand-850 rounded-xl space-y-3">
+                  <p className="text-xs font-bold text-purple-400 uppercase tracking-wider">Multi-Level Referral Commissions</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-semibold text-brand-300">Level 1 (%)</label>
+                      <input 
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        required
+                        className="w-full h-9 px-2 rounded-lg bg-background border border-border text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
+                        value={formData.referralLevel1}
+                        onChange={(e) => setFormData(prev => ({ ...prev, referralLevel1: e.target.value }))}
+                        disabled={isPending}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-semibold text-brand-300">Level 2 (%)</label>
+                      <input 
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        required
+                        className="w-full h-9 px-2 rounded-lg bg-background border border-border text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
+                        value={formData.referralLevel2}
+                        onChange={(e) => setFormData(prev => ({ ...prev, referralLevel2: e.target.value }))}
+                        disabled={isPending}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-semibold text-brand-300">Level 3 (%)</label>
+                      <input 
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        required
+                        className="w-full h-9 px-2 rounded-lg bg-background border border-border text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
+                        value={formData.referralLevel3}
+                        onChange={(e) => setFormData(prev => ({ ...prev, referralLevel3: e.target.value }))}
+                        disabled={isPending}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Service Configs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground">Withdrawal Time Description</label>
+                    <input 
+                      type="text"
+                      required
+                      placeholder="e.g. 2 Hours, 24-48 Hours"
+                      className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+                      value={formData.withdrawalTime}
+                      onChange={(e) => setFormData(prev => ({ ...prev, withdrawalTime: e.target.value }))}
+                      disabled={isPending}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground">Support Tier Description</label>
+                    <input 
+                      type="text"
+                      required
+                      placeholder="e.g. 24/7 Premium, Standard Email"
+                      className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+                      value={formData.support}
+                      onChange={(e) => setFormData(prev => ({ ...prev, support: e.target.value }))}
+                      disabled={isPending}
+                    />
+                  </div>
+                </div>
+
+                {/* Styling & Features row */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                  <div className="space-y-1 sm:col-span-1">
+                    <label className="text-xs font-semibold text-muted-foreground">Accent Hex Color</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="color"
+                        className="w-10 h-10 rounded-lg bg-transparent border-0 cursor-pointer outline-none shrink-0"
+                        value={formData.color}
+                        onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                        disabled={isPending}
+                      />
+                      <input 
+                        type="text"
+                        required
+                        placeholder="#3B82F6"
+                        className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary font-mono uppercase"
+                        value={formData.color}
+                        onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                        disabled={isPending}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-2 space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground">Plan Status</label>
+                    <div className="flex items-center gap-3 h-10 pl-1">
+                      <label className="relative flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.isActive}
+                          onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                          disabled={isPending}
+                        />
+                        <div className="w-11 h-6 bg-brand-900 border border-brand-800 rounded-full peer peer-focus:ring-1 peer-focus:ring-primary peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-brand-300 after:border-brand-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-white peer-checked:after:border-white"></div>
+                        <span className="ml-3 text-sm font-medium text-brand-200">This plan is active and public</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dynamic Features List Builder */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground">Custom Plan Features & Benefits</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. Free stock market premium guides"
+                      className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+                      value={newFeatureText}
+                      onChange={(e) => setNewFeatureText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleAddFeature()
+                        }
+                      }}
+                      disabled={isPending}
+                    />
+                    <Button 
+                      type="button" 
+                      onClick={handleAddFeature}
+                      className="h-10 px-4 bg-brand-900 border border-brand-800 text-xs font-extrabold hover:bg-brand-800 text-brand-200 hover:text-white"
+                      disabled={isPending}
+                    >
+                      <Plus className="w-4 h-4 mr-1.5" /> Add Perk
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pt-1.5 max-h-36 overflow-y-auto pr-1">
+                    {featuresList.map((feature, idx) => (
+                      <div 
+                        key={idx} 
+                        className="flex items-center gap-1.5 text-[11px] bg-brand-900/60 border border-brand-800 text-brand-100 pl-3 pr-1.5 py-1 rounded-full font-medium"
+                      >
+                        <span>{feature}</span>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveFeature(idx)}
+                          className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-brand-850 text-brand-300 hover:text-white transition-colors"
+                          disabled={isPending}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {featuresList.length === 0 && (
+                      <p className="text-xs text-muted-foreground italic pl-1">No features added yet. Add some custom benefits above!</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Form Buttons */}
+                <div className="flex justify-end gap-2 pt-3 border-t border-brand-850">
                   <Button 
                     type="button" 
-                    onClick={handleAddFeature}
-                    className="h-10 px-4 bg-brand-900 border border-brand-800 text-xs font-extrabold hover:bg-brand-800 text-brand-200 hover:text-white"
+                    variant="ghost" 
+                    onClick={() => setModalOpen(false)} 
                     disabled={isPending}
+                    className="hover:bg-brand-900/60 text-brand-300 hover:text-white"
                   >
-                    <Plus className="w-4 h-4 mr-1.5" /> Add Perk
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={isPending}
+                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold px-5 rounded-xl shadow-md transition-all active:scale-95"
+                  >
+                    {isPending ? 'Saving Plan...' : selectedPlan ? 'Save Changes' : 'Create Plan'}
                   </Button>
                 </div>
-                <div className="flex flex-wrap gap-1.5 pt-1.5 max-h-36 overflow-y-auto pr-1">
-                  {featuresList.map((feature, idx) => (
-                    <div 
-                      key={idx} 
-                      className="flex items-center gap-1.5 text-[11px] bg-brand-900/60 border border-brand-800 text-brand-100 pl-3 pr-1.5 py-1 rounded-full font-medium"
-                    >
-                      <span>{feature}</span>
-                      <button 
-                        type="button"
-                        onClick={() => handleRemoveFeature(idx)}
-                        className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-brand-850 text-brand-300 hover:text-white transition-colors"
-                        disabled={isPending}
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {featuresList.length === 0 && (
-                    <p className="text-xs text-muted-foreground italic pl-1">No features added yet. Add some custom benefits above!</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Form Buttons */}
-              <div className="flex justify-end gap-2 pt-3 border-t border-brand-850">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  onClick={() => setModalOpen(false)} 
-                  disabled={isPending}
-                  className="hover:bg-brand-900/60 text-brand-300 hover:text-white"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isPending}
-                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold px-5 rounded-xl shadow-md transition-all active:scale-95"
-                >
-                  {isPending ? 'Saving Plan...' : selectedPlan ? 'Save Changes' : 'Create Plan'}
-                </Button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </>
   )

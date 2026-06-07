@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpFromLine, TrendingUp, ShieldCheck,
   GitBranch, Wallet, Bell, BarChart3, Lock, Settings, X, TrendingUpIcon,
-  LogOut, Menu, ChevronRight, Crown, Gift, Coins
+  LogOut, Menu, ChevronRight, Crown, Gift, Coins, ClipboardList
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { adminLogoutAction } from '@/actions/auth'
@@ -16,6 +16,7 @@ const adminNavItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/dashboard/users', label: 'User Management', icon: Users },
   { href: '/admin/dashboard/bonus', label: 'Admin Bonus', icon: Coins },
+  { href: '/admin/dashboard/tasks', label: 'Offline Tasks', icon: ClipboardList },
   { href: '/admin/dashboard/deposits', label: 'Deposits', icon: ArrowDownToLine },
   { href: '/admin/dashboard/withdrawals', label: 'Withdrawals', icon: ArrowUpFromLine },
   { href: '/admin/dashboard/plans', label: 'Investment Plans', icon: TrendingUp },
@@ -89,7 +90,7 @@ export function AdminLayoutClient({ children, admin }: AdminLayoutClientProps) {
       <AnimatePresence>
         {sidebarOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="lg:hidden fixed inset-0 z-40 bg-black/75" onClick={() => setSidebarOpen(false)} />
             <motion.aside initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="lg:hidden fixed left-0 top-0 bottom-0 z-50 w-64 bg-sidebar border-r border-sidebar-border">
               <div className="absolute top-4 right-4">
                 <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/60"><X className="w-4 h-4" /></button>
@@ -120,7 +121,7 @@ export function AdminLayoutClient({ children, admin }: AdminLayoutClientProps) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative z-10">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
           {children}
         </main>
       </div>
