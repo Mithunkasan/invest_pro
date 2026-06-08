@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, comparePassword, setSession, clearSession } from '@/lib/auth'
+import { sendWelcomeEmail } from '@/lib/mail'
 import { loginSchema, registerSchema, adminLoginSchema } from '@/utils/validators'
 import type { ApiResponse } from '@/types'
 
@@ -123,6 +124,13 @@ export async function registerAction(
       type: 'SUCCESS',
     },
   })
+
+  // Send welcome email
+  try {
+    await sendWelcomeEmail(user.email, user.name)
+  } catch (error) {
+    console.error('Failed to send welcome email:', error)
+  }
 
   return { success: true, message: 'Account created successfully! Please login.' }
 }

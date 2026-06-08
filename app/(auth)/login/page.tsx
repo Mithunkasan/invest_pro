@@ -25,6 +25,7 @@ function SubmitButton() {
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
 
   async function handleAction(formData: FormData) {
@@ -67,6 +68,8 @@ export default function LoginPage() {
               name="email"
               type="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="arjun@example.com"
               className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400 transition-all"
             />
@@ -77,7 +80,7 @@ export default function LoginPage() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-sm text-white/70 font-medium">Password</label>
-            <Link href="/forgot-password" className="text-xs text-indigo-400 hover:text-indigo-300 hover:underline">
+            <Link href={`/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ''}`} className="text-xs text-indigo-400 hover:text-indigo-300 hover:underline">
               Forgot password?
             </Link>
           </div>

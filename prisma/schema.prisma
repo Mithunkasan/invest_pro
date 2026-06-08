@@ -518,3 +518,31 @@ model OfflineTask {
   @@index([status])
   @@index([dueAt])
 }
+
+// ============================================================
+// OTP MODEL
+// ============================================================
+model Otp {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+// ============================================================
+// PASSWORD RESET REQUEST MODEL
+// ============================================================
+model PasswordResetRequest {
+  id        String   @id @default(cuid())
+  email     String
+  status    String   @default("PENDING") // PENDING, RESOLVED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+}
