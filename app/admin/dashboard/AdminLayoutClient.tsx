@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpFromLine, TrendingUp, ShieldCheck,
   GitBranch, Wallet, Bell, BarChart3, Lock, Settings, X, TrendingUpIcon,
-  LogOut, Menu, ChevronRight, Crown, Gift, Coins, ClipboardList, Key
+  LogOut, Menu, ChevronRight, Crown, Gift, Coins, ClipboardList, Key, MessageSquare
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { adminLogoutAction } from '@/actions/auth'
@@ -16,6 +16,7 @@ const adminNavItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/dashboard/users', label: 'User Management', icon: Users },
   { href: '/admin/dashboard/password-resets', label: 'Password Resets', icon: Key },
+  { href: '/admin/dashboard/tickets', label: 'Ticket Management', icon: MessageSquare },
   { href: '/admin/dashboard/bonus', label: 'Admin Bonus', icon: Coins },
   { href: '/admin/dashboard/tasks', label: 'Offline Tasks', icon: ClipboardList },
   { href: '/admin/dashboard/deposits', label: 'Deposits', icon: ArrowDownToLine },
