@@ -47,6 +47,8 @@ model User {
   notifications Notification[]
   gift          Gift?
   assignedTasks OfflineTask[]
+  tickets       Ticket[]
+  ticketNotifications TicketNotification[]
 
   // Badges & Rank
   starPerformer       Boolean   @default(false)
@@ -545,4 +547,82 @@ model PasswordResetRequest {
 
   @@index([email])
   @@index([status])
+}
+
+// ============================================================
+// TICKETING SYSTEM MODELS
+// ============================================================
+enum TicketCategory {
+  TECHNICAL_ISSUE
+  PAYMENT_ISSUE
+  FEATURE_REQUEST
+  COMPLAINT
+  OTHER
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model Ticket {
+  id          String         @id @default(cuid())
+  ticketId    String         @unique
+  userId      String
+  subject     String
+  category    TicketCategory
+  priority    TicketPriority
+  description String
+  attachment  String?
+  status      TicketStatus   @default(OPEN)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages      TicketMessage[]
+  notifications TicketNotification[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([ticketId])
+}
+
+model TicketMessage {
+  id         String   @id @default(cuid())
+  ticketId   String
+  senderId   String
+  senderRole String   // "USER" or "ADMIN"
+  message    String   @db.Text
+  createdAt  DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([senderId])
+}
+
+model TicketNotification {
+  id        String   @id @default(cuid())
+  userId    String
+  ticketId  String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([ticketId])
+  @@index([isRead])
 }
