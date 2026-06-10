@@ -29,6 +29,51 @@ export async function toggleUserStatus(userId: string): Promise<ApiResponse> {
   }
 }
 
+// ── Update User Details ───────────────────────────────────────────────────────
+export async function updateUserAction(
+  userId: string,
+  data: {
+    name?: string
+    email?: string
+    phone?: string
+    addressLine?: string
+    city?: string
+    state?: string
+    pinCode?: string
+  }
+): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) return { success: false, message: 'User not found' }
+
+    const updateData: any = {}
+    if (data.name !== undefined && data.name.trim()) updateData.name = data.name.trim()
+    if (data.email !== undefined && data.email.trim()) updateData.email = data.email.trim().toLowerCase()
+    if (data.phone !== undefined) updateData.phone = data.phone.trim() || null
+    if (data.addressLine !== undefined) updateData.addressLine = data.addressLine.trim() || null
+    if (data.city !== undefined) updateData.city = data.city.trim() || null
+    if (data.state !== undefined) updateData.state = data.state.trim() || null
+    if (data.pinCode !== undefined) updateData.pinCode = data.pinCode.trim() || null
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    })
+
+    revalidatePath('/admin/dashboard/users')
+    return { success: true, message: 'User details updated successfully' }
+  } catch (error: any) {
+    console.error('Error updating user:', error)
+    if (error?.code === 'P2002') {
+      return { success: false, message: 'Email or phone already in use by another user' }
+    }
+    return { success: false, message: 'Failed to update user details' }
+  }
+}
+
 // ── Deposit Management ────────────────────────────────────────────────────────
 export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJECT', remarks?: string): Promise<ApiResponse> {
   const admin = await getAdminSession()
