@@ -15,6 +15,8 @@ interface StatsCardProps {
   iconBg?: string
   delay?: number
   suffix?: string
+  onClick?: () => void
+  className?: string
 }
 
 export function StatsCard({
@@ -27,6 +29,8 @@ export function StatsCard({
   iconBg = 'bg-primary/10',
   delay = 0,
   suffix,
+  onClick,
+  className,
 }: StatsCardProps) {
   const displayValue = isCurrency
     ? formatCurrency(Number(value))
@@ -40,7 +44,12 @@ export function StatsCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className="premium-card group p-5 sm:p-6 hover:shadow-[0_8px_30px_rgb(var(--primary-rgb),0.12)] hover:-translate-y-1.5 transition-all duration-300 hover:border-primary/30"
+      className={cn(
+        "premium-card group p-5 sm:p-6 hover:shadow-[0_8px_30px_rgb(var(--primary-rgb),0.12)] hover:-translate-y-1.5 transition-all duration-300 hover:border-primary/30",
+        onClick && "cursor-pointer select-none hover:border-primary/60",
+        className
+      )}
+      onClick={onClick}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1">
