@@ -42,7 +42,7 @@ export default async function AdminWalletPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Wallet Management</h1>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4">
         <div className="premium-card p-4 col-span-2 md:col-span-1">
           <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Total Platform Funds</p>
           <p className="text-xl font-black mt-1 text-primary">{formatCurrency(totalPlatformBalance)}</p>
@@ -61,11 +61,7 @@ export default async function AdminWalletPage() {
         </div>
         <div className="premium-card p-4">
           <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Referral Funds</p>
-          <p className="text-base font-bold mt-1 text-purple-500">{formatCurrency(totals._sum.referralBalance || 0)}</p>
-        </div>
-        <div className="premium-card p-4">
-          <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Level Funds</p>
-          <p className="text-base font-bold mt-1 text-emerald-500">{formatCurrency(totals._sum.levelBalance || 0)}</p>
+          <p className="text-base font-bold mt-1 text-purple-500">{formatCurrency((totals._sum.referralBalance || 0) + (totals._sum.levelBalance || 0))}</p>
         </div>
         <div className="premium-card p-4">
           <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Share Funds</p>

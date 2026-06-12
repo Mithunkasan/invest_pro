@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { formatCurrency, formatDateTime } from '@/utils/formatters'
-import { Wallet, TrendingUp, Users, ArrowDownToLine } from 'lucide-react'
+import { Wallet, TrendingUp, Users } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -64,7 +64,7 @@ export default async function WalletPage() {
         {/* Sub-wallets breakdown list below the balance */}
         {!isFree && <div className="mt-6 pt-4 border-t border-white/10">
           <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-3">Sub-Wallets Breakdown</p>
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
               <p className="text-[10px] text-white/50 font-medium">Deposit Wallet</p>
               <p className="text-sm font-bold text-blue-400 mt-0.5">{formatCurrency(wallet?.depositBalance || 0)}</p>
@@ -75,11 +75,7 @@ export default async function WalletPage() {
             </div>
             <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
               <p className="text-[10px] text-white/50 font-medium">Referral Income Wallet</p>
-              <p className="text-sm font-bold text-purple-400 mt-0.5">{formatCurrency(wallet?.referralBalance || 0)}</p>
-            </div>
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
-              <p className="text-[10px] text-white/50 font-medium">Level Income Wallet</p>
-              <p className="text-sm font-bold text-emerald-400 mt-0.5">{formatCurrency(wallet?.levelBalance || 0)}</p>
+              <p className="text-sm font-bold text-purple-400 mt-0.5">{formatCurrency((wallet?.referralBalance || 0) + (wallet?.levelBalance || 0))}</p>
             </div>
             <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
               <p className="text-[10px] text-white/50 font-medium">Share Wallet</p>
@@ -99,8 +95,7 @@ export default async function WalletPage() {
           { label: 'Main Wallet', value: wallet?.mainBalance || 0, icon: Wallet, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Combined total of all wallets', show: true },
           { label: 'Deposit Wallet', value: wallet?.depositBalance || 0, icon: Wallet, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'User deposited amount', show: !isFree },
           { label: 'Reward Wallet', value: wallet?.rewardBalance || 0, icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-500/10', desc: 'Claimed reward balances', show: !isFree },
-          { label: 'Referral Income Wallet', value: wallet?.referralBalance || 0, icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Commission from direct referrals', show: !isFree },
-          { label: 'Level Income Wallet', value: wallet?.levelBalance || 0, icon: ArrowDownToLine, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Commission from multi-level referrals', show: !isFree },
+          { label: 'Referral Income Wallet', value: (wallet?.referralBalance || 0) + (wallet?.levelBalance || 0), icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Commission from direct and multi-level referrals', show: !isFree },
           { label: 'Share Wallet', value: wallet?.shareBalance || 0, icon: TrendingUp, color: 'text-cyan-500', bg: 'bg-cyan-500/10', desc: 'Income as active member TL/Director Rank', show: !isFree },
           { label: 'Bonus Wallet', value: wallet?.bonusBalance || 0, icon: Wallet, color: 'text-orange-500', bg: 'bg-orange-500/10', desc: 'Platform bonus credits', show: !isFree },
         ].filter(w => w.show).map((w) => (

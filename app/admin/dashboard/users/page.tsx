@@ -19,6 +19,10 @@ export default async function AdminUsersPage() {
     orderBy: { createdAt: 'desc' },
   })
 
+  const plans = await prisma.membershipPlan.findMany({
+    orderBy: { price: 'asc' },
+  })
+
   const processedUsers = users.map(u => {
     if (!u.wallet) return u
     return {
@@ -52,7 +56,10 @@ export default async function AdminUsersPage() {
         </div>
       </div>
       <div className="premium-card p-6">
-        <UsersTable users={JSON.parse(JSON.stringify(processedUsers))} />
+        <UsersTable 
+          users={JSON.parse(JSON.stringify(processedUsers))} 
+          plans={JSON.parse(JSON.stringify(plans))}
+        />
       </div>
     </div>
   )

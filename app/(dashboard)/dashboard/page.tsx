@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   if (!session) redirect('/login')
 
   // Fetch all dashboard data in parallel
-  const [wallet, investments, transactions, notifications, chartTxns, dbAdminBonuses] = await Promise.all([
+  const [wallet, investments, transactions, notifications, chartTxns, dbAdminBonuses, completedTxns] = await Promise.all([
     prisma.wallet.findUnique({ where: { userId: session.id } }),
     prisma.investment.findMany({
       where: { userId: session.id, status: 'ACTIVE' },
@@ -47,6 +47,17 @@ export default async function DashboardPage() {
         }
       },
       orderBy: { createdAt: 'desc' }
+    }),
+    prisma.transaction.groupBy({
+      by: ['walletType'],
+      where: {
+        userId: session.id,
+        status: 'COMPLETED',
+        amount: { gt: 0 }
+      },
+      _sum: {
+        amount: true
+      }
     })
   ])
 
@@ -67,6 +78,25 @@ export default async function DashboardPage() {
       })
     }
   }
+
+  // Calculate cumulative earnings from completed credit transactions
+  let totalRewardEarned = 0
+  let totalReferralEarned = 0
+  let totalShareEarned = 0
+  let totalBonusEarned = 0
+
+  completedTxns.forEach(group => {
+    const sum = group._sum.amount || 0
+    if (group.walletType === 'REWARD') {
+      totalRewardEarned = sum
+    } else if (group.walletType === 'REFERRAL' || group.walletType === 'LEVEL') {
+      totalReferralEarned += sum
+    } else if (group.walletType === 'SHARE') {
+      totalShareEarned = sum
+    } else if (group.walletType === 'BONUS') {
+      totalBonusEarned = sum
+    }
+  })
 
   // Calculate monthly profit/investment for chart
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -142,6 +172,10 @@ export default async function DashboardPage() {
     referralIncome: referralIncome._sum.commission || 0,
     activePlans: investments.length,
     wallet: dbWallet || { mainBalance: 0, depositBalance: 0, bonusBalance: 0, referralBalance: 0, rewardBalance: 0, levelBalance: 0, shareBalance: 0 },
+    totalRewardEarned,
+    totalReferralEarned,
+    totalShareEarned,
+    totalBonusEarned,
   }
 
   if (dbUser?.memberType === 'FREE') {

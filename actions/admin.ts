@@ -36,10 +36,33 @@ export async function updateUserAction(
     name?: string
     email?: string
     phone?: string
+    profilePictureUrl?: string
+    hasSeenProfilePicturePopup?: boolean
+    dateOfBirth?: string | null
     addressLine?: string
     city?: string
     state?: string
     pinCode?: string
+    profileCompleted?: boolean
+    role?: 'USER' | 'ADMIN'
+    status?: 'ACTIVE' | 'SUSPENDED' | 'PENDING'
+    memberType?: 'FREE' | 'BASIC' | 'PREMIUM'
+    referralCode?: string
+    referredById?: string | null
+    membershipPlanId?: string | null
+    basicMembershipAmount?: number
+    basicMembershipActivatedAt?: string | null
+    basicMembershipExpiresAt?: string | null
+    lastDailyYieldAt?: string | null
+    starPerformer?: boolean
+    doubleStarPerformer?: boolean
+    elitePerformer?: boolean
+    tlRank?: boolean
+    tlRankEarnedAt?: string | null
+    tlShareholder?: boolean
+    directorRank?: boolean
+    directorRankEarnedAt?: string | null
+    directorShareholder?: boolean
   }
 ): Promise<ApiResponse> {
   const admin = await getAdminSession()
@@ -49,14 +72,76 @@ export async function updateUserAction(
     const user = await prisma.user.findUnique({ where: { id: userId } })
     if (!user) return { success: false, message: 'User not found' }
 
+    if (data.referredById) {
+      const referrer = await prisma.user.findUnique({ where: { id: data.referredById } })
+      if (!referrer) {
+        return { success: false, message: `Referrer user with ID "${data.referredById}" does not exist.` }
+      }
+      if (referrer.id === userId) {
+        return { success: false, message: 'A user cannot refer themselves.' }
+      }
+    }
+
+    if (data.membershipPlanId) {
+      const plan = await prisma.membershipPlan.findUnique({ where: { id: data.membershipPlanId } })
+      if (!plan) {
+        return { success: false, message: `Membership plan with ID "${data.membershipPlanId}" does not exist.` }
+      }
+    }
+
     const updateData: any = {}
-    if (data.name !== undefined && data.name.trim()) updateData.name = data.name.trim()
-    if (data.email !== undefined && data.email.trim()) updateData.email = data.email.trim().toLowerCase()
-    if (data.phone !== undefined) updateData.phone = data.phone.trim() || null
-    if (data.addressLine !== undefined) updateData.addressLine = data.addressLine.trim() || null
-    if (data.city !== undefined) updateData.city = data.city.trim() || null
-    if (data.state !== undefined) updateData.state = data.state.trim() || null
-    if (data.pinCode !== undefined) updateData.pinCode = data.pinCode.trim() || null
+    if (data.name !== undefined) updateData.name = data.name.trim()
+    if (data.email !== undefined) updateData.email = data.email.trim().toLowerCase()
+    if (data.phone !== undefined) updateData.phone = data.phone ? data.phone.trim() : null
+    if (data.profilePictureUrl !== undefined) updateData.profilePictureUrl = data.profilePictureUrl ? data.profilePictureUrl.trim() : null
+    if (data.hasSeenProfilePicturePopup !== undefined) updateData.hasSeenProfilePicturePopup = Boolean(data.hasSeenProfilePicturePopup)
+    if (data.dateOfBirth !== undefined) updateData.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : null
+    if (data.addressLine !== undefined) updateData.addressLine = data.addressLine ? data.addressLine.trim() : null
+    if (data.city !== undefined) updateData.city = data.city ? data.city.trim() : null
+    if (data.state !== undefined) updateData.state = data.state ? data.state.trim() : null
+    if (data.pinCode !== undefined) updateData.pinCode = data.pinCode ? data.pinCode.trim() : null
+    if (data.profileCompleted !== undefined) updateData.profileCompleted = Boolean(data.profileCompleted)
+    if (data.role !== undefined) updateData.role = data.role as any
+    if (data.status !== undefined) updateData.status = data.status as any
+    if (data.memberType !== undefined) updateData.memberType = data.memberType as any
+    if (data.referralCode !== undefined) updateData.referralCode = data.referralCode.trim()
+    if (data.referredById !== undefined) updateData.referredById = data.referredById || null
+    if (data.membershipPlanId !== undefined) updateData.membershipPlanId = data.membershipPlanId || null
+    if (data.basicMembershipAmount !== undefined) updateData.basicMembershipAmount = Number(data.basicMembershipAmount) || 0
+    if (data.basicMembershipActivatedAt !== undefined) updateData.basicMembershipActivatedAt = data.basicMembershipActivatedAt ? new Date(data.basicMembershipActivatedAt) : null
+    if (data.basicMembershipExpiresAt !== undefined) updateData.basicMembershipExpiresAt = data.basicMembershipExpiresAt ? new Date(data.basicMembershipExpiresAt) : null
+    if (data.lastDailyYieldAt !== undefined) updateData.lastDailyYieldAt = data.lastDailyYieldAt ? new Date(data.lastDailyYieldAt) : null
+    
+    // Ranks/Badges
+    if (data.starPerformer !== undefined) updateData.starPerformer = Boolean(data.starPerformer)
+    if (data.doubleStarPerformer !== undefined) updateData.doubleStarPerformer = Boolean(data.doubleStarPerformer)
+    if (data.elitePerformer !== undefined) updateData.elitePerformer = Boolean(data.elitePerformer)
+    
+    if (data.tlRank !== undefined) {
+      updateData.tlRank = Boolean(data.tlRank)
+      if (data.tlRank && !user.tlRank) {
+        updateData.tlRankEarnedAt = new Date()
+      } else if (!data.tlRank) {
+        updateData.tlRankEarnedAt = null
+      }
+    }
+    if (data.tlRankEarnedAt !== undefined) {
+      updateData.tlRankEarnedAt = data.tlRankEarnedAt ? new Date(data.tlRankEarnedAt) : null
+    }
+    if (data.tlShareholder !== undefined) updateData.tlShareholder = Boolean(data.tlShareholder)
+    
+    if (data.directorRank !== undefined) {
+      updateData.directorRank = Boolean(data.directorRank)
+      if (data.directorRank && !user.directorRank) {
+        updateData.directorRankEarnedAt = new Date()
+      } else if (!data.directorRank) {
+        updateData.directorRankEarnedAt = null
+      }
+    }
+    if (data.directorRankEarnedAt !== undefined) {
+      updateData.directorRankEarnedAt = data.directorRankEarnedAt ? new Date(data.directorRankEarnedAt) : null
+    }
+    if (data.directorShareholder !== undefined) updateData.directorShareholder = Boolean(data.directorShareholder)
 
     await prisma.user.update({
       where: { id: userId },
@@ -64,11 +149,13 @@ export async function updateUserAction(
     })
 
     revalidatePath('/admin/dashboard/users')
+    revalidatePath('/admin/dashboard/memberships')
+    revalidatePath('/dashboard')
     return { success: true, message: 'User details updated successfully' }
   } catch (error: any) {
     console.error('Error updating user:', error)
     if (error?.code === 'P2002') {
-      return { success: false, message: 'Email or phone already in use by another user' }
+      return { success: false, message: 'Email, phone, or referral code already in use by another user' }
     }
     return { success: false, message: 'Failed to update user details' }
   }

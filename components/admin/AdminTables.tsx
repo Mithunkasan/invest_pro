@@ -558,8 +558,7 @@ export function WalletsTable({ data }: TableProps) {
     { key: 'mainBalance', label: 'Main', render: (v: any) => <span className="font-bold text-xs">{formatCurrency(Number(v))}</span> },
     { key: 'depositBalance', label: 'Deposit', render: (v: any) => <span className="text-blue-400 font-bold text-xs">{formatCurrency(Number(v))}</span> },
     { key: 'rewardBalance', label: 'Reward', render: (v: any) => <span className="text-amber-500 font-bold text-xs">{formatCurrency(Number(v))}</span> },
-    { key: 'referralBalance', label: 'Referral', render: (v: any) => <span className="text-purple-500 font-bold text-xs">{formatCurrency(Number(v))}</span> },
-    { key: 'levelBalance', label: 'Level', render: (v: any) => <span className="text-emerald-500 font-bold text-xs">{formatCurrency(Number(v))}</span> },
+    { key: 'referralBalance', label: 'Referral', render: (_: any, row: any) => <span className="text-purple-500 font-bold text-xs">{formatCurrency((row.referralBalance || 0) + (row.levelBalance || 0))}</span> },
     { key: 'shareBalance', label: 'Share', render: (v: any) => <span className="text-cyan-500 font-bold text-xs">{formatCurrency(Number(v))}</span> },
     { key: 'bonusBalance', label: 'Bonus', render: (v: any) => <span className="text-orange-500 font-bold text-xs">{formatCurrency(Number(v))}</span> },
     { key: 'userId', label: 'Actions', render: (userId: string, row: any) => (

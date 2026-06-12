@@ -1,8 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  DollarSign, TrendingUp, Wallet, Users, Activity, ArrowUpRight, ArrowDownRight,
+  DollarSign, TrendingUp, Wallet, Users, Activity, ArrowUpRight, ArrowDownRight, Award,
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -12,6 +13,7 @@ import { DataTable } from './DataTable'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatDate, getStatusColor } from '@/utils/formatters'
 import type { UserTokenPayload } from '@/lib/auth'
+import { ModalPortal } from '@/components/common/ModalPortal'
 
 interface DashboardOverviewProps {
   user: UserTokenPayload & {
@@ -38,6 +40,10 @@ interface DashboardOverviewProps {
       levelBalance: number
       shareBalance: number
     }
+    totalRewardEarned: number
+    totalReferralEarned: number
+    totalShareEarned: number
+    totalBonusEarned: number
   }
   investments: Array<{ id: string; amount: number; profit: number; status: string; startDate: string; endDate: string; plan: { name: string; roiPercent: number } }>
   transactions: Array<{ id: string; type: string; amount: number; status: string; description: string | null; createdAt: string }>
@@ -71,6 +77,8 @@ const transactionColumns = [
 ]
 
 export function DashboardOverview({ user, stats, investments, transactions, chartData, adminBonuses }: DashboardOverviewProps) {
+  const [showTotalModal, setShowTotalModal] = useState(false)
+
   const formatDDMMYYYY = (date: Date | string) => {
     const d = new Date(date)
     const day = String(d.getDate()).padStart(2, '0')
@@ -78,6 +86,12 @@ export function DashboardOverview({ user, stats, investments, transactions, char
     const year = d.getFullYear()
     return `${day}-${month}-${year}`
   }
+
+  const grandTotalEarnings = 
+    (stats.totalRewardEarned || 0) +
+    (stats.totalReferralEarned || 0) +
+    (stats.totalShareEarned || 0) +
+    (stats.totalBonusEarned || 0)
 
   return (
     <div className="space-y-6">
@@ -160,7 +174,7 @@ export function DashboardOverview({ user, stats, investments, transactions, char
         />
         <StatsCard
           title="Referral Income"
-          value={stats.wallet.referralBalance}
+          value={(stats.wallet.referralBalance || 0) + (stats.wallet.levelBalance || 0)}
           icon={
             <div className="relative flex items-center justify-center">
               <span className="absolute w-8 h-8 rounded-full bg-purple-500/20 animate-ping" />
@@ -171,16 +185,18 @@ export function DashboardOverview({ user, stats, investments, transactions, char
           delay={0.1}
         />
         <StatsCard
-          title="Level Income"
-          value={stats.wallet.levelBalance}
+          title="Total"
+          value={grandTotalEarnings}
           icon={
             <div className="relative flex items-center justify-center">
               <span className="absolute w-8 h-8 rounded-full bg-emerald-500/20 animate-pulse" />
-              <Activity className="w-5 h-5 text-emerald-500 relative z-10 animate-pulse" />
+              <Award className="w-5 h-5 text-emerald-500 relative z-10 animate-pulse" />
             </div>
           }
           iconBg="bg-emerald-500/10"
           delay={0.15}
+          onClick={() => setShowTotalModal(true)}
+          className="border-emerald-500/30 hover:border-emerald-400"
         />
         <StatsCard
           title="Share Wallet"
@@ -219,6 +235,79 @@ export function DashboardOverview({ user, stats, investments, transactions, char
           delay={0.25}
         />
       </div>
+
+      {/* Cumulative Earnings Dialog Modal */}
+      {showTotalModal && (
+        <ModalPortal>
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm transition-all duration-300 animate-in fade-in"
+            onClick={() => setShowTotalModal(false)}
+          >
+            <div
+              className="p-6 w-full max-w-md bg-card/95 border border-border rounded-2xl shadow-2xl relative space-y-4 text-left cursor-default animate-in fade-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 className="text-lg font-bold text-white/90 flex items-center gap-2">
+                  <span className="text-xl">📊</span> Cumulative Earnings
+                </h3>
+                <button
+                  onClick={() => setShowTotalModal(false)}
+                  className="text-muted-foreground hover:text-white transition-colors text-lg font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                These are your cumulative lifetime earnings from all sources, unaffected by withdrawals.
+              </p>
+
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary/20 transition-colors">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Reward Income Earned</p>
+                    <p className="text-base font-bold text-amber-400 mt-0.5">{formatCurrency(stats.totalRewardEarned)}</p>
+                  </div>
+                  <span className="text-xl">🎁</span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary/20 transition-colors">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Referral Income Earned</p>
+                    <p className="text-xs text-muted-foreground italic">(includes Direct & Level Commission)</p>
+                    <p className="text-base font-bold text-purple-400 mt-0.5">{formatCurrency(stats.totalReferralEarned)}</p>
+                  </div>
+                  <span className="text-xl">👥</span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary/20 transition-colors">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Share Wallet Income Earned</p>
+                    <p className="text-base font-bold text-cyan-400 mt-0.5">{formatCurrency(stats.totalShareEarned)}</p>
+                  </div>
+                  <span className="text-xl">📊</span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary/20 transition-colors">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Bonus Wallet Income Earned</p>
+                    <p className="text-base font-bold text-orange-400 mt-0.5">{formatCurrency(stats.totalBonusEarned)}</p>
+                  </div>
+                  <span className="text-xl">⭐</span>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/10 flex flex-col gap-1 text-[11px] text-muted-foreground">
+                <div className="flex justify-between font-bold text-white/90 text-sm">
+                  <span>Grand Total Cumulative Earnings:</span>
+                  <span className="text-primary font-black">{formatCurrency(grandTotalEarnings)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
 
       {/* Charts + Active Plans */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -306,14 +395,13 @@ export function DashboardOverview({ user, stats, investments, transactions, char
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4"
+        className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4"
       >
         {[
           { label: 'Main Wallet', value: stats.wallet.mainBalance, color: 'from-blue-500 to-blue-600', icon: '💼' },
           { label: 'Deposit Wallet', value: stats.wallet.depositBalance, color: 'from-indigo-500 to-indigo-600', icon: '💰' },
           { label: 'Reward Wallet', value: stats.wallet.rewardBalance, color: 'from-amber-500 to-amber-600', icon: '🎁' },
-          { label: 'Referral Wallet', value: stats.wallet.referralBalance, color: 'from-purple-500 to-purple-600', icon: '👥' },
-          { label: 'Level Wallet', value: stats.wallet.levelBalance, color: 'from-emerald-500 to-emerald-600', icon: '📈' },
+          { label: 'Referral Wallet', value: (stats.wallet.referralBalance || 0) + (stats.wallet.levelBalance || 0), color: 'from-purple-500 to-purple-600', icon: '👥' },
           { label: 'Share Wallet', value: stats.wallet.shareBalance, color: 'from-cyan-500 to-cyan-600', icon: '📊' },
           { label: 'Bonus Wallet', value: stats.wallet.bonusBalance, color: 'from-orange-500 to-orange-600', icon: '⭐' },
         ].map((w) => (
