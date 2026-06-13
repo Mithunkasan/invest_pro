@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Rocket, Play } from 'lucide-react'
 import Link from 'next/link'
+import BlurText from '@/components/ui/BlurText'
 
 /* ── Social Icons ── */
 const TelegramIcon = () => (
@@ -128,51 +129,47 @@ export function HeroSection({ stats }: HeroSectionProps) {
               </motion.div>
 
               {/* Giant stacked headings (semantic h1 for SEO) */}
-              <motion.h1
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  hidden: { opacity: 0 },
-                  visible: {
-                    opacity: 1,
-                    transition: { staggerChildren: 0.12 }
-                  }
-                }}
+              <h1
                 className="flex flex-col gap-1 mb-5 font-black tracking-tight leading-[0.9] w-full min-w-0"
                 style={{ fontSize: 'clamp(2.4rem, 6.2vw, 4.8rem)' }}
               >
                 {[
-                  { key: 'title1', className: 'text-white' },
-                  { key: 'title2', className: 'text-white' },
+                  { key: 'title1', className: 'text-white', baseDelay: 0, animateBy: 'letters' as const },
+                  { key: 'title2', className: 'text-white', baseDelay: 200, animateBy: 'letters' as const },
                   {
                     key: 'title3',
-                    className:
-                      'bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(168,85,247,0.55)]',
+                    className: 'drop-shadow-[0_0_20px_rgba(168,85,247,0.55)]',
+                    childClassName:
+                      'bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-500 bg-clip-text text-transparent',
+                    baseDelay: 400,
+                    animateBy: 'words' as const
                   },
-                ].map(({ key, className }) => (
-                  <motion.span
+                ].map(({ key, className, childClassName, baseDelay, animateBy }) => (
+                  <BlurText
                     key={key}
-                    variants={{
-                      hidden: { opacity: 0, x: -25 },
-                      visible: { opacity: 1, x: 0, transition: { duration: 0.65 } }
-                    }}
+                    as="span"
+                    text={t(key as 'title1' | 'title2' | 'title3')}
+                    delay={60}
+                    baseDelay={baseDelay}
+                    animateBy={animateBy}
+                    direction="top"
                     className={className}
-                  >
-                    {t(key as 'title1' | 'title2' | 'title3')}
-                  </motion.span>
+                    childClassName={childClassName}
+                  />
                 ))}
-              </motion.h1>
+              </h1>
 
               {/* Subtitle (semantic h2 for SEO) */}
-              <motion.h2
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.42 }}
+              <BlurText
+                as="h2"
+                text={t('subtitle')}
+                delay={20}
+                baseDelay={700}
+                animateBy="words"
+                direction="bottom"
                 className="text-slate-300 leading-relaxed font-semibold mb-6 max-w-xl text-balance"
                 style={{ fontSize: 'clamp(0.85rem,1.5vw,1.1rem)' }}
-              >
-                {t('subtitle')}
-              </motion.h2>
+              />
 
               {/* CTA Buttons */}
               <motion.div

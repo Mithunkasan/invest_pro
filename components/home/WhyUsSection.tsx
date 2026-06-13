@@ -194,46 +194,52 @@ const Web3Icon = () => (
 ───────────────────────────────────────────── */
 const FEATURES = [
   {
-    key:         'globalNetwork',
-    Icon:        GlobalNetworkIcon,
-    glowColor:   'rgba(59,130,246,0.35)',
-    borderColor: 'rgba(59,130,246,0.3)',
-    delay:       0.0,
+    key:            'globalNetwork',
+    Icon:           GlobalNetworkIcon,
+    glowColor:      'rgba(59,130,246,0.35)',
+    borderColor:    'rgba(59,130,246,0.3)',
+    bannerGradient: 'linear-gradient(135deg, rgba(96, 165, 250, 0.45) 0%, rgba(29, 78, 216, 0.75) 100%)',
+    delay:          0.0,
   },
   {
-    key:         'partTime',
-    Icon:        PartTimeIcon,
-    glowColor:   'rgba(14,165,233,0.35)',
-    borderColor: 'rgba(14,165,233,0.3)',
-    delay:       0.1,
+    key:            'partTime',
+    Icon:           PartTimeIcon,
+    glowColor:      'rgba(14,165,233,0.35)',
+    borderColor:    'rgba(14,165,233,0.3)',
+    bannerGradient: 'linear-gradient(135deg, rgba(56, 189, 248, 0.45) 0%, rgba(2, 132, 199, 0.75) 100%)',
+    delay:          0.1,
   },
   {
-    key:         'earnRewards',
-    Icon:        EarnRewardsIcon,
-    glowColor:   'rgba(245,158,11,0.4)',
-    borderColor: 'rgba(245,158,11,0.3)',
-    delay:       0.2,
+    key:            'earnRewards',
+    Icon:           EarnRewardsIcon,
+    glowColor:      'rgba(245,158,11,0.4)',
+    borderColor:    'rgba(245,158,11,0.3)',
+    bannerGradient: 'linear-gradient(135deg, rgba(251, 191, 36, 0.45) 0%, rgba(180, 83, 9, 0.75) 100%)',
+    delay:          0.2,
   },
   {
-    key:         'membership',
-    Icon:        MembershipIcon,
-    glowColor:   'rgba(168,85,247,0.4)',
-    borderColor: 'rgba(168,85,247,0.3)',
-    delay:       0.3,
+    key:            'membership',
+    Icon:           MembershipIcon,
+    glowColor:      'rgba(168,85,247,0.4)',
+    borderColor:    'rgba(168,85,247,0.3)',
+    bannerGradient: 'linear-gradient(135deg, rgba(192, 132, 252, 0.45) 0%, rgba(124, 58, 237, 0.75) 100%)',
+    delay:          0.3,
   },
   {
-    key:         'secure',
-    Icon:        SecureIcon,
-    glowColor:   'rgba(59,130,246,0.35)',
-    borderColor: 'rgba(59,130,246,0.3)',
-    delay:       0.4,
+    key:            'secure',
+    Icon:           SecureIcon,
+    glowColor:      'rgba(59,130,246,0.35)',
+    borderColor:    'rgba(59,130,246,0.3)',
+    bannerGradient: 'linear-gradient(135deg, rgba(56, 189, 248, 0.45) 0%, rgba(29, 78, 216, 0.75) 100%)',
+    delay:          0.4,
   },
   {
-    key:         'web3',
-    Icon:        Web3Icon,
-    glowColor:   'rgba(34,211,238,0.35)',
-    borderColor: 'rgba(34,211,238,0.3)',
-    delay:       0.5,
+    key:            'web3',
+    Icon:           Web3Icon,
+    glowColor:      'rgba(34,211,238,0.35)',
+    borderColor:    'rgba(34,211,238,0.3)',
+    bannerGradient: 'linear-gradient(135deg, rgba(103, 232, 249, 0.45) 0%, rgba(14, 116, 144, 0.75) 100%)',
+    delay:          0.5,
   },
 ] as const
 
@@ -318,46 +324,45 @@ export function WhyUsSection() {
           role="list"
           aria-label={t('label')}
         >
-          {FEATURES.map(({ key, Icon, glowColor, borderColor }) => (
+          {FEATURES.map(({ key, Icon, glowColor, borderColor, bannerGradient }) => (
             <motion.article
               key={key}
               variants={cardVariants}
               role="listitem"
-              className="group relative flex flex-col items-center text-center rounded-2xl overflow-hidden cursor-default"
+              className="why-us-card group cursor-default"
               style={{
                 background: 'linear-gradient(145deg,rgba(13,17,40,0.95) 0%,rgba(8,12,28,0.98) 100%)',
                 border: `1px solid ${borderColor}`,
-              }}
+                '--banner-grad': bannerGradient,
+              } as React.CSSProperties}
               whileHover={{
                 y: -6,
                 transition: { duration: 0.25, ease: 'easeOut' },
               }}
             >
-              {/* Hover glow overlay */}
+              {/* Bottom glow line */}
               <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none rounded-2xl"
-                style={{
-                  background: `radial-gradient(ellipse 80% 60% at 50% 0%,${glowColor} 0%,transparent 70%)`,
-                }}
+                className="absolute bottom-0 left-[15%] right-[15%] h-px opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none z-20"
+                style={{ background: `linear-gradient(90deg,transparent,${glowColor},transparent)` }}
                 aria-hidden="true"
               />
 
-              {/* Card content */}
-              <div className="relative z-10 flex flex-col items-center px-4 py-7 sm:py-8 w-full">
-                {/* Icon container */}
-                <div
-                  className="w-16 h-16 sm:w-[4.5rem] sm:h-[4.5rem] mb-4 flex items-center justify-center rounded-xl"
-                  style={{
-                    background: `radial-gradient(ellipse at 40% 35%,${glowColor} 0%,rgba(2,4,20,0.8) 70%)`,
-                    boxShadow: `0 0 22px ${glowColor}`,
-                  }}
-                  aria-hidden="true"
-                >
-                  <div className="w-10 h-10 sm:w-12 sm:h-12">
-                    <Icon />
-                  </div>
+              {/* Icon container */}
+              <div
+                className="w-14 h-14 flex items-center justify-center rounded-xl icon-wrapper"
+                style={{
+                  background: `radial-gradient(ellipse at 40% 35%,${glowColor} 0%,rgba(2,4,20,0.8) 70%)`,
+                  boxShadow: `0 0 22px ${glowColor}`,
+                }}
+                aria-hidden="true"
+              >
+                <div className="w-8 h-8">
+                  <Icon />
                 </div>
+              </div>
 
+              {/* Card content */}
+              <div className="card-info text-center">
                 {/* Title */}
                 <h3
                   className="text-white font-bold leading-snug mb-2.5"
@@ -368,19 +373,12 @@ export function WhyUsSection() {
 
                 {/* Description */}
                 <p
-                  className="text-slate-400 leading-relaxed font-medium"
+                  className="text-slate-400 group-hover:text-slate-100 transition-colors duration-500 leading-relaxed font-medium"
                   style={{ fontSize: 'clamp(0.72rem,1.1vw,0.82rem)' }}
                 >
                   {t(`features.${key}.desc` as Parameters<typeof t>[0])}
                 </p>
               </div>
-
-              {/* Bottom glow line */}
-              <div
-                className="absolute bottom-0 left-[15%] right-[15%] h-px opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none"
-                style={{ background: `linear-gradient(90deg,transparent,${glowColor},transparent)` }}
-                aria-hidden="true"
-              />
             </motion.article>
           ))}
         </motion.div>
