@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { DashboardLayoutClient } from './dashboard/DashboardLayoutClient'
 import { creditDueBasicDailyYield } from '@/lib/basicMembership'
+import { checkAndExpireMembership } from '@/lib/membershipExpiration'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
@@ -30,6 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   })
 
   await creditDueBasicDailyYield(session.id)
+  await checkAndExpireMembership(session.id)
 
   const isFree = dbUser?.memberType === 'FREE'
   const isBasic = dbUser?.memberType === 'BASIC'

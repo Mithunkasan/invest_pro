@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { formatCurrency } from '@/utils/formatters'
-import { CheckCircle2, Crown, Sparkles, Zap, Shield, Gift, HelpCircle } from 'lucide-react'
+import { Crown, Sparkles, Zap, Shield, Gift, HelpCircle } from 'lucide-react'
 import { MembershipUpgradeButton } from '@/components/dashboard/MembershipUpgradeButton'
 
 export const metadata: Metadata = {
@@ -16,7 +16,7 @@ export default async function UserMembershipPage() {
   if (!session) redirect('/login')
 
   // Fetch current user along with their active membership relation and wallet
-  const [user, dbWalletRaw, activePlans] = await Promise.all([
+  const [user, dbWalletRaw, activePlans, pendingRequest] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.id },
       include: { membershipPlan: true }
@@ -27,6 +27,10 @@ export default async function UserMembershipPage() {
     prisma.membershipPlan.findMany({
       where: { isActive: true },
       orderBy: { price: 'asc' }
+    }),
+    prisma.membershipUpgradeRequest.findFirst({
+      where: { userId: session.id, status: 'PENDING' },
+      include: { plan: true }
     })
   ])
 
@@ -90,6 +94,15 @@ export default async function UserMembershipPage() {
           Elevate your financial compounding potential. Unlock exclusive yield bonuses, speed up withdrawal timelines, and multiply your earnings with recursive multi-level referral commissions.
         </p>
       </div>
+
+      {pendingRequest && (
+        <div className="premium-card p-4 border border-amber-500/30 bg-amber-500/5 rounded-2xl flex items-center gap-3">
+          <Sparkles className="w-5 h-5 text-amber-500 animate-pulse shrink-0" />
+          <div className="text-xs sm:text-sm">
+            <span className="font-extrabold text-amber-400">Upgrade Request Pending:</span> Your request to subscribe to <span className="font-bold text-white">{pendingRequest.plan.name}</span> is currently being reviewed by our administrative team.
+          </div>
+        </div>
+      )}
 
       {/* Active Membership Status Banner */}
       <div 
@@ -231,38 +244,20 @@ export default async function UserMembershipPage() {
                     </div>
                   </div>
 
-                  {/* Benefit Checklist */}
-                  <div className="space-y-3 pt-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">Key Perks Included:</span>
-                    <ul className="space-y-2.5">
-                      {/* Standard limits & support details dynamically fetched */}
-                      <li className="flex items-start gap-2 text-xs">
-                        <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                        <span className="text-white/90">⚡ Withdrawal Queue: <strong>{plan.withdrawalTime}</strong></span>
-                      </li>
-                      <li className="flex items-start gap-2 text-xs">
-                        <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                        <span className="text-white/90">💬 Customer Support: <strong>{plan.support}</strong></span>
-                      </li>
-                      {plan.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-xs">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                          <span className="text-white/90">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
                   {/* Purchase Button */}
                   <div className="pt-6 border-t border-brand-850 mt-4">
-                    <MembershipUpgradeButton 
-                      planId={plan.id}
-                      planName={plan.name}
-                      price={plan.price}
-                      mainBalance={wallet.mainBalance}
-                      isActivePlan={isCurrent}
-                      color={plan.color}
-                    />
+                    {!(currentPlan.name === 'Premium Membership' && (plan.name === 'Free Membership' || plan.name === 'Royal Membership')) && (
+                      <MembershipUpgradeButton 
+                        planId={plan.id}
+                        planName={plan.name}
+                        price={plan.price}
+                        mainBalance={wallet.mainBalance}
+                        isActivePlan={isCurrent}
+                        color={plan.color}
+                        hasPendingRequest={!!pendingRequest}
+                        isLowerOrEqual={plan.price <= currentPlan.price}
+                      />
+                    )}
                   </div>
                 </div>
               </div>

@@ -17,7 +17,7 @@ import {
   deleteMembershipPlanAction
 } from '@/actions/admin'
 import { toast } from '@/hooks/use-toast'
-import { Plus, Edit2, Trash2, X, PlusCircle, Search } from 'lucide-react'
+import { Plus, Edit2, Trash2, X, PlusCircle, Search, Calendar } from 'lucide-react'
 
 interface TableProps {
   data: any[]
@@ -244,10 +244,17 @@ export function UsersTable({ users }: { users: any[] }) {
 
 export function DepositsTable({ data }: TableProps) {
   const [isPending, startTransition] = useTransition()
+  const [selectedDeposit, setSelectedDeposit] = useState<any | null>(null)
 
   const onHandle = (id: string, action: 'APPROVE' | 'REJECT') => {
+    let remarks: string | undefined = undefined
+    if (action === 'REJECT') {
+      const input = prompt('Enter rejection reason (optional):')
+      if (input === null) return // Cancelled
+      remarks = input
+    }
     startTransition(async () => {
-      const res = await handleDeposit(id, action)
+      const res = await handleDeposit(id, action, remarks)
       if (res.success) {
         toast({ title: 'Success', description: res.message })
       } else {
@@ -256,38 +263,202 @@ export function DepositsTable({ data }: TableProps) {
     })
   }
 
+  const openDocument = (url: string, title: string) => {
+    if (url.startsWith('data:')) {
+      const win = window.open()
+      if (win) {
+        win.document.write(`
+          <html>
+            <head>
+              <title>${title}</title>
+              <style>
+                body { margin: 0; background: #0b0f19; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+                img { max-width: 100%; max-height: 100%; object-fit: contain; }
+              </style>
+            </head>
+            <body>
+              <img src="${url}" alt="${title}" />
+            </body>
+          </html>
+        `)
+        win.document.close()
+      }
+    } else {
+      window.open(url, '_blank')
+    }
+  }
+
   const cols = [
     { key: 'user.name', label: 'User', render: (_: any, row: any) => (
       <div>
-        <p className="text-sm font-medium">{row.user.name}</p>
-        <p className="text-xs text-muted-foreground">{row.user.email}</p>
+        <p className="text-sm font-medium">{row.user?.name || 'Unknown'}</p>
+        <p className="text-xs text-muted-foreground">{row.user?.email || '—'}</p>
       </div>
     )},
     { key: 'amount', label: 'Amount', sortable: true, render: (v: any) => <span className="font-semibold">{formatCurrency(Number(v))}</span> },
     { key: 'method', label: 'Method', render: (v: any) => <span className="text-xs uppercase font-bold">{String(v)}</span> },
-    { key: 'utrNumber', label: 'UTR', render: (v: any) => <span className="text-xs font-mono">{String(v)}</span> },
+    { key: 'utrNumber', label: 'UTR', render: (v: any) => <span className="text-xs font-mono">{String(v || '—')}</span> },
     { key: 'status', label: 'Status', render: (v: any) => <span className={`status-badge ${getStatusColor(String(v))}`}>{String(v)}</span> },
     { key: 'createdAt', label: 'Date', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
-    { key: 'id', label: 'Actions', render: (id: string, row: any) => row.status === 'PENDING' && (
-      <div className="flex gap-1">
+    { key: 'id', label: 'Actions', render: (id: string, row: any) => (
+      <div className="flex items-center gap-1.5 flex-wrap">
         <Button 
           size="sm" 
-          variant="default" 
-          className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700"
-          onClick={() => onHandle(id, 'APPROVE')}
-          disabled={isPending}
-        >Approve</Button>
-        <Button 
-          size="sm" 
-          variant="destructive" 
-          className="h-7 px-2 text-xs"
-          onClick={() => onHandle(id, 'REJECT')}
-          disabled={isPending}
-        >Reject</Button>
+          variant="outline" 
+          className="h-7 px-2 text-xs border-primary/30 text-primary hover:bg-primary/10 font-bold"
+          onClick={() => setSelectedDeposit(row)}
+        >
+          View
+        </Button>
+        {row.status === 'PENDING' && (
+          <>
+            <Button 
+              size="sm" 
+              variant="default" 
+              className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700 font-bold"
+              onClick={() => onHandle(id, 'APPROVE')}
+              disabled={isPending}
+            >
+              Approve
+            </Button>
+            <Button 
+              size="sm" 
+              variant="destructive" 
+              className="h-7 px-2 text-xs font-bold"
+              onClick={() => onHandle(id, 'REJECT')}
+              disabled={isPending}
+            >
+              Reject
+            </Button>
+          </>
+        )}
       </div>
     )},
   ]
-  return <DataTable data={data} columns={cols as any} rowKey="id" searchPlaceholder="Search deposits..." />
+
+  return (
+    <>
+      <DataTable data={data} columns={cols as any} rowKey="id" searchPlaceholder="Search deposits..." />
+
+      {/* View Details Modal */}
+      {selectedDeposit && (
+        <ModalPortal>
+          <div 
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+            onClick={() => setSelectedDeposit(null)}
+          >
+            <div 
+              className="relative w-full max-w-lg bg-brand-950 border border-brand-800 rounded-2xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-left"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-brand-800 pb-3">
+                <div>
+                  <h3 className="text-lg font-black text-white">Deposit Request Details</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 font-mono">Reference ID: {selectedDeposit.id}</p>
+                </div>
+                <button 
+                  onClick={() => setSelectedDeposit(null)}
+                  className="rounded-lg p-1 text-brand-300 hover:bg-brand-900 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Grid info */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">User</p>
+                  <p className="font-semibold text-white/90">{selectedDeposit.user?.name || 'Unknown'}</p>
+                  <p className="text-xs text-muted-foreground">{selectedDeposit.user?.email || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</p>
+                  <span className={`status-badge mt-1 inline-block ${getStatusColor(selectedDeposit.status)}`}>
+                    {selectedDeposit.status}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Amount</p>
+                  <p className="font-extrabold text-white text-base">{formatCurrency(selectedDeposit.amount)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Payment Method</p>
+                  <p className="font-bold text-white uppercase">{selectedDeposit.method}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">UTR Number</p>
+                  <p className="font-mono text-white/90 bg-muted/30 px-2 py-0.5 rounded border border-border/20 inline-block mt-0.5">
+                    {selectedDeposit.utrNumber || '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Date Requested</p>
+                  <p className="text-muted-foreground mt-0.5">{formatDate(selectedDeposit.createdAt)}</p>
+                </div>
+                {selectedDeposit.remarks && (
+                  <div className="col-span-2">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Remarks / Notes</p>
+                    <p className="text-white/80 bg-muted/20 p-2 rounded border border-border/25 mt-1 text-xs">
+                      {selectedDeposit.remarks}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Proof Image */}
+              {selectedDeposit.proofUrl ? (
+                <div className="border border-border/40 rounded-xl overflow-hidden bg-black/40 p-2.5 text-center space-y-1.5">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Payment Proof Screenshot</p>
+                  <img 
+                    src={selectedDeposit.proofUrl} 
+                    alt="Payment Proof" 
+                    className="max-h-64 mx-auto object-contain cursor-pointer rounded-lg hover:opacity-95 transition-opacity"
+                    onClick={() => openDocument(selectedDeposit.proofUrl, 'Payment Proof')}
+                  />
+                  <p className="text-[10px] text-muted-foreground">Click image to open full screen ↗</p>
+                </div>
+              ) : (
+                <div className="border border-dashed border-border/40 rounded-xl p-6 text-center text-muted-foreground bg-muted/10">
+                  No payment proof uploaded
+                </div>
+              )}
+
+              {/* Footer Actions */}
+              <div className="flex justify-end gap-2 border-t border-brand-800 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedDeposit(null)}
+                  className="px-4 font-semibold text-xs border-brand-700 bg-brand-900/50 hover:bg-brand-900 text-brand-300 hover:text-white"
+                >
+                  Close
+                </Button>
+                {selectedDeposit.status === 'PENDING' && (
+                  <>
+                    <Button 
+                      onClick={() => { onHandle(selectedDeposit.id, 'REJECT'); setSelectedDeposit(null); }}
+                      variant="destructive"
+                      disabled={isPending}
+                      className="px-4 font-extrabold text-xs"
+                    >
+                      Reject
+                    </Button>
+                    <Button 
+                      onClick={() => { onHandle(selectedDeposit.id, 'APPROVE'); setSelectedDeposit(null); }}
+                      disabled={isPending}
+                      className="px-4 bg-green-600 hover:bg-green-700 text-white font-extrabold text-xs"
+                    >
+                      Approve
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+    </>
+  )
 }
 
 export function WithdrawalsTable({ data }: TableProps) {
@@ -674,11 +845,53 @@ export function WalletsTable({ data }: TableProps) {
 }
 
 export function AdminNotificationsTable({ data }: TableProps) {
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [filterMembership, setFilterMembership] = useState('ALL')
+
+  // Helper function to resolve user's membership display name
+  const getMembershipLabel = (row: any): string => {
+    if (row.user?.membershipPlan?.name) {
+      return row.user.membershipPlan.name.replace(' Membership', '')
+    }
+    const memberType = row.user?.memberType || 'FREE'
+    if (memberType === 'FREE') return 'Free'
+    if (memberType === 'BASIC') return 'Basic'
+    if (memberType === 'PREMIUM') return 'Premium'
+    return 'Free'
+  }
+
+  const filteredData = useMemo(() => {
+    return data.filter((row: any) => {
+      // 1. Membership Filter
+      if (filterMembership !== 'ALL') {
+        const mLabel = getMembershipLabel(row)
+        if (mLabel.toLowerCase() !== filterMembership.toLowerCase()) return false
+      }
+
+      // 2. Date Filter
+      const created = new Date(row.createdAt)
+      if (startDate) {
+        const filterStart = new Date(startDate + 'T00:00:00')
+        if (created < filterStart) return false
+      }
+      if (endDate) {
+        const filterEnd = new Date(endDate + 'T23:59:59.999')
+        if (created > filterEnd) return false
+      }
+
+      return true
+    })
+  }, [data, filterMembership, startDate, endDate])
+
   const cols = [
     { key: 'user.name', label: 'User', render: (_: any, row: any) => (
       <div>
-        <p className="text-sm font-medium">{row.user.name}</p>
-        <p className="text-[10px] text-muted-foreground">{row.user.email}</p>
+        <p className="text-sm font-medium">{row.user?.name || 'Unknown'}</p>
+        <p className="text-[10px] text-muted-foreground">{row.user?.email || '—'}</p>
+        <span className="text-[9px] px-1.5 py-0.5 mt-1 rounded bg-muted/60 text-muted-foreground font-semibold border border-border/40 inline-block">
+          {getMembershipLabel(row)}
+        </span>
       </div>
     )},
     { key: 'title', label: 'Title', render: (v: any) => <span className="font-bold">{String(v)}</span> },
@@ -686,7 +899,79 @@ export function AdminNotificationsTable({ data }: TableProps) {
     { key: 'type', label: 'Type', render: (v: any) => <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${v === 'SUCCESS' ? 'bg-green-500/10 text-green-500' : v === 'ERROR' ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-500'}`}>{String(v)}</span> },
     { key: 'createdAt', label: 'Sent', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
   ]
-  return <DataTable data={data} columns={cols as any} rowKey="id" searchPlaceholder="Search notifications..." />
+
+  const hasActiveFilters = startDate || endDate || filterMembership !== 'ALL'
+
+  const handleClearFilters = () => {
+    setStartDate('')
+    setEndDate('')
+    setFilterMembership('ALL')
+  }
+
+  const membershipOptions = ['Free', 'Basic', 'Premium', 'Bronze', 'Silver', 'Gold', 'Diamond', 'Platinum']
+
+  return (
+    <div className="space-y-4">
+      {/* Filter Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 backdrop-blur-sm">
+        {/* Membership Dropdown */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground">Membership Type</label>
+          <select
+            value={filterMembership}
+            onChange={(e) => setFilterMembership(e.target.value)}
+            className="w-full h-10 px-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+          >
+            <option value="ALL">All Memberships</option>
+            {membershipOptions.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Start Date */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+            <Calendar className="w-3.5 h-3.5 text-muted-foreground" /> Start Date
+          </label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-full h-10 px-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+          />
+        </div>
+
+        {/* End Date + Reset button */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+            <Calendar className="w-3.5 h-3.5 text-muted-foreground" /> End Date
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="flex-1 h-10 px-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+            />
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                onClick={handleClearFilters}
+                className="h-10 px-3 text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 font-bold border border-rose-500/20"
+              >
+                <X className="w-4 h-4 mr-1" /> Clear
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <DataTable data={filteredData} columns={cols as any} rowKey="id" searchPlaceholder="Search notifications..." />
+    </div>
+  )
 }
 
 export function SecurityLogsTable({ data }: TableProps) {
@@ -860,13 +1145,6 @@ export function MembershipsTable({ data }: TableProps) {
     { key: 'depositBonus', label: 'Yield Bonus', render: (v: any) => (
       <span className="text-xs text-amber-500 font-extrabold">+{String(v)}% Yield</span>
     )},
-    { key: 'referralLevel1', label: 'Referral Rates', render: (_: any, row: any) => (
-      <div className="space-y-0.5 text-[10px] leading-tight">
-        <p className="text-purple-400 font-bold">L1: {row.referralLevel1}%</p>
-        <p className="text-purple-300">L2: {row.referralLevel2}%</p>
-        <p className="text-purple-300">L3: {row.referralLevel3}%</p>
-      </div>
-    )},
     { key: 'withdrawalTime', label: 'Limits & Support', render: (_: any, row: any) => (
       <div className="text-[10px] space-y-0.5 max-w-[150px] truncate leading-tight">
         <p className="text-brand-300 font-medium">⚡ {row.withdrawalTime}</p>
@@ -1008,52 +1286,6 @@ export function MembershipsTable({ data }: TableProps) {
                       onChange={(e) => setFormData(prev => ({ ...prev, depositBonus: e.target.value }))}
                       disabled={isPending}
                     />
-                  </div>
-                </div>
-
-                {/* Referral Configs */}
-                <div className="p-3.5 bg-brand-900/20 border border-brand-850 rounded-xl space-y-3">
-                  <p className="text-xs font-bold text-purple-400 uppercase tracking-wider">Multi-Level Referral Commissions</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-brand-300">Level 1 (%)</label>
-                      <input 
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        required
-                        className="w-full h-9 px-2 rounded-lg bg-background border border-border text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
-                        value={formData.referralLevel1}
-                        onChange={(e) => setFormData(prev => ({ ...prev, referralLevel1: e.target.value }))}
-                        disabled={isPending}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-brand-300">Level 2 (%)</label>
-                      <input 
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        required
-                        className="w-full h-9 px-2 rounded-lg bg-background border border-border text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
-                        value={formData.referralLevel2}
-                        onChange={(e) => setFormData(prev => ({ ...prev, referralLevel2: e.target.value }))}
-                        disabled={isPending}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-brand-300">Level 3 (%)</label>
-                      <input 
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        required
-                        className="w-full h-9 px-2 rounded-lg bg-background border border-border text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
-                        value={formData.referralLevel3}
-                        onChange={(e) => setFormData(prev => ({ ...prev, referralLevel3: e.target.value }))}
-                        disabled={isPending}
-                      />
-                    </div>
                   </div>
                 </div>
 

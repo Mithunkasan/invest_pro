@@ -329,7 +329,10 @@ export async function buyMembershipPlanAction(planId: string): Promise<ApiRespon
     if (!plan) return { success: false, message: 'Membership plan not found or inactive' }
 
     const [user, wallet] = await Promise.all([
-      prisma.user.findUnique({ where: { id: session.id } }),
+      prisma.user.findUnique({ 
+        where: { id: session.id },
+        include: { membershipPlan: true }
+      }),
       prisma.wallet.findUnique({ where: { userId: session.id } }),
     ])
 
@@ -338,6 +341,20 @@ export async function buyMembershipPlanAction(planId: string): Promise<ApiRespon
 
     if (user.membershipPlanId === plan.id) {
       return { success: false, message: `You are already subscribed to ${plan.name}!` }
+    }
+
+    // Downgrade validation
+    const currentPlanPrice = user.membershipPlan?.price || 0
+    if (plan.price <= currentPlanPrice) {
+      return { success: false, message: 'You can only upgrade to a higher-level membership plan than your current active plan.' }
+    }
+
+    // Check for existing pending requests
+    const pendingRequest = await prisma.membershipUpgradeRequest.findFirst({
+      where: { userId: session.id, status: 'PENDING' }
+    })
+    if (pendingRequest) {
+      return { success: false, message: 'You already have a pending upgrade request. Please wait for admin approval.' }
     }
 
     if (wallet.mainBalance < plan.price) {
@@ -349,50 +366,47 @@ export async function buyMembershipPlanAction(planId: string): Promise<ApiRespon
       if (plan.price > 0) {
         await deductFromWallets(tx, session.id, plan.price)
         
-        // Create transaction
+        // Create pending transaction
         await tx.transaction.create({
           data: {
             userId: session.id,
             type: 'INVESTMENT',
             amount: plan.price,
-            status: 'COMPLETED',
-            description: `Upgraded to ${plan.name}`,
+            status: 'PENDING',
+            description: `Upgrade to ${plan.name} (Pending Admin Approval)`,
             walletType: 'MAIN',
           },
         })
       }
 
-      // Update user plan
-      await tx.user.update({
-        where: { id: session.id },
-        data: { membershipPlanId: plan.id },
+      // Create upgrade request
+      await tx.membershipUpgradeRequest.create({
+        data: {
+          userId: session.id,
+          planId: plan.id,
+          status: 'PENDING',
+        },
       })
 
       // Send notification
       await tx.notification.create({
         data: {
           userId: session.id,
-          title: `${plan.name} Activated! 👑`,
-          message: `Congratulations! You have successfully upgraded to ${plan.name}.`,
-          type: 'SUCCESS',
+          title: 'Upgrade Request Submitted 👑',
+          message: `Your request to upgrade to ${plan.name} has been submitted for admin approval. ₹${plan.price.toLocaleString('en-IN')} has been put on hold.`,
+          type: 'INFO',
         },
       })
     })
-
-    // Trigger referral commission if membership is a paid upgrade
-    if (plan.price > 0) {
-      const { distributeReferralAndLevelCommissions } = require('./rules')
-      await distributeReferralAndLevelCommissions(session.id, plan.price, plan.id)
-    }
 
     revalidatePath('/dashboard')
     revalidatePath('/dashboard/membership')
     revalidatePath('/dashboard/wallet')
 
-    return { success: true, message: `Successfully upgraded to ${plan.name}!` }
+    return { success: true, message: `Upgrade request to ${plan.name} submitted successfully for admin review!` }
   } catch (error) {
     console.error('Error purchasing membership plan:', error)
-    return { success: false, message: 'Failed to process upgrade' }
+    return { success: false, message: 'Failed to process upgrade request' }
   }
 }
 

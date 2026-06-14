@@ -14,14 +14,27 @@ interface UpgradeButtonProps {
   mainBalance: number
   isActivePlan: boolean
   color: string
+  hasPendingRequest?: boolean
+  isLowerOrEqual?: boolean
 }
 
-export function MembershipUpgradeButton({ planId, planName, price, mainBalance, isActivePlan, color }: UpgradeButtonProps) {
+export function MembershipUpgradeButton({ 
+  planId, 
+  planName, 
+  price, 
+  mainBalance, 
+  isActivePlan, 
+  color,
+  hasPendingRequest,
+  isLowerOrEqual
+}: UpgradeButtonProps) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   const handleUpgrade = () => {
     if (isActivePlan) return
+    if (isLowerOrEqual) return
+    if (hasPendingRequest) return
     if (mainBalance < price) {
       toast({
         title: 'Insufficient Balance',
@@ -36,13 +49,13 @@ export function MembershipUpgradeButton({ planId, planName, price, mainBalance, 
         const res = await buyMembershipPlanAction(planId)
         if (res.success) {
           toast({
-            title: 'Upgrade Successful! 👑',
+            title: 'Request Submitted! 👑',
             description: res.message,
           })
           router.refresh()
         } else {
           toast({
-            title: 'Upgrade Failed',
+            title: 'Request Failed',
             description: res.message,
             variant: 'destructive',
           })
@@ -62,6 +75,22 @@ export function MembershipUpgradeButton({ planId, planName, price, mainBalance, 
       <Button disabled className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-not-allowed flex items-center justify-center gap-1.5 rounded-xl h-10.5">
         <Check className="w-4.5 h-4.5" />
         Current Plan
+      </Button>
+    )
+  }
+
+  if (isLowerOrEqual) {
+    return (
+      <Button disabled className="w-full bg-white/5 text-white/20 font-bold cursor-not-allowed border border-white/5 rounded-xl h-10.5">
+        Upgrade Only
+      </Button>
+    )
+  }
+
+  if (hasPendingRequest) {
+    return (
+      <Button disabled className="w-full bg-amber-500/10 text-amber-500 font-bold cursor-not-allowed border border-amber-500/20 rounded-xl h-10.5">
+        Pending Approval
       </Button>
     )
   }
@@ -89,7 +118,7 @@ export function MembershipUpgradeButton({ planId, planName, price, mainBalance, 
       {isPending ? (
         <>
           <Loader2 className="w-4.5 h-4.5 animate-spin text-black" />
-          Activating...
+          Submitting...
         </>
       ) : (
         <>
