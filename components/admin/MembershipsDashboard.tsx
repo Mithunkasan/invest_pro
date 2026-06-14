@@ -3,15 +3,17 @@
 import { useState } from 'react'
 import { MembershipsTable } from './AdminTables'
 import { UserMembershipsTable } from './UserMembershipsTable'
+import { UpgradeRequestsTable } from './UpgradeRequestsTable'
 import { Crown, Sparkles, AlertCircle, Users } from 'lucide-react'
 
 interface MembershipsDashboardProps {
   plans: any[]
   users: any[]
+  upgradeRequests: any[]
 }
 
-export function MembershipsDashboard({ plans, users }: MembershipsDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'tiers' | 'assignments'>('tiers')
+export function MembershipsDashboard({ plans, users, upgradeRequests = [] }: MembershipsDashboardProps) {
+  const [activeTab, setActiveTab] = useState<'tiers' | 'assignments' | 'requests'>('tiers')
 
   // Stats calculations
   const activeCount = plans.filter(p => p.isActive).length
@@ -93,14 +95,33 @@ export function MembershipsDashboard({ plans, users }: MembershipsDashboardProps
           <Users className="w-4 h-4" />
           User Assignments
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('requests')}
+          className={`px-5 py-2.5 text-sm font-bold transition-all border-b-2 rounded-t-xl flex items-center gap-1.5 ${
+            activeTab === 'requests'
+              ? 'border-amber-500 text-amber-400 bg-brand-900/40'
+              : 'border-transparent text-brand-300 hover:text-white hover:bg-brand-900/10'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          Upgrade Requests
+          {upgradeRequests.filter(r => r.status === 'PENDING').length > 0 && (
+            <span className="ml-1 text-[10px] bg-amber-500 text-black px-1.5 py-0.5 rounded-full font-black animate-pulse">
+              {upgradeRequests.filter(r => r.status === 'PENDING').length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Dashboard Panels */}
       <div className="premium-card p-6">
         {activeTab === 'tiers' ? (
           <MembershipsTable data={plans} />
-        ) : (
+        ) : activeTab === 'assignments' ? (
           <UserMembershipsTable users={users} plans={plans} />
+        ) : (
+          <UpgradeRequestsTable requests={upgradeRequests} />
         )}
       </div>
     </div>

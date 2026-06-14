@@ -309,86 +309,39 @@ export function DashboardOverview({ user, stats, investments, transactions, char
         </ModalPortal>
       )}
 
-      {/* Charts + Active Plans */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Portfolio Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="lg:col-span-2 premium-card p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="font-semibold text-base">Portfolio Performance</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Profit earned over time</p>
-            </div>
-            <Activity className="w-5 h-5 text-muted-foreground" />
+      {/* Portfolio Chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="premium-card p-6"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="font-semibold text-base">Portfolio Performance</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Profit earned over time</p>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#1a56db" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#1a56db" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#888' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#888' }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip
-                formatter={(v) => [formatCurrency(Number(v)), 'Profit']}
-                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px', fontSize: '12px' }}
-              />
-              <Area type="monotone" dataKey="profit" stroke="#1a56db" fill="url(#profitGrad)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* Active Plans */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="premium-card p-6"
-        >
-          <h2 className="font-semibold text-base mb-4">Active Plans ({stats.activePlans})</h2>
-          <div className="space-y-4">
-            {investments.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                No active investments.<br />
-                <a href="/dashboard/investments" className="text-primary hover:underline">Start investing →</a>
-              </div>
-            ) : (
-              investments.slice(0, 3).map((inv) => {
-                const progress = Math.round(
-                  ((Date.now() - new Date(inv.startDate).getTime()) /
-                    (new Date(inv.endDate).getTime() - new Date(inv.startDate).getTime())) * 100
-                )
-                return (
-                  <div key={inv.id} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{inv.plan.name}</span>
-                      <span className="text-green-500 text-xs font-semibold">+{inv.plan.roiPercent}%/day</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{formatCurrency(inv.amount)}</span>
-                      <span className="text-gold-500">{formatCurrency(inv.profit)} earned</span>
-                    </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">{progress}% complete</p>
-                  </div>
-                )
-              })
-            )}
-          </div>
-        </motion.div>
-      </div>
+          <Activity className="w-5 h-5 text-muted-foreground" />
+        </div>
+        <ResponsiveContainer width="100%" height={220}>
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#1a56db" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#1a56db" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+            <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#888' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#888' }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+            <Tooltip
+              formatter={(v) => [formatCurrency(Number(v)), 'Profit']}
+              contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px', fontSize: '12px' }}
+            />
+            <Area type="monotone" dataKey="profit" stroke="#1a56db" fill="url(#profitGrad)" strokeWidth={2} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </motion.div>
 
       {/* Wallet Breakdown */}
       <motion.div

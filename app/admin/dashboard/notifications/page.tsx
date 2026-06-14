@@ -5,7 +5,16 @@ import { AdminNotificationsTable } from '@/components/admin/AdminTables'
 
 export default async function AdminNotificationsPage() {
   const notifications = await prisma.notification.findMany({
-    include: { user: { select: { name: true, email: true } } },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+          memberType: true,
+          membershipPlan: { select: { name: true } },
+        },
+      },
+    },
     orderBy: { createdAt: 'desc' },
     take: 100,
   })

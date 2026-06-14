@@ -27,10 +27,19 @@ export default async function AdminMembershipsPage() {
     orderBy: { name: 'asc' },
   })
 
+  const upgradeRequests = await prisma.membershipUpgradeRequest.findMany({
+    include: {
+      user: { select: { name: true, email: true } },
+      plan: { select: { name: true, price: true } }
+    },
+    orderBy: { createdAt: 'desc' }
+  })
+
   return (
     <MembershipsDashboard 
       plans={JSON.parse(JSON.stringify(plans))} 
       users={JSON.parse(JSON.stringify(users))} 
+      upgradeRequests={JSON.parse(JSON.stringify(upgradeRequests))}
     />
   )
 }

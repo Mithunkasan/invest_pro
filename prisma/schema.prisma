@@ -64,6 +64,9 @@ model User {
   // Active Membership Plan
   membershipPlanId String?
   membershipPlan   MembershipPlan? @relation("UserMembershipPlan", fields: [membershipPlanId], references: [id])
+  membershipPlanActivatedAt DateTime?
+  membershipPlanExpiresAt   DateTime?
+  membershipUpgradeRequests MembershipUpgradeRequest[] @relation("UserUpgradeRequests")
   basicMembershipAmount Float @default(0)
   basicMembershipActivatedAt DateTime?
   basicMembershipExpiresAt DateTime?
@@ -92,6 +95,7 @@ model Admin {
   approvedDeposits   Deposit[]    @relation("AdminDepositApproval")
   approvedWithdrawals Withdrawal[] @relation("AdminWithdrawalApproval")
   approvedKYCs       KYC[]        @relation("AdminKYCApproval")
+  approvedMembershipUpgrades MembershipUpgradeRequest[] @relation("AdminMembershipUpgradeApproval")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -461,6 +465,7 @@ model MembershipPlan {
 
   // Relation to users on this plan
   users           User[]   @relation("UserMembershipPlan")
+  upgradeRequests MembershipUpgradeRequest[] @relation("PlanUpgradeRequests")
 
   @@index([isActive])
 }
@@ -625,4 +630,25 @@ model TicketNotification {
   @@index([userId])
   @@index([ticketId])
   @@index([isRead])
+}
+
+// ============================================================
+// MEMBERSHIP UPGRADE REQUEST MODEL
+// ============================================================
+model MembershipUpgradeRequest {
+  id              String   @id @default(cuid())
+  userId          String
+  planId          String
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  remarks         String?
+  approvedById    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation("UserUpgradeRequests", fields: [userId], references: [id], onDelete: Cascade)
+  plan            MembershipPlan @relation("PlanUpgradeRequests", fields: [planId], references: [id], onDelete: Cascade)
+  approvedBy      Admin?   @relation("AdminMembershipUpgradeApproval", fields: [approvedById], references: [id])
+
+  @@index([userId])
+  @@index([status])
 }

@@ -50,6 +50,8 @@ export async function updateUserAction(
     referralCode?: string
     referredById?: string | null
     membershipPlanId?: string | null
+    membershipPlanActivatedAt?: string | null
+    membershipPlanExpiresAt?: string | null
     basicMembershipAmount?: number
     basicMembershipActivatedAt?: string | null
     basicMembershipExpiresAt?: string | null
@@ -106,7 +108,29 @@ export async function updateUserAction(
     if (data.memberType !== undefined) updateData.memberType = data.memberType as any
     if (data.referralCode !== undefined) updateData.referralCode = data.referralCode.trim()
     if (data.referredById !== undefined) updateData.referredById = data.referredById || null
-    if (data.membershipPlanId !== undefined) updateData.membershipPlanId = data.membershipPlanId || null
+    if (data.membershipPlanId !== undefined) {
+      updateData.membershipPlanId = data.membershipPlanId || null
+      if (user.membershipPlanId !== data.membershipPlanId) {
+        if (data.membershipPlanId) {
+          const plan = await prisma.membershipPlan.findUnique({ where: { id: data.membershipPlanId } })
+          if (plan) {
+            updateData.membershipPlanActivatedAt = new Date()
+            if (plan.durationDays > 0) {
+              const exp = new Date()
+              exp.setDate(exp.getDate() + plan.durationDays)
+              updateData.membershipPlanExpiresAt = exp
+            } else {
+              updateData.membershipPlanExpiresAt = null
+            }
+          }
+        } else {
+          updateData.membershipPlanActivatedAt = null
+          updateData.membershipPlanExpiresAt = null
+        }
+      }
+    }
+    if (data.membershipPlanActivatedAt !== undefined) updateData.membershipPlanActivatedAt = data.membershipPlanActivatedAt ? new Date(data.membershipPlanActivatedAt) : null
+    if (data.membershipPlanExpiresAt !== undefined) updateData.membershipPlanExpiresAt = data.membershipPlanExpiresAt ? new Date(data.membershipPlanExpiresAt) : null
     if (data.basicMembershipAmount !== undefined) updateData.basicMembershipAmount = Number(data.basicMembershipAmount) || 0
     if (data.basicMembershipActivatedAt !== undefined) updateData.basicMembershipActivatedAt = data.basicMembershipActivatedAt ? new Date(data.basicMembershipActivatedAt) : null
     if (data.basicMembershipExpiresAt !== undefined) updateData.basicMembershipExpiresAt = data.basicMembershipExpiresAt ? new Date(data.basicMembershipExpiresAt) : null
@@ -1185,3 +1209,176 @@ export async function upgradeUserToPremiumAction(userId: string): Promise<ApiRes
 }
 
 
+
+
+// ── Membership Upgrade Requests ──────────────────────────────────────────────
+export async function getMembershipUpgradeRequestsAction() {
+  const admin = await getAdminSession()
+  if (!admin) return []
+  return prisma.membershipUpgradeRequest.findMany({
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+      plan: { select: { id: true, name: true, price: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export async function processMembershipUpgradeAction(
+  requestId: string,
+  action: 'APPROVED' | 'REJECTED',
+  remarks?: string
+): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  try {
+    const request = await prisma.membershipUpgradeRequest.findUnique({
+      where: { id: requestId },
+      include: { user: true, plan: true },
+    })
+
+    if (!request) return { success: false, message: 'Upgrade request not found' }
+    if (request.status !== 'PENDING') return { success: false, message: 'Request has already been processed' }
+
+    if (action === 'APPROVED') {
+      const activatedAt = new Date()
+      let expiresAt: Date | null = null
+      if (request.plan.durationDays > 0) {
+        expiresAt = new Date()
+        expiresAt.setDate(expiresAt.getDate() + request.plan.durationDays)
+      }
+
+      await prisma.$transaction(async (tx) => {
+        // Update request status
+        await tx.membershipUpgradeRequest.update({
+          where: { id: requestId },
+          data: { status: 'APPROVED', approvedById: admin.id, remarks },
+        })
+
+        // Determine memberType based on plan name
+        let targetMemberType: 'FREE' | 'BASIC' | 'PREMIUM' = 'PREMIUM'
+        if (request.plan.name === 'Free Membership') {
+          targetMemberType = 'FREE'
+        } else if (request.plan.name === 'Basic Membership') {
+          targetMemberType = 'BASIC'
+        }
+
+        // Update user's plan details
+        await tx.user.update({
+          where: { id: request.userId },
+          data: {
+            membershipPlanId: request.planId,
+            memberType: targetMemberType,
+            membershipPlanActivatedAt: activatedAt,
+            membershipPlanExpiresAt: expiresAt,
+          },
+        })
+
+        // Find the transaction that was created when requesting, and update its status to COMPLETED
+        const pendingTx = await tx.transaction.findFirst({
+          where: {
+            userId: request.userId,
+            type: 'INVESTMENT',
+            amount: request.plan.price,
+            status: 'PENDING',
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+
+        if (pendingTx) {
+          await tx.transaction.update({
+            where: { id: pendingTx.id },
+            data: { status: 'COMPLETED' },
+          })
+        } else {
+          // If no pending transaction found, create a completed one
+          if (request.plan.price > 0) {
+            await tx.transaction.create({
+              data: {
+                userId: request.userId,
+                type: 'INVESTMENT',
+                amount: request.plan.price,
+                status: 'COMPLETED',
+                description: `Upgraded to ${request.plan.name}`,
+                walletType: 'MAIN',
+              },
+            })
+          }
+        }
+
+        // Send success notification to user
+        await tx.notification.create({
+          data: {
+            userId: request.userId,
+            title: `Membership Upgraded! 👑`,
+            message: `Your request to upgrade to ${request.plan.name} has been approved by the admin.`,
+            type: 'SUCCESS',
+          },
+        })
+      })
+
+      // Trigger referral commission if membership is a paid upgrade
+      if (request.plan.price > 0) {
+        const { distributeReferralAndLevelCommissions } = require('./rules')
+        await distributeReferralAndLevelCommissions(request.userId, request.plan.price, request.plan.id)
+      }
+
+      revalidatePath('/admin/dashboard/memberships')
+      revalidatePath('/dashboard/membership')
+      return { success: true, message: `Membership upgrade to ${request.plan.name} approved successfully!` }
+    } else {
+      // REJECTED
+      await prisma.$transaction(async (tx) => {
+        // Update request status
+        await tx.membershipUpgradeRequest.update({
+          where: { id: requestId },
+          data: { status: 'REJECTED', approvedById: admin.id, remarks },
+        })
+
+        // Refund the amount back to user's main wallet if price > 0
+        if (request.plan.price > 0) {
+          await tx.wallet.update({
+            where: { userId: request.userId },
+            data: { mainBalance: { increment: request.plan.price } },
+          })
+
+          // Update transaction status to FAILED or create a REFUND transaction
+          const pendingTx = await tx.transaction.findFirst({
+            where: {
+              userId: request.userId,
+              type: 'INVESTMENT',
+              amount: request.plan.price,
+              status: 'PENDING',
+            },
+            orderBy: { createdAt: 'desc' },
+          })
+
+          if (pendingTx) {
+            await tx.transaction.update({
+              where: { id: pendingTx.id },
+              data: { status: 'FAILED', description: `Upgrade to ${request.plan.name} Rejected: ${remarks || 'No remarks'}` },
+            })
+          }
+        }
+
+        // Send failure notification to user
+        await tx.notification.create({
+          data: {
+            userId: request.userId,
+            title: `Upgrade Request Rejected ❌`,
+            message: `Your request to upgrade to ${request.plan.name} was rejected by the admin. ${remarks ? `Reason: ${remarks}` : ''}`,
+            type: 'ERROR',
+          },
+        })
+      })
+
+      revalidatePath('/admin/dashboard/memberships')
+      revalidatePath('/dashboard/membership')
+      return { success: true, message: `Membership upgrade request rejected successfully.` }
+    }
+  } catch (error: any) {
+    console.error('Error processing membership upgrade:', error)
+    return { success: false, message: error.message || 'Failed to process upgrade request' }
+  }
+}
