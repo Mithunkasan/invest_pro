@@ -13,7 +13,6 @@ export async function syncWalletMainBalance(tx: any, userId: string) {
   if (!wallet) return
 
   const newMainBalance = 
-    (wallet.depositBalance || 0) +
     (wallet.rewardBalance || 0) +
     (wallet.referralBalance || 0) +
     (wallet.levelBalance || 0) +
@@ -99,7 +98,6 @@ export async function deductFromWallets(tx: any, userId: string, amountToDeduct:
   })
   if (updatedWallet) {
     const newMainBalance = 
-      (updatedWallet.depositBalance || 0) +
       (updatedWallet.rewardBalance || 0) +
       (updatedWallet.referralBalance || 0) +
       (updatedWallet.levelBalance || 0) +

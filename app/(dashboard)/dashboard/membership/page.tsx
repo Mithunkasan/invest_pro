@@ -37,7 +37,6 @@ export default async function UserMembershipPage() {
   let wallet = dbWalletRaw
   if (wallet) {
     const expectedMain = 
-      (wallet.depositBalance || 0) +
       (wallet.rewardBalance || 0) +
       (wallet.referralBalance || 0) +
       (wallet.levelBalance || 0) +

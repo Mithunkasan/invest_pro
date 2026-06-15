@@ -4,20 +4,25 @@ import { Button } from '@/components/ui/button'
 import { AdminNotificationsTable } from '@/components/admin/AdminTables'
 
 export default async function AdminNotificationsPage() {
-  const notifications = await prisma.notification.findMany({
-    include: {
-      user: {
-        select: {
-          name: true,
-          email: true,
-          memberType: true,
-          membershipPlan: { select: { name: true } },
+  const [notifications, plans] = await Promise.all([
+    prisma.notification.findMany({
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            memberType: true,
+            membershipPlan: { select: { name: true } },
+          },
         },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  })
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    }),
+    prisma.membershipPlan.findMany({
+      orderBy: { price: 'asc' },
+    }),
+  ])
 
   return (
     <div className="space-y-6">
@@ -31,7 +36,10 @@ export default async function AdminNotificationsPage() {
 
       <div className="premium-card p-6">
         <h2 className="font-semibold mb-4">Notification Logs</h2>
-        <AdminNotificationsTable data={JSON.parse(JSON.stringify(notifications))} />
+        <AdminNotificationsTable 
+          data={JSON.parse(JSON.stringify(notifications))} 
+          plans={JSON.parse(JSON.stringify(plans))} 
+        />
       </div>
     </div>
   )

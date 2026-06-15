@@ -20,7 +20,6 @@ export default async function AdminWalletPage() {
   })
 
   const totalPlatformBalance = 
-    (totals._sum.depositBalance || 0) +
     (totals._sum.rewardBalance || 0) + 
     (totals._sum.referralBalance || 0) + 
     (totals._sum.levelBalance || 0) + 
@@ -30,7 +29,6 @@ export default async function AdminWalletPage() {
   const processedWallets = wallets.map(w => ({
     ...w,
     mainBalance: 
-      (w.depositBalance || 0) +
       (w.rewardBalance || 0) + 
       (w.referralBalance || 0) + 
       (w.levelBalance || 0) + 

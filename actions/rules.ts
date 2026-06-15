@@ -221,63 +221,69 @@ export async function distributeReferralAndLevelCommissions(
       if (!referrer) break
 
       if (percentage > 0) {
-        const commissionAmount = (investmentAmount * percentage) / 100
-        const balanceField = level === 1 ? 'referralBalance' : 'levelBalance'
-        const walletEnum = level === 1 ? 'REFERRAL' : 'LEVEL'
-        const txType = level === 1 ? 'REFERRAL_BONUS' : 'LEVEL_INCOME'
-
-        await prisma.$transaction([
-          // Credit the commission to the referrer's balance
-          prisma.wallet.update({
-            where: { userId: referrer.id },
-            data: { [balanceField]: { increment: commissionAmount } }
-          }),
-          // Create a transaction record
-          prisma.transaction.create({
-            data: {
-              userId: referrer.id,
-              type: txType,
-              amount: commissionAmount,
-              status: 'COMPLETED',
-              reference: investmentId,
-              description: level === 1
-                ? `Level ${level} referral commission from ${investor.name}'s investment`
-                : `Level ${level} level income from ${investor.name}'s investment`,
-              walletType: walletEnum
-            }
-          }),
-          // Create user notification
-          prisma.notification.create({
-            data: {
-              userId: referrer.id,
-              title: level === 1 ? 'Referral Commission Received 👥' : 'Level Income Received 📈',
-              message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} ${level === 1 ? 'referral commission' : 'level income'} from ${investor.name}'s investment.`,
-              type: 'SUCCESS'
-            }
-          })
-        ])
-
-        // Find or create a Referral record to track this specific commission at this level
-        const referralRecord = await prisma.referral.findFirst({
-          where: { referrerId: referrer.id, referredId: investorId }
+        const directReferralsCount = await prisma.user.count({
+          where: { referredById: referrer.id }
         })
-        if (referralRecord) {
-          await prisma.referral.update({
-            where: { id: referralRecord.id },
-            data: { commission: { increment: commissionAmount }, level: level }
-          })
-        } else {
-          await prisma.referral.create({
-            data: {
-              referrerId: referrer.id,
-              referredId: investorId,
-              commission: commissionAmount,
-              level: level
-            }
-          })
-        }
 
-        referralUpdates.push({ referrerId: referrer.id, amount: commissionAmount, level })
+        if (directReferralsCount >= level) {
+          const commissionAmount = (investmentAmount * percentage) / 100
+          const balanceField = level === 1 ? 'referralBalance' : 'levelBalance'
+          const walletEnum = level === 1 ? 'REFERRAL' : 'LEVEL'
+          const txType = level === 1 ? 'REFERRAL_BONUS' : 'LEVEL_INCOME'
+
+          await prisma.$transaction([
+            // Credit the commission to the referrer's balance
+            prisma.wallet.update({
+              where: { userId: referrer.id },
+              data: { [balanceField]: { increment: commissionAmount } }
+            }),
+            // Create a transaction record
+            prisma.transaction.create({
+              data: {
+                userId: referrer.id,
+                type: txType,
+                amount: commissionAmount,
+                status: 'COMPLETED',
+                reference: investmentId,
+                description: level === 1
+                  ? `Level ${level} referral commission from ${investor.name}'s investment`
+                  : `Level ${level} level income from ${investor.name}'s investment`,
+                walletType: walletEnum
+              }
+            }),
+            // Create user notification
+            prisma.notification.create({
+              data: {
+                userId: referrer.id,
+                title: level === 1 ? 'Referral Commission Received 👥' : 'Level Income Received 📈',
+                message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} ${level === 1 ? 'referral commission' : 'level income'} from ${investor.name}'s investment.`,
+                type: 'SUCCESS'
+              }
+            })
+          ])
+
+          // Find or create a Referral record to track this specific commission at this level
+          const referralRecord = await prisma.referral.findFirst({
+            where: { referrerId: referrer.id, referredId: investorId }
+          })
+          if (referralRecord) {
+            await prisma.referral.update({
+              where: { id: referralRecord.id },
+              data: { commission: { increment: commissionAmount }, level: level }
+            })
+          } else {
+            await prisma.referral.create({
+              data: {
+                referrerId: referrer.id,
+                referredId: investorId,
+                commission: commissionAmount,
+                level: level
+              }
+            })
+          }
+
+          referralUpdates.push({ referrerId: referrer.id, amount: commissionAmount, level })
+        }
       }
 
       // Move to the next parent referrer in the chain

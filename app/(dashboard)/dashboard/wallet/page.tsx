@@ -22,7 +22,6 @@ export default async function WalletPage() {
   let wallet = await prisma.wallet.findUnique({ where: { userId: session.id } })
   if (wallet) {
     const expectedMain = 
-      (wallet.depositBalance || 0) +
       (wallet.rewardBalance || 0) +
       (wallet.referralBalance || 0) +
       (wallet.levelBalance || 0) +

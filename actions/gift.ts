@@ -27,14 +27,29 @@ export async function submitGiftAction(
       return { success: false, message: 'Unauthorized. Please login again.' }
     }
 
-    // 1. Verify user is Premium member in DB
+    // 1. Verify user is Premium member in DB and get their plan details
     const dbUser = await prisma.user.findUnique({
       where: { id: session.id },
-      select: { memberType: true }
+      include: { membershipPlan: true }
     })
 
     if (!dbUser || dbUser.memberType !== 'PREMIUM') {
       return { success: false, message: 'This feature is only available for Premium Members.' }
+    }
+
+    // 1b. Check if user has made at least one approved deposit
+    const approvedDeposit = await prisma.deposit.findFirst({
+      where: { userId: session.id, status: 'APPROVED' }
+    })
+    if (!approvedDeposit) {
+      return { success: false, message: 'You must make a deposit before applying for a welcome gift.' }
+    }
+
+    // 1c. Check if user has activated a membership plan
+    const hasMembership = (dbUser.membershipPlanId && dbUser.membershipPlan && dbUser.membershipPlan.price > 0) ||
+                          (dbUser.basicMembershipActivatedAt && dbUser.basicMembershipAmount > 0)
+    if (!hasMembership) {
+      return { success: false, message: 'You must activate a membership plan before applying for a welcome gift.' }
     }
 
     // 2. Validate details with Zod
@@ -68,36 +83,107 @@ export async function submitGiftAction(
       return { success: false, message: `Invalid location: PIN Code "${parsed.data.pinCode}" does not match city "${parsed.data.city}".` }
     }
 
-    // 3. Save to database using upsert (allow updates before shipping)
-    await prisma.gift.upsert({
-      where: { userId: session.id },
-      update: {
-        fullName: parsed.data.fullName,
-        age: parsed.data.age,
-        mobile: parsed.data.mobile,
-        email: parsed.data.email,
-        houseNo: parsed.data.houseNo,
-        area: parsed.data.area,
-        state: parsed.data.state,
-        district: parsed.data.district,
-        city: parsed.data.city,
-        pinCode: parsed.data.pinCode,
-      },
-      create: {
+    // 3. Save to database or update pending request
+    const activeGift = await prisma.gift.findFirst({
+      where: {
         userId: session.id,
-        fullName: parsed.data.fullName,
-        age: parsed.data.age,
-        mobile: parsed.data.mobile,
-        email: parsed.data.email,
-        houseNo: parsed.data.houseNo,
-        area: parsed.data.area,
-        state: parsed.data.state,
-        district: parsed.data.district,
-        city: parsed.data.city,
-        pinCode: parsed.data.pinCode,
-        deliveryStatus: 'PENDING'
+        deliveryStatus: { in: ['PENDING', 'ACCEPTED', 'POSTED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'] }
       }
     })
+
+    if (activeGift) {
+      if (activeGift.deliveryStatus === 'PENDING') {
+        // Allow updating the pending address details
+        await prisma.gift.update({
+          where: { id: activeGift.id },
+          data: {
+            fullName: parsed.data.fullName,
+            age: parsed.data.age,
+            mobile: parsed.data.mobile,
+            email: parsed.data.email,
+            houseNo: parsed.data.houseNo,
+            area: parsed.data.area,
+            state: parsed.data.state,
+            district: parsed.data.district,
+            city: parsed.data.city,
+            pinCode: parsed.data.pinCode,
+          }
+        })
+      } else {
+        // Status is ACCEPTED, POSTED, IN_TRANSIT or OUT_FOR_DELIVERY
+        return {
+          success: false,
+          message: 'You cannot submit or modify a gift request while your previous gift is being processed or in transit.'
+        }
+      }
+    } else {
+      // No active gift request. Count past gifts to see if we should charge.
+      const giftCount = await prisma.gift.count({
+        where: { userId: session.id }
+      })
+
+      if (giftCount >= 1) {
+        // Subsequent gift request -> Pay ₹2,500
+        const wallet = await prisma.wallet.findUnique({
+          where: { userId: session.id }
+        })
+        if (!wallet || wallet.mainBalance < 2500) {
+          return { success: false, message: 'Insufficient balance in wallet. A payment of ₹2,500 is required for subsequent gift requests.' }
+        }
+
+        // Deduct payment and create new gift
+        await prisma.$transaction(async (tx) => {
+          const { deductFromWallets } = await import('./walletUtils')
+          await deductFromWallets(tx, session.id, 2500)
+
+          await tx.transaction.create({
+            data: {
+              userId: session.id,
+              type: 'INVESTMENT',
+              amount: 2500,
+              status: 'COMPLETED',
+              description: `Gift Request Payment (Request #${giftCount + 1})`,
+              walletType: 'MAIN'
+            }
+          })
+
+          await tx.gift.create({
+            data: {
+              userId: session.id,
+              fullName: parsed.data.fullName,
+              age: parsed.data.age,
+              mobile: parsed.data.mobile,
+              email: parsed.data.email,
+              houseNo: parsed.data.houseNo,
+              area: parsed.data.area,
+              state: parsed.data.state,
+              district: parsed.data.district,
+              city: parsed.data.city,
+              pinCode: parsed.data.pinCode,
+              deliveryStatus: 'PENDING'
+            }
+          })
+        })
+      } else {
+        // First gift request -> Free
+        await prisma.gift.create({
+          data: {
+            userId: session.id,
+            fullName: parsed.data.fullName,
+            age: parsed.data.age,
+            mobile: parsed.data.mobile,
+            email: parsed.data.email,
+            houseNo: parsed.data.houseNo,
+            area: parsed.data.area,
+            state: parsed.data.state,
+            district: parsed.data.district,
+            city: parsed.data.city,
+            pinCode: parsed.data.pinCode,
+            deliveryStatus: 'PENDING'
+          }
+        })
+      }
+    }
 
     // 4. Create an in-app notification
     await prisma.notification.create({

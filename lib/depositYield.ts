@@ -1,0 +1,108 @@
+import { prisma } from '@/lib/prisma'
+import { syncWalletMainBalance } from '@/actions/walletUtils'
+
+function get10AMIST(d: Date): Date {
+  const istOffset = 5.5 * 60 * 60 * 1000 // 5.5 hours in ms
+  const istTime = new Date(d.getTime() + istOffset)
+  const year = istTime.getUTCFullYear()
+  const month = istTime.getUTCMonth()
+  const dateVal = istTime.getUTCDate()
+  
+  // 10:00 AM IST is 04:30 AM UTC
+  return new Date(Date.UTC(year, month, dateVal, 4, 30, 0, 0))
+}
+
+export async function creditDueDepositYields(userId: string) {
+  // 1. Fetch user, their active membership plan, and all approved deposits.
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      membershipPlan: true,
+      deposits: {
+        where: { status: 'APPROVED' },
+      },
+    },
+  })
+
+  if (!user) return
+
+  // 2. Determine yield percentage.
+  const yieldPercent = user.membershipPlan?.depositBonus || 0
+  if (yieldPercent <= 0) return
+
+  const now = new Date()
+
+  // 3. For each approved deposit, check if there are daily yields due.
+  for (const deposit of user.deposits) {
+    const depositDate = deposit.createdAt
+    
+    // Determine StartCreditDate (10:00 AM IST sequence start)
+    const T_0 = get10AMIST(depositDate)
+    let startCreditDate: Date
+    if (depositDate.getTime() < T_0.getTime()) {
+      startCreditDate = T_0
+    } else {
+      startCreditDate = new Date(T_0.getTime() + 24 * 60 * 60 * 1000)
+    }
+
+    if (now.getTime() < startCreditDate.getTime()) {
+      continue
+    }
+
+    // Calculate how many credits should have happened up to now
+    const diffTime = now.getTime() - startCreditDate.getTime()
+    const targetCredits = Math.min(1000, 1 + Math.floor(diffTime / 86400000))
+    const currentCredits = deposit.yieldDaysCredited || 0
+    const dueDays = targetCredits - currentCredits
+
+    if (dueDays <= 0) continue
+
+    // Calculate daily return: (deposit.amount * yieldPercent) / 100
+    const dailyReturn = (deposit.amount * yieldPercent) / 100
+    const totalCreditAmount = Number((dailyReturn * dueDays).toFixed(2))
+
+    if (totalCreditAmount <= 0) continue
+
+    // Credit to Bonus Wallet and create transaction and update deposit
+    const lastYieldTimestamp = new Date(startCreditDate.getTime() + (targetCredits - 1) * 86400000)
+
+    await prisma.$transaction(async (tx) => {
+      // Increment Bonus Wallet
+      await tx.wallet.upsert({
+        where: { userId: user.id },
+        update: {
+          bonusBalance: { increment: totalCreditAmount },
+        },
+        create: {
+          userId: user.id,
+          bonusBalance: totalCreditAmount,
+        },
+      })
+
+      // Create a Transaction record
+      await tx.transaction.create({
+        data: {
+          userId: user.id,
+          type: 'BONUS',
+          amount: totalCreditAmount,
+          status: 'COMPLETED',
+          walletType: 'BONUS',
+          description: `Daily yield of ${yieldPercent}% on deposit (₹${deposit.amount}) x ${dueDays} day${dueDays > 1 ? 's' : ''}`,
+          reference: `DEPOSIT_YIELD:${deposit.id}:${targetCredits}`,
+        },
+      })
+
+      // Update Deposit record with new yield stats
+      await tx.deposit.update({
+        where: { id: deposit.id },
+        data: {
+          yieldDaysCredited: targetCredits,
+          lastYieldAt: lastYieldTimestamp,
+        },
+      })
+
+      // Sync user's main wallet balance
+      await syncWalletMainBalance(tx, user.id)
+    })
+  }
+}
