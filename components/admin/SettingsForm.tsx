@@ -484,7 +484,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
         <h2 className="text-lg font-bold border-b pb-3 border-muted/50 text-white/90">Basic Membership Plan</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
           <div className="space-y-2">
-            <Label htmlFor="basicDailyYieldPercent" className="text-sm font-semibold">Daily Yield Percentage (%)</Label>
+            <Label htmlFor="basicDailyYieldPercent" className="text-sm font-semibold">Deposit Bonus Yield (%)</Label>
             <div className="relative flex items-center">
               <Input
                 id="basicDailyYieldPercent"
@@ -500,7 +500,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
               />
               <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">Controls Basic Membership daily wallet yield. Default: 0.2% of Rs. 2,500 for 1,000 days.</p>
+            <p className="text-[11px] text-muted-foreground">Controls the deposit bonus yield for the Basic Membership plan.</p>
           </div>
         </div>
       </div>

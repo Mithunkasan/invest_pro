@@ -844,7 +844,7 @@ export function WalletsTable({ data }: TableProps) {
   )
 }
 
-export function AdminNotificationsTable({ data }: TableProps) {
+export function AdminNotificationsTable({ data, plans = [] }: { data: any[]; plans?: any[] }) {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [filterMembership, setFilterMembership] = useState('ALL')
@@ -908,7 +908,10 @@ export function AdminNotificationsTable({ data }: TableProps) {
     setFilterMembership('ALL')
   }
 
-  const membershipOptions = ['Free', 'Basic', 'Premium', 'Bronze', 'Silver', 'Gold', 'Diamond', 'Platinum']
+  const membershipOptions = useMemo(() => {
+    const dbOptions = plans.map((plan: any) => plan.name.replace(' Membership', ''))
+    return Array.from(new Set(dbOptions)).filter(Boolean) as string[]
+  }, [plans])
 
   return (
     <div className="space-y-4">

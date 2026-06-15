@@ -147,7 +147,7 @@ export function DashboardOverview({ user, stats, investments, transactions, char
       </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         <StatsCard
           title="Main Wallet"
           value={stats.wallet.mainBalance}
@@ -161,6 +161,18 @@ export function DashboardOverview({ user, stats, investments, transactions, char
           delay={0}
         />
         <StatsCard
+          title="Deposit"
+          value={stats.wallet.depositBalance}
+          icon={
+            <div className="relative flex items-center justify-center">
+              <span className="absolute w-8 h-8 rounded-full bg-indigo-500/20 animate-pulse" />
+              <DollarSign className="w-5 h-5 text-indigo-500 relative z-10" />
+            </div>
+          }
+          iconBg="bg-indigo-500/10"
+          delay={0.05}
+        />
+        <StatsCard
           title="Reward"
           value={stats.wallet.rewardBalance}
           icon={
@@ -170,7 +182,7 @@ export function DashboardOverview({ user, stats, investments, transactions, char
             </div>
           }
           iconBg="bg-amber-500/10"
-          delay={0.05}
+          delay={0.1}
         />
         <StatsCard
           title="Referral Income"
@@ -182,7 +194,7 @@ export function DashboardOverview({ user, stats, investments, transactions, char
             </div>
           }
           iconBg="bg-purple-500/10"
-          delay={0.1}
+          delay={0.15}
         />
         <StatsCard
           title="Total"
@@ -194,7 +206,7 @@ export function DashboardOverview({ user, stats, investments, transactions, char
             </div>
           }
           iconBg="bg-emerald-500/10"
-          delay={0.15}
+          delay={0.2}
           onClick={() => setShowTotalModal(true)}
           className="border-emerald-500/30 hover:border-emerald-400"
         />
@@ -220,7 +232,7 @@ export function DashboardOverview({ user, stats, investments, transactions, char
             </div>
           }
           iconBg="bg-cyan-500/15"
-          delay={0.2}
+          delay={0.25}
         />
         <StatsCard
           title="Bonus Wallet"
@@ -232,7 +244,7 @@ export function DashboardOverview({ user, stats, investments, transactions, char
             </div>
           }
           iconBg="bg-orange-500/10"
-          delay={0.25}
+          delay={0.3}
         />
       </div>
 

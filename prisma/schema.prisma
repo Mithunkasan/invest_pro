@@ -45,7 +45,7 @@ model User {
   referralsReceived Referral[] @relation("ReferredRelation")
   kyc           KYC?
   notifications Notification[]
-  gift          Gift?
+  gifts         Gift[]
   assignedTasks OfflineTask[]
   tickets       Ticket[]
   ticketNotifications TicketNotification[]
@@ -209,6 +209,10 @@ model Deposit {
   status      DepositStatus @default(PENDING)
   remarks     String?
   approvedById String?
+
+  // Yield fields
+  lastYieldAt       DateTime?
+  yieldDaysCredited Int           @default(0)
 
   user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   approvedBy Admin? @relation("AdminDepositApproval", fields: [approvedById], references: [id])
@@ -475,7 +479,7 @@ model MembershipPlan {
 // ============================================================
 model Gift {
   id                   String    @id @default(cuid())
-  userId               String    @unique
+  userId               String
   user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   // Gift address details
@@ -496,6 +500,8 @@ model Gift {
   dispatchDate         DateTime?
   expectedDeliveryDate DateTime?
   deliveryStatus       String    @default("PENDING") // PENDING, SHIPPED, OUT_FOR_DELIVERY, DELIVERED
+  acceptedAt           DateTime?
+  remarks              String    @default("")
   
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt

@@ -293,74 +293,80 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
           if (!referrer) break
           
           if (percentage > 0) {
-            const commissionAmount = (depositAmount * percentage) / 100
-            const balanceField = level === 1 ? 'referralBalance' : 'levelBalance'
-            const walletEnum = level === 1 ? 'REFERRAL' : 'LEVEL'
-            const txType = level === 1 ? 'REFERRAL_BONUS' : 'LEVEL_INCOME'
-            
-            // 1. Credit referrer's wallet
-            dbOps.push(
-              prisma.wallet.update({
-                where: { userId: referrer.id },
-                data: { [balanceField]: { increment: commissionAmount } }
-              })
-            )
-            
-            // 2. Create transaction record
-            dbOps.push(
-              prisma.transaction.create({
-                data: {
-                  userId: referrer.id,
-                  type: txType,
-                  amount: commissionAmount,
-                  status: 'COMPLETED',
-                  reference: deposit.utrNumber || depositId,
-                  description: level === 1 
-                    ? `Level ${level} referral commission from ${user.name}'s deposit`
-                    : `Level ${level} level income from ${user.name}'s deposit`,
-                  walletType: walletEnum
-                }
-              })
-            )
-            
-            // 3. Notification for referrer
-            dbOps.push(
-              prisma.notification.create({
-                data: {
-                  userId: referrer.id,
-                  title: level === 1 ? 'Referral Commission Received 👥' : 'Level Income Received 📈',
-                  message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} ${level === 1 ? 'referral commission' : 'level income'} from ${user.name}'s deposit.`,
-                  type: 'SUCCESS'
-                }
-              })
-            )
-            
-            // 4. Update/Create Referral record
-            const referralRecord = await prisma.referral.findFirst({
-              where: { referrerId: referrer.id, referredId: user.id }
+            const directReferralsCount = await prisma.user.count({
+              where: { referredById: referrer.id }
             })
-            
-            if (referralRecord) {
+
+            if (directReferralsCount >= level) {
+              const commissionAmount = (depositAmount * percentage) / 100
+              const balanceField = level === 1 ? 'referralBalance' : 'levelBalance'
+              const walletEnum = level === 1 ? 'REFERRAL' : 'LEVEL'
+              const txType = level === 1 ? 'REFERRAL_BONUS' : 'LEVEL_INCOME'
+              
+              // 1. Credit referrer's wallet
               dbOps.push(
-                prisma.referral.update({
-                  where: { id: referralRecord.id },
-                  data: { commission: { increment: commissionAmount }, level: level }
+                prisma.wallet.update({
+                  where: { userId: referrer.id },
+                  data: { [balanceField]: { increment: commissionAmount } }
                 })
               )
-            } else {
+              
+              // 2. Create transaction record
               dbOps.push(
-                prisma.referral.create({
+                prisma.transaction.create({
                   data: {
-                    referrerId: referrer.id,
-                    referredId: user.id,
-                    commission: commissionAmount,
-                    level: level
+                    userId: referrer.id,
+                    type: txType,
+                    amount: commissionAmount,
+                    status: 'COMPLETED',
+                    reference: deposit.utrNumber || depositId,
+                    description: level === 1 
+                      ? `Level ${level} referral commission from ${user.name}'s deposit`
+                      : `Level ${level} level income from ${user.name}'s deposit`,
+                    walletType: walletEnum
                   }
                 })
               )
+              
+              // 3. Notification for referrer
+              dbOps.push(
+                prisma.notification.create({
+                  data: {
+                    userId: referrer.id,
+                    title: level === 1 ? 'Referral Commission Received 👥' : 'Level Income Received 📈',
+                    message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} ${level === 1 ? 'referral commission' : 'level income'} from ${user.name}'s deposit.`,
+                    type: 'SUCCESS'
+                  }
+                })
+              )
+              
+              // 4. Update/Create Referral record
+              const referralRecord = await prisma.referral.findFirst({
+                where: { referrerId: referrer.id, referredId: user.id }
+              })
+              
+              if (referralRecord) {
+                dbOps.push(
+                  prisma.referral.update({
+                    where: { id: referralRecord.id },
+                    data: { commission: { increment: commissionAmount }, level: level }
+                  })
+                )
+              } else {
+                dbOps.push(
+                  prisma.referral.create({
+                    data: {
+                      referrerId: referrer.id,
+                      referredId: user.id,
+                      commission: commissionAmount,
+                      level: level
+                    }
+                  })
+                )
+              }
+              
+              referralUpdates.push({ referrerId: referrer.id, amount: commissionAmount, level: level })
             }
-            
-            referralUpdates.push({ referrerId: referrer.id, amount: commissionAmount, level: level })
           }
           
           currentReferrerId = referrer.referredById
@@ -651,6 +657,18 @@ export async function getSystemSettings(): Promise<any> {
         }
       })
     }
+
+    // Fetch and sync Basic Membership plan's depositBonus
+    let basicPlan = await prisma.membershipPlan.findUnique({
+      where: { name: 'Basic Membership' }
+    })
+    if (!basicPlan) {
+      basicPlan = await ensureBasicMembershipPlan()
+    }
+    if (basicPlan) {
+      settings.basicDailyYieldPercent = basicPlan.depositBonus
+    }
+
     return settings
   } catch (error) {
     console.error('Error fetching system settings:', error)
@@ -664,6 +682,8 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
   if (!admin) return { success: false, message: 'Unauthorized' }
 
   try {
+    const newBasicYield = Number(data.basicDailyYieldPercent ?? 0.2)
+
     await prisma.systemSettings.upsert({
       where: { id: 'default' },
       update: {
@@ -687,7 +707,7 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         directorRankMaxUsers: Number(data.directorRankMaxUsers || 5),
         directorRankEnabled: Boolean(data.directorRankEnabled),
         withdrawalDeductionPercent: Number(data.withdrawalDeductionPercent ?? 20.0),
-        basicDailyYieldPercent: Number(data.basicDailyYieldPercent ?? 0.2),
+        basicDailyYieldPercent: newBasicYield,
         heroMembers: String(data.heroMembers),
         heroActive: String(data.heroActive),
         heroPaid: String(data.heroPaid),
@@ -715,12 +735,24 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         directorRankMaxUsers: Number(data.directorRankMaxUsers || 5),
         directorRankEnabled: Boolean(data.directorRankEnabled),
         withdrawalDeductionPercent: Number(data.withdrawalDeductionPercent ?? 20.0),
-        basicDailyYieldPercent: Number(data.basicDailyYieldPercent ?? 0.2),
+        basicDailyYieldPercent: newBasicYield,
         heroMembers: String(data.heroMembers),
         heroActive: String(data.heroActive),
         heroPaid: String(data.heroPaid),
         heroRate: String(data.heroRate),
       }
+    })
+
+    // Sync corresponding membership plan configuration's depositBonus
+    let basicPlan = await prisma.membershipPlan.findUnique({
+      where: { name: 'Basic Membership' }
+    })
+    if (!basicPlan) {
+      basicPlan = await ensureBasicMembershipPlan()
+    }
+    await prisma.membershipPlan.update({
+      where: { id: basicPlan.id },
+      data: { depositBonus: newBasicYield }
     })
 
     revalidatePath('/admin/dashboard/settings')

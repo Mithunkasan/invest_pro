@@ -26,13 +26,19 @@ interface GiftFormClientProps {
     courierName: string
     dispatchDate: string | null
     expectedDeliveryDate: string | null
-    deliveryStatus: 'PENDING' | 'SHIPPED' | 'OUT_FOR_DELIVERY' | 'DELIVERED'
+    deliveryStatus: 'PENDING' | 'ACCEPTED' | 'POSTED' | 'IN_TRANSIT' | 'OUT_FOR_DELIVERY' | 'DELIVERED'
+    acceptedAt: string | null
+    remarks: string
+    createdAt: string
     updatedAt: string
   } | null
+  giftCount: number
+  walletBalance: number
 }
 
-export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
+export function GiftFormClient({ gift: initialGift, giftCount, walletBalance }: GiftFormClientProps) {
   const [gift, setGift] = useState(initialGift)
+  const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -50,6 +56,25 @@ export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
     city: gift?.city || '',
     pinCode: gift?.pinCode || '',
   })
+
+  // Synchronize local state with prop updates (to reflect admin status updates in real-time)
+  useEffect(() => {
+    setGift(initialGift)
+    if (initialGift) {
+      setFormData({
+        fullName: initialGift.fullName || '',
+        age: initialGift.age || '',
+        mobile: initialGift.mobile || '',
+        email: initialGift.email || '',
+        houseNo: initialGift.houseNo || '',
+        area: initialGift.area || '',
+        state: initialGift.state || '',
+        district: initialGift.district || '',
+        city: initialGift.city || '',
+        pinCode: initialGift.pinCode || '',
+      })
+    }
+  }, [initialGift])
 
   // Dropdown lists and loading states
   const [states, setStates] = useState<string[]>([])
@@ -165,14 +190,18 @@ export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
     const res = await submitGiftAction(payload)
     if (res.success) {
       setSuccess(res.message)
+      setShowForm(false)
       // Query again or set local gift state to show tracking
       setGift({
         ...payload,
-        trackingNumber: gift?.trackingNumber || '',
-        courierName: gift?.courierName || '',
-        dispatchDate: gift?.dispatchDate || null,
-        expectedDeliveryDate: gift?.expectedDeliveryDate || null,
-        deliveryStatus: gift?.deliveryStatus || 'PENDING',
+        trackingNumber: '',
+        courierName: '',
+        dispatchDate: null,
+        expectedDeliveryDate: null,
+        deliveryStatus: 'PENDING',
+        acceptedAt: null,
+        remarks: '',
+        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       })
     } else {
@@ -181,16 +210,63 @@ export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
     setLoading(false)
   }
 
-  // --- RENDER TRACKER UI (IF ALREADY SUBMITTED) ---
-  if (gift) {
+  // --- RENDER TRACKER UI (IF ALREADY SUBMITTED & NOT REQUESTING NEXT) ---
+  if (gift && (!showForm || gift.deliveryStatus !== 'DELIVERED')) {
     const statusMap = {
-      PENDING: { label: 'Pending Dispatch', step: 1, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-      SHIPPED: { label: 'Shipped', step: 2, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-      OUT_FOR_DELIVERY: { label: 'Out for Delivery', step: 3, color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' },
-      DELIVERED: { label: 'Delivered', step: 4, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' }
+      PENDING: { label: 'Pending Verification', step: 1, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+      ACCEPTED: { label: 'Request Accepted', step: 2, color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
+      POSTED: { label: 'Posted', step: 3, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+      IN_TRANSIT: { label: 'In Transit', step: 4, color: 'text-sky-400 bg-sky-500/10 border-sky-500/20' },
+      OUT_FOR_DELIVERY: { label: 'Out for Delivery', step: 5, color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' },
+      DELIVERED: { label: 'Delivered', step: 6, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' }
     }
 
     const currentStatus = statusMap[gift.deliveryStatus] || statusMap.PENDING
+
+    const timelineSteps = [
+      {
+        label: 'Gift Request Submitted',
+        isCompleted: true,
+        isActive: gift.deliveryStatus === 'PENDING',
+        date: gift.createdAt,
+        desc: 'Your request has been received.'
+      },
+      {
+        label: 'Request Accepted by Admin',
+        isCompleted: ['ACCEPTED', 'POSTED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(gift.deliveryStatus),
+        isActive: gift.deliveryStatus === 'ACCEPTED',
+        date: gift.acceptedAt,
+        desc: 'Verified by our administration.'
+      },
+      {
+        label: 'Package Posted',
+        isCompleted: ['POSTED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(gift.deliveryStatus),
+        isActive: gift.deliveryStatus === 'POSTED',
+        date: gift.dispatchDate,
+        desc: 'Handed over to courier partner.'
+      },
+      {
+        label: 'In Transit',
+        isCompleted: ['IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(gift.deliveryStatus),
+        isActive: gift.deliveryStatus === 'IN_TRANSIT',
+        date: null,
+        desc: 'Package is moving between hubs.'
+      },
+      {
+        label: 'Out for Delivery',
+        isCompleted: ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(gift.deliveryStatus),
+        isActive: gift.deliveryStatus === 'OUT_FOR_DELIVERY',
+        date: null,
+        desc: 'Courier agent is delivering today.'
+      },
+      {
+        label: 'Delivered',
+        isCompleted: gift.deliveryStatus === 'DELIVERED',
+        isActive: gift.deliveryStatus === 'DELIVERED',
+        date: gift.deliveryStatus === 'DELIVERED' ? gift.expectedDeliveryDate : null,
+        desc: 'Successfully received!'
+      }
+    ]
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -208,106 +284,115 @@ export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
             </span>
           </div>
 
-          {/* Graphical Stepper */}
-          <div className="relative flex justify-between items-start max-w-lg mx-auto py-4">
-            {/* Background Line */}
-            <div className="absolute left-6 right-6 top-[22px] h-[3px] bg-white/10 z-0 rounded-full" />
-            {/* Progress Line */}
-            <div 
-              className="absolute left-6 top-[22px] h-[3px] bg-gradient-to-r from-emerald-500 to-emerald-400 z-0 rounded-full transition-all duration-500" 
-              style={{ width: `${((currentStatus.step - 1) / 3) * 100}%` }}
-            />
-
-            {[
-              { label: 'Verified', status: 'PENDING', desc: 'Address Received', icon: ShieldCheck },
-              { label: 'Dispatched', status: 'SHIPPED', desc: 'In Courier Transit', icon: Truck },
-              { label: 'Out for Delivery', status: 'OUT_FOR_DELIVERY', desc: 'Arrived at City Hub', icon: Package },
-              { label: 'Delivered', status: 'DELIVERED', desc: 'Successfully Received', icon: CheckCircle2 }
-            ].map((step, idx) => {
-              const Icon = step.icon as any
-              const isCompleted = currentStatus.step > idx
-              const isActive = currentStatus.step === idx + 1
-
-              return (
-                <div key={idx} className="flex flex-col items-center text-center relative z-10 space-y-2.5 max-w-[80px]">
-                  <div 
-                    className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                      isCompleted 
-                        ? 'bg-emerald-500 border-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]'
-                        : isActive 
-                        ? 'bg-indigo-950 border-emerald-400 text-emerald-400 animate-pulse'
-                        : 'bg-slate-900 border-white/10 text-white/40'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <span className={`text-[10px] font-black uppercase tracking-wider block ${isActive ? 'text-emerald-400' : 'text-white/70'}`}>
-                      {step.label}
-                    </span>
-                    <span className="text-[9px] text-muted-foreground block leading-tight">
-                      {step.desc}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
+          {/* Tracking Summary Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 rounded-2xl bg-white/5 border border-white/5 p-5 md:p-6 text-xs font-semibold">
+            <div>
+              <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-0.5">Gift Request Date</span>
+              <span className="text-white font-extrabold">{formatDate(gift.createdAt)}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-0.5">Request Accepted Date</span>
+              <span className="text-white font-extrabold">{gift.acceptedAt ? formatDate(gift.acceptedAt) : '—'}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-0.5">Current Status</span>
+              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${currentStatus.color} inline-block mt-0.5`}>
+                {gift.deliveryStatus.replace(/_/g, ' ')}
+              </span>
+            </div>
+            {gift.courierName && (
+              <div>
+                <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-0.5">Courier Company</span>
+                <span className="text-white font-extrabold">{gift.courierName}</span>
+              </div>
+            )}
+            {gift.trackingNumber && (
+              <div>
+                <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-0.5">Tracking Number</span>
+                <span className="text-white font-mono font-bold select-all tracking-wider">{gift.trackingNumber}</span>
+              </div>
+            )}
           </div>
 
-          {/* Dispatch details (Courier Info) */}
-          {gift.deliveryStatus !== 'PENDING' ? (
-            <div className="rounded-2xl bg-white/5 border border-white/5 p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3.5">
-                <h3 className="text-xs font-bold text-emerald-300 uppercase tracking-widest flex items-center gap-1.5">
-                  <Truck className="w-4 h-4" /> Courier & Shipping Details
-                </h3>
-                
-                <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
-                  <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-0.5">Courier Partner</span>
-                    <span className="text-white font-extrabold">{gift.courierName}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-0.5">Tracking Number</span>
-                    <span className="text-white font-mono font-bold select-all tracking-wider">{gift.trackingNumber}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-0.5">Dispatch Date</span>
-                    <span className="text-white">{gift.dispatchDate ? formatDate(gift.dispatchDate) : '—'}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-0.5">Estimated Arrival</span>
-                    <span className="text-emerald-300 font-extrabold">{gift.expectedDeliveryDate ? formatDate(gift.expectedDeliveryDate) : '—'}</span>
-                  </div>
-                </div>
-              </div>
+          {/* Status History Timeline */}
+          <div className="space-y-4 pt-2">
+            <h3 className="text-xs font-bold text-white uppercase tracking-widest border-b border-white/5 pb-2">
+              Status History Timeline
+            </h3>
+            <div className="relative pl-8 space-y-6">
+              {/* Vertical line connecting steps */}
+              <div className="absolute left-[13px] top-2 bottom-2 w-[2px] bg-white/10 z-0" />
 
-              {/* Action Button Mock */}
-              <div className="flex flex-col justify-center items-start border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6 space-y-3">
-                <p className="text-xs text-muted-foreground font-medium leading-relaxed">
-                  You can track your package directly on the partner website by pasting the tracking code.
-                </p>
-                <a 
-                  href="#" 
-                  className="py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md group/link"
-                  onClick={(e) => { e.preventDefault(); alert("Tracking is simulated. In a live system, this redirects to " + gift.courierName + " track page.") }}
-                >
-                  <span>Courier Tracking Panel</span>
-                  <ExternalLink className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 transition-transform" />
-                </a>
-              </div>
+              {timelineSteps.map((step, idx) => {
+                const isStepCompleted = step.isCompleted
+                const isStepActive = step.isActive
+
+                return (
+                  <div key={idx} className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-2 z-10">
+                    {/* Circle icon */}
+                    <div 
+                      className={`absolute -left-8 w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                        isStepCompleted 
+                          ? 'bg-emerald-500 border-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                          : isStepActive 
+                          ? 'bg-indigo-950 border-emerald-400 text-emerald-400 animate-pulse'
+                          : 'bg-slate-900 border-white/10 text-white/20'
+                      }`}
+                    >
+                      {isStepCompleted ? (
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      ) : (
+                        <div className={`w-1.5 h-1.5 rounded-full ${isStepActive ? 'bg-emerald-400' : 'bg-white/20'}`} />
+                      )}
+                    </div>
+                    
+                    {/* Step Content */}
+                    <div className="space-y-0.5">
+                      <span className={`text-xs font-black uppercase tracking-wider block ${isStepActive ? 'text-emerald-400' : isStepCompleted ? 'text-white' : 'text-white/40'}`}>
+                        {step.label}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground block leading-tight">
+                        {step.desc}
+                      </span>
+                    </div>
+
+                    {/* Step Date */}
+                    {step.date && (
+                      <span className="text-[10px] text-muted-foreground font-mono bg-white/5 border border-white/5 px-2 py-1 rounded-md self-start sm:self-center font-bold">
+                        {formatDate(step.date)}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
             </div>
-          ) : (
-            <div className="rounded-2xl bg-white/5 border border-white/5 p-6 flex flex-col md:flex-row items-center gap-5">
-              <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                <Clock className="w-6 h-6 text-amber-400" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-extrabold text-xs text-white uppercase tracking-widest">Preparing Package</h3>
-                <p className="text-xs text-muted-foreground max-w-lg leading-relaxed">
-                  Your address details have been successfully received and validated! Our logistics crew is currently packaging your Welcome Kit. Dispatch details and expected dates will appear here immediately once handed over to our courier partner.
+          </div>
+
+          {/* Remarks display if any */}
+          {gift.remarks && (
+            <div className="rounded-2xl bg-white/5 border border-white/5 p-4 text-xs mt-6">
+              <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-1">Latest Update / Remarks</span>
+              <p className="text-white font-medium">{gift.remarks}</p>
+            </div>
+          )}
+
+          {gift.deliveryStatus === 'DELIVERED' && (
+            <div className="rounded-2xl bg-emerald-500/5 border border-emerald-500/10 p-5 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+              <div className="space-y-1 text-left">
+                <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
+                  <span>Apply for Your Next Gift!</span> 🎁
+                </h4>
+                <p className="text-xs text-muted-foreground max-w-md">
+                  Your welcome kit has been delivered successfully. You are now eligible to request your next premium gift.
                 </p>
               </div>
+              <button
+                onClick={() => setShowForm(true)}
+                className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-1 transition-all shadow-md shrink-0 cursor-pointer"
+              >
+                <span>Request Next Gift</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
@@ -368,13 +453,40 @@ export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
     )
   }
 
-  // --- RENDER FORM UI (IF NOT SUBMITTED YET) ---
+  // --- RENDER FORM UI (IF NOT SUBMITTED YET OR PREVIOUS DELIVERED) ---
   return (
     <div className="max-w-3xl mx-auto premium-card p-6 md:p-8 space-y-6">
       <div className="border-b border-white/5 pb-4">
         <h2 className="text-lg font-black text-white">Shipping Address Registration</h2>
         <p className="text-xs text-muted-foreground mt-0.5">Please provide accurate Indian postal shipping details to avoid courier dispatch rejection.</p>
       </div>
+
+      {gift && gift.deliveryStatus === 'DELIVERED' && (
+        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🎉</span>
+            <span className="font-extrabold text-white">Your previous gift has been delivered!</span>
+          </div>
+          <p className="text-white/70 leading-relaxed">
+            You are eligible to apply for your next welcome gift. Note that subsequent requests require a payment of <strong className="text-emerald-300 font-extrabold">₹2,500</strong> which will be deducted from your wallet main balance upon submission.
+          </p>
+          <div className="text-[10px] text-white/50">
+            Wallet Balance: <strong className={walletBalance >= 2500 ? "text-emerald-400 font-extrabold" : "text-rose-400 font-extrabold"}>₹{walletBalance.toLocaleString('en-IN')}</strong>
+          </div>
+        </div>
+      )}
+
+      {giftCount >= 1 && walletBalance < 2500 && (
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <span className="block text-white font-extrabold">Insufficient Wallet Balance</span>
+            <span className="block text-white/70 font-medium leading-relaxed">
+              You need a wallet balance of at least ₹2,500 to submit subsequent gift requests. Your current balance is ₹{walletBalance.toLocaleString('en-IN')}. Please add funds to your wallet to proceed.
+            </span>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold flex items-center gap-2">
@@ -544,10 +656,10 @@ export function GiftFormClient({ gift: initialGift }: GiftFormClientProps) {
         <div className="pt-4 flex justify-end">
           <button
             type="submit"
-            disabled={loading}
-            className="py-3 px-6 rounded-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/20 transition-all text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            disabled={loading || (giftCount >= 1 && walletBalance < 2500)}
+            className="py-3 px-6 rounded-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/20 transition-all text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Submitting Details...' : 'Submit Shipping Details'}
+            {loading ? 'Submitting Details...' : (giftCount === 0 ? 'Submit Shipping Details' : 'Pay ₹2,500 & Submit Gift Request')}
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

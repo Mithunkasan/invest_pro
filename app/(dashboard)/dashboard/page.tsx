@@ -64,7 +64,6 @@ export default async function DashboardPage() {
   let dbWallet = wallet
   if (dbWallet) {
     const expectedMain = 
-      (dbWallet.depositBalance || 0) +
       (dbWallet.rewardBalance || 0) +
       (dbWallet.referralBalance || 0) +
       (dbWallet.levelBalance || 0) +
