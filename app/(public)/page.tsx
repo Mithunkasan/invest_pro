@@ -18,11 +18,33 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const [userCount, totalAum, settings, membershipPlans] = await Promise.all([
+  const [userCount, totalAum, settings, membershipPlans, usersRaw] = await Promise.all([
     prisma.user.count(),
     prisma.investment.aggregate({ _sum: { amount: true } }),
     prisma.systemSettings.findUnique({ where: { id: 'default' } }),
-    prisma.membershipPlan.findMany({ where: { isActive: true }, orderBy: { price: 'asc' } })
+    prisma.membershipPlan.findMany({ where: { isActive: true }, orderBy: { price: 'asc' } }),
+    prisma.user.findMany({
+      where: { role: 'USER' },
+      select: {
+        id: true,
+        name: true,
+        profilePictureUrl: true,
+        createdAt: true,
+        transactions: {
+          where: {
+            status: 'COMPLETED',
+            walletType: {
+              in: ['REWARD', 'REFERRAL', 'LEVEL', 'SHARE', 'BONUS']
+            },
+            amount: { gt: 0 }
+          },
+          select: {
+            amount: true,
+            createdAt: true
+          }
+        }
+      }
+    })
   ])
 
   const stats = {
@@ -43,6 +65,38 @@ export default async function HomePage() {
     features: p.features,
     color: p.color
   }))
+
+  const leaderboardData = usersRaw
+    .map(u => {
+      const totalEarnings = u.transactions.reduce((sum, tx) => sum + tx.amount, 0)
+      const lastTxTime = u.transactions.length > 0
+        ? Math.max(...u.transactions.map(t => t.createdAt.getTime()))
+        : u.createdAt.getTime()
+
+      return {
+        name: u.name,
+        avatar: u.profilePictureUrl || '',
+        totalEarnings,
+        lastTxTime,
+        createdAt: u.createdAt.getTime()
+      }
+    })
+    .sort((a, b) => {
+      if (b.totalEarnings !== a.totalEarnings) {
+        return b.totalEarnings - a.totalEarnings
+      }
+      if (a.lastTxTime !== b.lastTxTime) {
+        return a.lastTxTime - b.lastTxTime
+      }
+      return a.createdAt - b.createdAt
+    })
+    .slice(0, 3)
+    .map((u, index) => ({
+      rank: index + 1,
+      name: u.name,
+      amount: `₹${u.totalEarnings.toLocaleString('en-IN')}`,
+      avatar: u.avatar
+    }))
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   
@@ -90,7 +144,7 @@ export default async function HomePage() {
         <WhyUsSection />
         {/* <StatsSection stats={stats} /> */}
         <PlansSection plans={formattedPlans} />
-        <HowItWorksLeaderboard />
+        <HowItWorksLeaderboard leaderboard={leaderboardData} />
         <FeaturesSection />
         <Testimonials />
         <FAQSection />

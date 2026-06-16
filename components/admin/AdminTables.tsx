@@ -523,27 +523,6 @@ export function WithdrawalsTable({ data }: TableProps) {
   return <DataTable data={data} columns={cols as any} rowKey="id" searchPlaceholder="Search withdrawals..." />
 }
 
-export function PlansTable({ data }: TableProps) {
-  const cols = [
-    { key: 'name', label: 'Plan Name', sortable: true, render: (v: any, row: any) => (
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: row.color }} />
-        <span className="font-bold">{String(v)}</span>
-      </div>
-    )},
-    { key: 'roiPercent', label: 'Daily ROI', render: (v: any) => <span className="font-black text-primary">{String(v)}%</span> },
-    { key: 'durationDays', label: 'Duration', render: (v: any) => <span>{String(v)} Days</span> },
-    { key: 'minAmount', label: 'Limits', render: (_: any, row: any) => (
-      <span className="text-xs">{formatCurrency(row.minAmount)} - {formatCurrency(row.maxAmount)}</span>
-    )},
-    { key: 'status', label: 'Status', render: (v: any) => <span className={`status-badge ${getStatusColor(String(v))}`}>{String(v)}</span> },
-    { key: 'id', label: 'Actions', render: () => (
-      <Button size="sm" variant="outline" className="h-7 px-2 text-xs">Edit</Button>
-    )},
-  ]
-  return <DataTable data={data} columns={cols as any} rowKey="id" searchable={false} />
-}
-
 export function KycTable({ data }: TableProps) {
   const [isPending, startTransition] = useTransition()
 

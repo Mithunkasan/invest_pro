@@ -35,31 +35,16 @@ const PriyaBadge = () => (
   </svg>
 )
 
-export function HowItWorksLeaderboard() {
-  const leaderboard = [
-    {
-      rank: 1,
-      name: 'Arjun K.',
-      amount: '₹12,45,000',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80',
-      isBadge: false,
-    },
-    {
-      rank: 2,
-      name: 'Priya S.',
-      amount: '₹9,80,000',
-      avatar: '',
-      isBadge: true,
-    },
-    {
-      rank: 3,
-      name: 'Vikram R.',
-      amount: '₹7,35,000',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80',
-      isBadge: false,
-    },
-  ]
+interface HowItWorksLeaderboardProps {
+  leaderboard?: {
+    rank: number
+    name: string
+    amount: string
+    avatar?: string
+  }[]
+}
 
+export function HowItWorksLeaderboard({ leaderboard = [] }: HowItWorksLeaderboardProps) {
   return (
     <section className="relative w-full bg-transparent py-16 sm:py-20 overflow-hidden" aria-label="Decentralized Yield Generation and Top Earners Leaderboard">
       {/* Background container grid lines */}
@@ -238,11 +223,8 @@ export function HowItWorksLeaderboard() {
                         {user.rank}
                       </span>
                       
-                      {/* Avatar shrink protection */}
                       <div className="relative w-10 h-10 shrink-0 flex items-center justify-center">
-                        {user.isBadge ? (
-                          <PriyaBadge />
-                        ) : (
+                        {user.avatar ? (
                           <div className="w-10 h-10 rounded-full overflow-hidden border border-blue-500/30 relative">
                             <Image
                               src={user.avatar}
@@ -251,6 +233,10 @@ export function HowItWorksLeaderboard() {
                               sizes="40px"
                               className="object-cover"
                             />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-full overflow-hidden border border-blue-500/30 bg-[#081235]/50 flex items-center justify-center text-blue-400 text-sm font-black shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                            {user.name.charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>

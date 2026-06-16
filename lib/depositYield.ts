@@ -24,34 +24,31 @@ export async function creditDueDepositYields(userId: string) {
     },
   })
 
-  if (!user) return
+  if (!user || !user.membershipPlan || !user.membershipPlanActivatedAt) return
 
   // 2. Determine yield percentage.
-  const yieldPercent = user.membershipPlan?.depositBonus || 0
+  const yieldPercent = user.membershipPlan.depositBonus
   if (yieldPercent <= 0) return
 
   const now = new Date()
+  const activationDate = user.membershipPlanActivatedAt
+
+  // Generate 1000 daily 10:00 AM IST timestamps starting from activationDate
+  const T_0 = get10AMIST(activationDate)
+  const firstCreditDate = activationDate.getTime() < T_0.getTime() ? T_0 : new Date(T_0.getTime() + 24 * 60 * 60 * 1000)
 
   // 3. For each approved deposit, check if there are daily yields due.
   for (const deposit of user.deposits) {
-    const depositDate = deposit.createdAt
-    
-    // Determine StartCreditDate (10:00 AM IST sequence start)
-    const T_0 = get10AMIST(depositDate)
-    let startCreditDate: Date
-    if (depositDate.getTime() < T_0.getTime()) {
-      startCreditDate = T_0
-    } else {
-      startCreditDate = new Date(T_0.getTime() + 24 * 60 * 60 * 1000)
+    // Filter the 1000 days for those that are <= now and >= deposit.createdAt
+    let eligibleTimestamps: Date[] = []
+    for (let k = 1; k <= 1000; k++) {
+      const D_k = new Date(firstCreditDate.getTime() + (k - 1) * 24 * 60 * 60 * 1000)
+      if (D_k.getTime() <= now.getTime() && D_k.getTime() >= deposit.createdAt.getTime()) {
+        eligibleTimestamps.push(D_k)
+      }
     }
 
-    if (now.getTime() < startCreditDate.getTime()) {
-      continue
-    }
-
-    // Calculate how many credits should have happened up to now
-    const diffTime = now.getTime() - startCreditDate.getTime()
-    const targetCredits = Math.min(1000, 1 + Math.floor(diffTime / 86400000))
+    const targetCredits = eligibleTimestamps.length
     const currentCredits = deposit.yieldDaysCredited || 0
     const dueDays = targetCredits - currentCredits
 
@@ -64,7 +61,7 @@ export async function creditDueDepositYields(userId: string) {
     if (totalCreditAmount <= 0) continue
 
     // Credit to Bonus Wallet and create transaction and update deposit
-    const lastYieldTimestamp = new Date(startCreditDate.getTime() + (targetCredits - 1) * 86400000)
+    const lastYieldTimestamp = eligibleTimestamps[targetCredits - 1]
 
     await prisma.$transaction(async (tx) => {
       // Increment Bonus Wallet

@@ -111,6 +111,13 @@ export async function updateUserAction(
     if (data.membershipPlanId !== undefined) {
       updateData.membershipPlanId = data.membershipPlanId || null
       if (user.membershipPlanId !== data.membershipPlanId) {
+        await prisma.deposit.updateMany({
+          where: { userId },
+          data: {
+            yieldDaysCredited: 0,
+            lastYieldAt: null,
+          },
+        })
         if (data.membershipPlanId) {
           const plan = await prisma.membershipPlan.findUnique({ where: { id: data.membershipPlanId } })
           if (plan) {
@@ -593,28 +600,6 @@ export async function handleKYC(kycId: string, action: 'APPROVED' | 'REJECTED', 
   } catch (error) {
     console.error('KYC approval error:', error)
     return { success: false, message: 'Failed to process KYC' }
-  }
-}
-
-// ── Investment Plan Management ───────────────────────────────────────────────
-export async function upsertInvestmentPlan(data: any): Promise<ApiResponse> {
-  const admin = await getAdminSession()
-  if (!admin) return { success: false, message: 'Unauthorized' }
-
-  try {
-    const { id, ...payload } = data
-    if (id) {
-      await prisma.investmentPlan.update({ where: { id }, data: payload })
-    } else {
-      await prisma.investmentPlan.create({ data: payload })
-    }
-
-    revalidatePath('/admin/dashboard/plans')
-    revalidatePath('/')
-    revalidateTag('investment-plans', 'max')
-    return { success: true, message: `Plan ${id ? 'updated' : 'created'} successfully` }
-  } catch (error) {
-    return { success: false, message: 'Failed to save investment plan' }
   }
 }
 
@@ -1304,6 +1289,15 @@ export async function processMembershipUpgradeAction(
             memberType: targetMemberType,
             membershipPlanActivatedAt: activatedAt,
             membershipPlanExpiresAt: expiresAt,
+          },
+        })
+
+        // Reset yieldDaysCredited and lastYieldAt for user's deposits so the new plan yield starts fresh
+        await tx.deposit.updateMany({
+          where: { userId: request.userId },
+          data: {
+            yieldDaysCredited: 0,
+            lastYieldAt: null,
           },
         })
 

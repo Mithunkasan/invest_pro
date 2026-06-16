@@ -21,7 +21,6 @@ const adminNavItems = [
   { href: '/admin/dashboard/tasks', label: 'Offline Tasks', icon: ClipboardList },
   { href: '/admin/dashboard/deposits', label: 'Deposits', icon: ArrowDownToLine },
   { href: '/admin/dashboard/withdrawals', label: 'Withdrawals', icon: ArrowUpFromLine },
-  { href: '/admin/dashboard/plans', label: 'Investment Plans', icon: TrendingUp },
   { href: '/admin/dashboard/memberships', label: 'Manage Membership', icon: Crown },
   { href: '/admin/dashboard/gifts', label: 'Gifts Management', icon: Gift },
   { href: '/admin/dashboard/kyc', label: 'KYC Management', icon: ShieldCheck },
