@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { updateSystemSettingsAction } from '@/actions/admin'
 import { Button } from '@/components/ui/button'
+import { Check, AlertCircle, Save } from 'lucide-react'
+
 const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
   <input
     {...props}
@@ -17,7 +19,6 @@ const Label = (props: React.LabelHTMLAttributes<HTMLLabelElement>) => (
     className={`text-sm font-semibold text-white/80 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${props.className || ''}`}
   />
 )
-import { Check, AlertCircle, Save } from 'lucide-react'
 
 interface SettingsFormProps {
   initialSettings: {
@@ -45,6 +46,7 @@ interface SettingsFormProps {
     heroPaid: string
     heroRate: string
     withdrawalDeductionPercent?: number
+    userPayDeductionPercent?: number
     basicDailyYieldPercent?: number
   }
 }
@@ -61,6 +63,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
     directorRankMaxUsers: initialSettings.directorRankMaxUsers ?? 5,
     directorRankEnabled: initialSettings.directorRankEnabled ?? true,
     withdrawalDeductionPercent: initialSettings.withdrawalDeductionPercent ?? 20.0,
+    userPayDeductionPercent: initialSettings.userPayDeductionPercent ?? 0.0,
     basicDailyYieldPercent: initialSettings.basicDailyYieldPercent ?? 0.2,
     heroMembers: initialSettings.heroMembers || '25,689+',
     heroActive: initialSettings.heroActive || '8,932+',
@@ -475,6 +478,32 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
               <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
             </div>
             <p className="text-[11px] text-muted-foreground">The percentage dynamically deducted from user withdrawal requests before processing (e.g. 20%).</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section: User Pay Settings ─────────────────────────── */}
+      <div className="premium-card p-6 space-y-6">
+        <h2 className="text-lg font-bold border-b pb-3 border-muted/50 text-white/90">User Pay Settings</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          <div className="space-y-2">
+            <Label htmlFor="userPayDeductionPercent" className="text-sm font-semibold">User Pay Deduction Percentage (%)</Label>
+            <div className="relative flex items-center">
+              <Input
+                id="userPayDeductionPercent"
+                name="userPayDeductionPercent"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={settings.userPayDeductionPercent}
+                onChange={handleChange}
+                disabled={loading}
+                className="pr-8 bg-background/50 font-medium text-white"
+              />
+              <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">The percentage dynamically deducted from User Pay transfers (e.g. 5%). Set to 0 for no deduction.</p>
           </div>
         </div>
       </div>

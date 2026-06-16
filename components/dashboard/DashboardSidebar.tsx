@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Wallet, ArrowDownToLine, ArrowUpFromLine,
-  History, Users, Bell, ShieldCheck, Settings, X, ChevronRight, Crown, Gift, ClipboardList, Gamepad2, MessageSquare
+  History, Users, Bell, ShieldCheck, Settings, X, ChevronRight, Crown, Gift, ClipboardList, Gamepad2, MessageSquare,
+  Send
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -30,6 +31,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/tasks', label: 'Tasks', icon: ClipboardList },
   { href: '/dashboard/deposit', label: 'Deposit', icon: ArrowDownToLine },
   { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowUpFromLine },
+  { href: '/dashboard/user-pay', label: 'User Pay', icon: Send },
   { href: '/dashboard/transactions', label: 'Transactions', icon: History },
   { href: '/dashboard/referral', label: 'Referral', icon: Users },
   { href: '/dashboard/tickets', label: 'Support Tickets', icon: MessageSquare },

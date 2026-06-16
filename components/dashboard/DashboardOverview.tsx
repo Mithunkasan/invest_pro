@@ -64,8 +64,8 @@ const transactionColumns = [
   )},
   { key: 'description', label: 'Description', render: (v: unknown) => <span className="text-muted-foreground text-xs">{String(v || '—')}</span> },
   { key: 'amount', label: 'Amount', sortable: true, render: (v: unknown, row: Record<string, unknown>) => (
-    <span className={`font-semibold text-sm ${row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' ? 'text-red-500' : 'text-green-500'}`}>
-      {row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' ? '-' : '+'}{formatCurrency(Number(v))}
+    <span className={`font-semibold text-sm ${row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' || row.type === 'USER_PAY_SENT' ? 'text-red-500' : 'text-green-500'}`}>
+      {row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' || row.type === 'USER_PAY_SENT' ? '-' : '+'}{formatCurrency(Number(v))}
     </span>
   )},
   { key: 'status', label: 'Status', render: (v: unknown) => (

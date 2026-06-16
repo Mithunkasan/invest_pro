@@ -72,6 +72,10 @@ model User {
   basicMembershipExpiresAt DateTime?
   lastDailyYieldAt DateTime?
 
+  // User Pay relations
+  sentUserPays     UserPayRequest[] @relation("SenderRequests")
+  receivedUserPays UserPayRequest[] @relation("ReceiverRequests")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -357,6 +361,8 @@ enum TransactionType {
   LEVEL_INCOME
   REWARD
   SHARE_BONUS
+  USER_PAY_SENT
+  USER_PAY_RECEIVED
 }
 
 enum TransactionStatus {
@@ -438,6 +444,7 @@ model SystemSettings {
   directorRankMaxUsers    Int      @default(5)
   directorRankEnabled     Boolean  @default(true)
   withdrawalDeductionPercent Float   @default(20.0)
+  userPayDeductionPercent    Float   @default(0.0)
   basicDailyYieldPercent     Float   @default(0.2)
   heroMembers             String   @default("25,689+")
   heroActive              String   @default("8,932+")
@@ -657,4 +664,33 @@ model MembershipUpgradeRequest {
 
   @@index([userId])
   @@index([status])
+}
+
+// ============================================================
+// USER PAY REQUEST MODEL
+// ============================================================
+model UserPayRequest {
+  id                 String            @id @default(cuid())
+  senderId           String
+  receiverId         String
+  amount             Float             // Entered Amount
+  deductionPercent   Float             // Deduction Percentage
+  deductionAmount    Float             // Deduction Amount
+  finalAmount        Float             // Final Transfer Amount
+  status             UserPayStatus     @default(PENDING)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  sender             User              @relation("SenderRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver           User              @relation("ReceiverRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+}
+
+enum UserPayStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

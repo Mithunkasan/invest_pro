@@ -122,16 +122,16 @@ export default async function WalletPage() {
             recentTxns.map((txn: any) => (
               <div key={txn.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
-                    {txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' ? '↑' : '↓'}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' || txn.type === 'USER_PAY_SENT' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
+                    {txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' || txn.type === 'USER_PAY_SENT' ? '↑' : '↓'}
                   </div>
                   <div>
                     <p className="text-sm font-medium">{txn.description || txn.type.replace(/_/g, ' ')}</p>
                     <p className="text-xs text-muted-foreground">{formatDateTime(txn.createdAt)}</p>
                   </div>
                 </div>
-                <span className={`text-sm font-bold ${txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' ? 'text-red-500' : 'text-green-500'}`}>
-                  {txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' ? '-' : '+'}{formatCurrency(txn.amount)}
+                <span className={`text-sm font-bold ${txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' || txn.type === 'USER_PAY_SENT' ? 'text-red-500' : 'text-green-500'}`}>
+                  {txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' || txn.type === 'USER_PAY_SENT' ? '-' : '+'}{formatCurrency(txn.amount)}
                 </span>
               </div>
             ))
