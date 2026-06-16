@@ -20,8 +20,9 @@ export default async function AdminDashboard() {
     prisma.withdrawal.count({ where: { status: 'PENDING' } }),
     prisma.kYC.count({ where: { status: 'PENDING' } }),
     prisma.user.findMany({ orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, name: true, email: true, createdAt: true, status: true } }),
-    prisma.investmentPlan.findMany({
-      include: { _count: { select: { investments: true } } },
+    prisma.membershipPlan.findMany({
+      include: { _count: { select: { users: true } } },
+      orderBy: { price: 'asc' }
     }),
     prisma.transaction.findMany({
       where: { 
@@ -56,7 +57,7 @@ export default async function AdminDashboard() {
 
   const planDistribution = planDistributionRaw.map(p => ({
     name: p.name,
-    value: p._count.investments
+    value: p._count.users
   }))
 
   const kpiCards = [

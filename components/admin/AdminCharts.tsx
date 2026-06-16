@@ -61,7 +61,7 @@ export function AdminCharts({ monthlyData, planDistribution }: AdminChartsProps)
                 <div className="w-2 h-2 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
                 <span>{p.name}</span>
               </div>
-              <span className="text-muted-foreground">{p.value} investors</span>
+              <span className="text-muted-foreground">{p.value} users</span>
             </div>
           ))}
         </div>

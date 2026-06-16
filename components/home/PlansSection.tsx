@@ -1,9 +1,15 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useMotionValue, useSpring } from 'framer-motion'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+
+const springValues = {
+  damping: 30,
+  stiffness: 100,
+  mass: 2
+}
 
 export interface PlanData {
   id: string
@@ -184,18 +190,62 @@ function getPlanStyle(plan: PlanData) {
 /* ── Card Component ────────────────────────────────────────────── */
 function PlanCard({ plan }: { plan: PlanData }) {
   const s = getPlanStyle(plan)
+  const ref = useRef<HTMLDivElement>(null)
+
+  const rotateX = useSpring(useMotionValue(0), springValues)
+  const rotateY = useSpring(useMotionValue(0), springValues)
+  const scale = useSpring(1, springValues)
+
+  const rotateAmplitude = 12
+  const scaleOnHover = 1.03
+
+  function handleMouse(e: React.MouseEvent<HTMLDivElement>) {
+    if (!ref.current) return
+    if (window.innerWidth < 640) return
+
+    const rect = ref.current.getBoundingClientRect()
+    const offsetX = e.clientX - rect.left - rect.width / 2
+    const offsetY = e.clientY - rect.top - rect.height / 2
+
+    const rotationX = (offsetY / (rect.height / 2)) * -rotateAmplitude
+    const rotationY = (offsetX / (rect.width / 2)) * rotateAmplitude
+
+    rotateX.set(rotationX)
+    rotateY.set(rotationY)
+  }
+
+  function handleMouseEnter() {
+    if (window.innerWidth < 640) return
+    scale.set(scaleOnHover)
+  }
+
+  function handleMouseLeave() {
+    scale.set(1)
+    rotateX.set(0)
+    rotateY.set(0)
+  }
 
   return (
     /* Outer wrapper adds top space so the badge overflows above without being clipped */
-    <div className="h-full pt-4">
+    <div className="h-full pt-4" style={{ perspective: '1000px' }}>
     <motion.article
+      ref={ref}
+      onMouseMove={handleMouse}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       layout
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ type: 'spring', stiffness: 280, damping: 28 }}
       className={`relative flex flex-col h-full rounded-2xl border ${s.borderCls} ${s.bgCls}`}
-      style={plan.popular ? s.glowStyle : {}}
+      style={{
+        ...(plan.popular ? s.glowStyle : {}),
+        rotateX,
+        rotateY,
+        scale,
+        transformStyle: 'preserve-3d',
+      }}
       aria-label={`${plan.name} membership plan`}
     >
       {/* MOST POPULAR badge — sits above the card top edge, fully visible */}

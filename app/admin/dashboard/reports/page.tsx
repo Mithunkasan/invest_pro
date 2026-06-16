@@ -9,8 +9,9 @@ export default async function AdminReportsPage() {
       where: { status: 'COMPLETED' },
       orderBy: { createdAt: 'desc' }
     }),
-    prisma.investmentPlan.findMany({
-      include: { _count: { select: { investments: true } } }
+    prisma.membershipPlan.findMany({
+      include: { _count: { select: { users: true } } },
+      orderBy: { price: 'asc' }
     })
   ])
 
@@ -28,7 +29,7 @@ export default async function AdminReportsPage() {
 
   const planDistribution = plans.map(p => ({
     name: p.name,
-    value: p._count.investments
+    value: p._count.users
   }))
 
   return (

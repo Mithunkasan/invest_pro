@@ -96,19 +96,6 @@ export const contactSchema = z.object({
   message: z.string().min(20, 'Message must be at least 20 characters'),
 })
 
-// ── Investment Plan Schema (Admin) ────────────────────────────────────────────
-export const investmentPlanSchema = z.object({
-  name: z.string().min(2, 'Plan name is required'),
-  description: z.string().min(10, 'Description is required'),
-  minAmount: z.number().min(100, 'Minimum amount must be ₹100'),
-  maxAmount: z.number(),
-  roiPercent: z.number().min(0.1).max(100, 'ROI cannot exceed 100%'),
-  durationDays: z.number().min(1, 'Duration must be at least 1 day'),
-  features: z.array(z.string()).min(1, 'At least one feature is required'),
-}).refine((data) => data.maxAmount > data.minAmount, {
-  message: 'Maximum amount must be greater than minimum',
-  path: ['maxAmount'],
-})
 
 // Types
 export type LoginInput = z.infer<typeof loginSchema>
@@ -117,5 +104,4 @@ export type AdminLoginInput = z.infer<typeof adminLoginSchema>
 export type DepositInput = z.infer<typeof depositSchema>
 export type WithdrawalInput = z.infer<typeof withdrawalSchema>
 export type ContactInput = z.infer<typeof contactSchema>
-export type InvestmentPlanInput = z.infer<typeof investmentPlanSchema>
 export type GiftInput = z.infer<typeof giftSchema>
