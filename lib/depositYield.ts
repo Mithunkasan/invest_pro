@@ -60,19 +60,19 @@ export async function creditDueDepositYields(userId: string) {
 
     if (totalCreditAmount <= 0) continue
 
-    // Credit to Bonus Wallet and create transaction and update deposit
+    // Credit to Reward Wallet and create transaction and update deposit
     const lastYieldTimestamp = eligibleTimestamps[targetCredits - 1]
 
     await prisma.$transaction(async (tx) => {
-      // Increment Bonus Wallet
+      // Increment Reward Wallet
       await tx.wallet.upsert({
         where: { userId: user.id },
         update: {
-          bonusBalance: { increment: totalCreditAmount },
+          rewardBalance: { increment: totalCreditAmount },
         },
         create: {
           userId: user.id,
-          bonusBalance: totalCreditAmount,
+          rewardBalance: totalCreditAmount,
         },
       })
 
@@ -83,7 +83,7 @@ export async function creditDueDepositYields(userId: string) {
           type: 'BONUS',
           amount: totalCreditAmount,
           status: 'COMPLETED',
-          walletType: 'BONUS',
+          walletType: 'REWARD',
           description: `Daily yield of ${yieldPercent}% on deposit (₹${deposit.amount}) x ${dueDays} day${dueDays > 1 ? 's' : ''}`,
           reference: `DEPOSIT_YIELD:${deposit.id}:${targetCredits}`,
         },
