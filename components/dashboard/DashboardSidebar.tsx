@@ -44,7 +44,7 @@ interface DashboardSidebarProps {
   mobileOpen: boolean
   onClose: () => void
   isKycApproved: boolean
-  user: { name: string; email: string; memberType?: 'FREE' | 'BASIC' | 'PREMIUM' }
+  user: { name: string; email: string; memberType?: 'FREE' | 'BASIC' | 'PREMIUM'; isMembershipExpired?: boolean }
 }
 
 export function DashboardSidebar({ mobileOpen, onClose, isKycApproved, user }: DashboardSidebarProps) {
@@ -99,9 +99,13 @@ export function DashboardSidebar({ mobileOpen, onClose, isKycApproved, user }: D
     }
 
     // 2. Filter out non-KYC / non-Profile if KYC is not approved and user is not FREE
-    const filteredItems = isKycApproved
+    let filteredItems = isKycApproved
       ? baseItems
       : baseItems.filter((item) => item.label === 'KYC' || item.label === 'Profile')
+
+    if (user?.isMembershipExpired) {
+      filteredItems = baseItems.filter((item) => item.label === 'Membership' || item.label === 'Withdraw')
+    }
 
     return (
       <div className="flex flex-col h-full">

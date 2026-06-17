@@ -137,7 +137,15 @@ export default async function DashboardPage() {
       tlShareholder: true,
       directorRank: true,
       directorShareholder: true,
-      memberType: true
+      memberType: true,
+      membershipPlan: {
+        select: {
+          name: true,
+          price: true,
+        }
+      },
+      membershipPlanActivatedAt: true,
+      membershipPlanExpiresAt: true,
     }
   })
 
@@ -198,6 +206,9 @@ export default async function DashboardPage() {
         tlShareholder: dbUser?.tlShareholder || false,
         directorRank: dbUser?.directorRank || false,
         directorShareholder: dbUser?.directorShareholder || false,
+        membershipPlan: dbUser?.membershipPlan,
+        membershipPlanActivatedAt: dbUser?.membershipPlanActivatedAt ? dbUser.membershipPlanActivatedAt.toISOString() : null,
+        membershipPlanExpiresAt: dbUser?.membershipPlanExpiresAt ? dbUser.membershipPlanExpiresAt.toISOString() : null,
       } as any}
       stats={stats}
       investments={JSON.parse(JSON.stringify(investments))}

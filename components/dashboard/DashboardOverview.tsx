@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  DollarSign, TrendingUp, Wallet, Users, Activity, ArrowUpRight, ArrowDownRight, Award,
+  DollarSign, TrendingUp, Wallet, Users, Activity, ArrowUpRight, ArrowDownRight, Award, Crown, Calendar
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -24,6 +24,12 @@ interface DashboardOverviewProps {
     tlShareholder?: boolean
     directorRank?: boolean
     directorShareholder?: boolean
+    membershipPlan?: {
+      name: string
+      price: number
+    } | null
+    membershipPlanActivatedAt?: string | null
+    membershipPlanExpiresAt?: string | null
   }
   stats: {
     totalInvestment: number
@@ -59,9 +65,12 @@ interface DashboardOverviewProps {
 }
 
 const transactionColumns = [
-  { key: 'type', label: 'Type', sortable: true, render: (v: unknown) => (
-    <span className="capitalize text-xs font-medium">{String(v).replace(/_/g, ' ')}</span>
-  )},
+  { key: 'type', label: 'Type', sortable: true, render: (v: unknown) => {
+    let label = String(v).replace(/_/g, ' ')
+    if (v === 'USER_PAY_SENT') label = 'MONEY SENT'
+    if (v === 'USER_PAY_RECEIVED') label = 'MONEY RECEIVED'
+    return <span className="capitalize text-xs font-medium">{label.toLowerCase()}</span>
+  }},
   { key: 'description', label: 'Description', render: (v: unknown) => <span className="text-muted-foreground text-xs">{String(v || '—')}</span> },
   { key: 'amount', label: 'Amount', sortable: true, render: (v: unknown, row: Record<string, unknown>) => (
     <span className={`font-semibold text-sm ${row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' || row.type === 'USER_PAY_SENT' ? 'text-red-500' : 'text-green-500'}`}>
@@ -92,6 +101,10 @@ export function DashboardOverview({ user, stats, investments, transactions, char
     (stats.totalReferralEarned || 0) +
     (stats.totalShareEarned || 0) +
     (stats.totalBonusEarned || 0)
+
+  const isExpired = user.membershipPlanExpiresAt 
+    ? new Date() > new Date(user.membershipPlanExpiresAt) 
+    : false
 
   return (
     <div className="space-y-6">
@@ -142,6 +155,55 @@ export function DashboardOverview({ user, stats, investments, transactions, char
                 📊 Director Shareholder (1%)
               </span>
             )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Active Membership Details Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="premium-card p-5 relative overflow-hidden bg-gradient-to-r from-slate-900/90 via-slate-800/80 to-slate-900/90 border border-slate-700/50 shadow-xl rounded-2xl"
+      >
+        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+          <Crown className="w-24 h-24 text-amber-500" />
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="flex items-center gap-4">
+            <div className={`p-3 rounded-xl ${isExpired ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
+              <Crown className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg text-white flex items-center gap-2">
+                {user.membershipPlan?.name || 'Free Membership'}
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                  isExpired
+                    ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                    : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                }`}>
+                  {isExpired ? 'Expired' : 'Active'}
+                </span>
+              </h3>
+              <p className="text-sm text-slate-400 mt-1">
+                Plan Amount: <span className="font-semibold text-white">{formatCurrency(user.membershipPlan?.price || 0)}</span>
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm border-t md:border-t-0 md:border-l border-slate-700/60 pt-4 md:pt-0 md:pl-8">
+            <div>
+              <span className="text-xs text-slate-400 block">Activation Date</span>
+              <span className="font-semibold text-white mt-0.5 block">
+                {user.membershipPlanActivatedAt ? formatDate(user.membershipPlanActivatedAt) : 'N/A'}
+              </span>
+            </div>
+            <div>
+              <span className="text-xs text-slate-400 block">Expiry Date</span>
+              <span className="font-semibold text-white mt-0.5 block">
+                {user.membershipPlanExpiresAt ? formatDate(user.membershipPlanExpiresAt) : 'N/A'}
+              </span>
+            </div>
           </div>
         </div>
       </motion.div>

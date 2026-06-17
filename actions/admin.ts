@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { getAdminSession } from '@/lib/auth'
+import { getAdminSession, setSession, UserTokenPayload } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
 import { syncWalletMainBalance, deductFromWallets } from './walletUtils'
 import { BASIC_MEMBERSHIP_AMOUNT, ensureBasicMembershipPlan, getBasicMembershipExpiry } from '@/lib/basicMembership'
@@ -122,13 +122,9 @@ export async function updateUserAction(
           const plan = await prisma.membershipPlan.findUnique({ where: { id: data.membershipPlanId } })
           if (plan) {
             updateData.membershipPlanActivatedAt = new Date()
-            if (plan.durationDays > 0) {
-              const exp = new Date()
-              exp.setDate(exp.getDate() + plan.durationDays)
-              updateData.membershipPlanExpiresAt = exp
-            } else {
-              updateData.membershipPlanExpiresAt = null
-            }
+            const exp = new Date()
+            exp.setDate(exp.getDate() + 1000)
+            updateData.membershipPlanExpiresAt = exp
           }
         } else {
           updateData.membershipPlanActivatedAt = null
@@ -306,8 +302,8 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
 
             if (directReferralsCount >= level) {
               const commissionAmount = (depositAmount * percentage) / 100
-              const balanceField = level === 1 ? 'referralBalance' : 'levelBalance'
-              const walletEnum = level === 1 ? 'REFERRAL' : 'LEVEL'
+              const balanceField = 'referralBalance'
+              const walletEnum = 'REFERRAL'
               const txType = level === 1 ? 'REFERRAL_BONUS' : 'LEVEL_INCOME'
               
               // 1. Credit referrer's wallet
@@ -442,18 +438,6 @@ export async function handleWithdrawal(withdrawalId: string, action: 'APPROVE' |
           where: { id: withdrawalId },
           data: { status: 'APPROVED', approvedById: admin.id, processedAt: new Date(), remarks },
         }),
-        prisma.wallet.update({
-          where: { userId: withdrawal.userId },
-          data: {
-            mainBalance: 0,
-            depositBalance: 0,
-            rewardBalance: 0,
-            referralBalance: 0,
-            levelBalance: 0,
-            shareBalance: 0,
-            bonusBalance: 0,
-          }
-        }),
         prisma.notification.create({
           data: {
             userId: withdrawal.userId,
@@ -562,6 +546,8 @@ export async function handleKYC(kycId: string, action: 'APPROVED' | 'REJECTED', 
             basicMembershipAmount: BASIC_MEMBERSHIP_AMOUNT,
             basicMembershipActivatedAt: reviewedAt,
             basicMembershipExpiresAt: getBasicMembershipExpiry(reviewedAt),
+            membershipPlanActivatedAt: reviewedAt,
+            membershipPlanExpiresAt: getBasicMembershipExpiry(reviewedAt),
             lastDailyYieldAt: reviewedAt,
           },
         })
@@ -777,16 +763,16 @@ export async function adjustUserBalanceAction(
         await prisma.$transaction([
           prisma.wallet.update({
             where: { userId },
-            data: { depositBalance: { increment: amount } },
+            data: { bonusBalance: { increment: amount } },
           }),
           prisma.transaction.create({
             data: {
               userId,
-              type: 'DEPOSIT',
+              type: 'BONUS',
               amount,
               status: 'COMPLETED',
               description: `Admin manual addition of ₹${amount} to MAIN wallet`,
-              walletType: 'MAIN',
+              walletType: 'BONUS',
             },
           }),
           prisma.notification.create({
@@ -1200,12 +1186,18 @@ export async function upgradeUserToPremiumAction(userId: string): Promise<ApiRes
       orderBy: { price: 'asc' },
     })
 
+    const activatedAt = new Date()
+    const expiresAt = new Date(activatedAt)
+    expiresAt.setDate(expiresAt.getDate() + 1000)
+
     await prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: userId },
         data: {
           memberType: 'PREMIUM',
           membershipPlanId: premiumPlan?.id || user.membershipPlanId,
+          membershipPlanActivatedAt: activatedAt,
+          membershipPlanExpiresAt: expiresAt,
         },
       })
       await tx.notification.create({
@@ -1263,11 +1255,8 @@ export async function processMembershipUpgradeAction(
 
     if (action === 'APPROVED') {
       const activatedAt = new Date()
-      let expiresAt: Date | null = null
-      if (request.plan.durationDays > 0) {
-        expiresAt = new Date()
-        expiresAt.setDate(expiresAt.getDate() + request.plan.durationDays)
-      }
+      const expiresAt = new Date(activatedAt)
+      expiresAt.setDate(expiresAt.getDate() + 1000)
 
       await prisma.$transaction(async (tx) => {
         // Update request status
@@ -1365,11 +1354,11 @@ export async function processMembershipUpgradeAction(
           data: { status: 'REJECTED', approvedById: admin.id, remarks },
         })
 
-        // Refund the amount back to user's main wallet if price > 0
+        // Refund the amount back to user's deposit wallet if price > 0
         if (request.plan.price > 0) {
           await tx.wallet.update({
             where: { userId: request.userId },
-            data: { mainBalance: { increment: request.plan.price } },
+            data: { depositBalance: { increment: request.plan.price } },
           })
 
           // Update transaction status to FAILED or create a REFUND transaction
@@ -1409,5 +1398,56 @@ export async function processMembershipUpgradeAction(
   } catch (error: any) {
     console.error('Error processing membership upgrade:', error)
     return { success: false, message: error.message || 'Failed to process upgrade request' }
+  }
+}
+
+// ── Mark All Admin Platform Notifications As Read ─────────────────────────────────
+export async function markAllAdminNotificationsAsReadAction(): Promise<ApiResponse> {
+  const session = await getAdminSession()
+  if (!session) return { success: false, message: 'Unauthorized' }
+
+  try {
+    await prisma.notification.updateMany({
+      where: { isRead: false },
+      data: { isRead: true }
+    })
+    revalidatePath('/admin/dashboard')
+    revalidatePath('/admin/dashboard/notifications')
+    return { success: true, message: 'All platform notifications marked as read.' }
+  } catch (e: any) {
+    return { success: false, message: e.message || 'Failed to mark notifications as read.' }
+  }
+}
+
+// ── Secure User Impersonation / Login-as-User ────────────────────────────────────
+export async function impersonateUserAction(userId: string): Promise<ApiResponse<{ redirectUrl: string }>> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    })
+    if (!user) return { success: false, message: 'User not found' }
+
+    // Sign a user token payload
+    const payload: UserTokenPayload = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      type: 'user',
+      memberType: user.memberType,
+    }
+
+    await setSession(payload) // Sets the 'investpro_token' cookie
+
+    return {
+      success: true,
+      message: 'Impersonation session created successfully.',
+      data: { redirectUrl: '/dashboard' }
+    }
+  } catch (error: any) {
+    return { success: false, message: error.message || 'Failed to impersonate user' }
   }
 }

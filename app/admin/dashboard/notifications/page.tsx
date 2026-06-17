@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma'
-import { Send } from 'lucide-react'
+import { Send, CheckCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AdminNotificationsTable } from '@/components/admin/AdminTables'
+import { markAllAdminNotificationsAsReadAction } from '@/actions/admin'
 
 export default async function AdminNotificationsPage() {
   const [notifications, plans] = await Promise.all([
@@ -24,14 +25,29 @@ export default async function AdminNotificationsPage() {
     }),
   ])
 
+  const unreadCount = notifications.filter((n) => !n.isRead).length
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Platform Notifications</h1>
-        <Button size="sm">
-          <Send className="w-4 h-4 mr-2" />
-          Broadcast Message
-        </Button>
+        <div className="flex items-center gap-3">
+          {unreadCount > 0 && (
+            <form action={async () => {
+              'use server'
+              await markAllAdminNotificationsAsReadAction()
+            }}>
+              <Button type="submit" variant="outline" size="sm" className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/30">
+                <CheckCheck className="w-4 h-4 mr-2" />
+                Mark All as Read
+              </Button>
+            </form>
+          )}
+          <Button size="sm">
+            <Send className="w-4 h-4 mr-2" />
+            Broadcast Message
+          </Button>
+        </div>
       </div>
 
       <div className="premium-card p-6">

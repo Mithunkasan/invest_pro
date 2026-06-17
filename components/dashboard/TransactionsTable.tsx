@@ -27,7 +27,12 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
   })
 
   const cols = [
-    { key: 'type', label: 'Type', sortable: true, render: (v: unknown) => <span className="text-xs font-medium capitalize">{String(v).replace(/_/g, ' ')}</span> },
+    { key: 'type', label: 'Type', sortable: true, render: (v: unknown) => {
+      let label = String(v).replace(/_/g, ' ')
+      if (v === 'USER_PAY_SENT') label = 'MONEY SENT'
+      if (v === 'USER_PAY_RECEIVED') label = 'MONEY RECEIVED'
+      return <span className="text-xs font-medium capitalize">{label.toLowerCase()}</span>
+    } },
     { key: 'description', label: 'Description', render: (v: unknown) => <span className="text-xs text-muted-foreground">{String(v || '—')}</span> },
     { key: 'walletType', label: 'Wallet', render: (v: unknown) => <span className="text-xs capitalize">{String(v || '—').toLowerCase()}</span> },
     { key: 'amount', label: 'Amount', sortable: true, render: (v: unknown, row: any) => (

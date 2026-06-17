@@ -227,8 +227,8 @@ export async function distributeReferralAndLevelCommissions(
 
         if (directReferralsCount >= level) {
           const commissionAmount = (investmentAmount * percentage) / 100
-          const balanceField = level === 1 ? 'referralBalance' : 'levelBalance'
-          const walletEnum = level === 1 ? 'REFERRAL' : 'LEVEL'
+          const balanceField = 'referralBalance'
+          const walletEnum = 'REFERRAL'
           const txType = level === 1 ? 'REFERRAL_BONUS' : 'LEVEL_INCOME'
 
           await prisma.$transaction([

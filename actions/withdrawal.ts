@@ -101,18 +101,6 @@ export async function updateWithdrawalStatusAction(
           processedAt: new Date(),
         },
       }),
-      prisma.wallet.update({
-        where: { userId: withdrawal.userId },
-        data: {
-          mainBalance: 0,
-          depositBalance: 0,
-          rewardBalance: 0,
-          referralBalance: 0,
-          levelBalance: 0,
-          shareBalance: 0,
-          bonusBalance: 0,
-        }
-      }),
       prisma.notification.create({
         data: {
           userId: withdrawal.userId,

@@ -873,7 +873,14 @@ export function AdminNotificationsTable({ data, plans = [] }: { data: any[]; pla
         </span>
       </div>
     )},
-    { key: 'title', label: 'Title', render: (v: any) => <span className="font-bold">{String(v)}</span> },
+    { key: 'title', label: 'Title', render: (v: any, row: any) => (
+      <span className="font-bold flex items-center gap-1.5">
+        {String(v)}
+        {!row.isRead && (
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0" title="Unread" />
+        )}
+      </span>
+    ) },
     { key: 'message', label: 'Message', render: (v: any) => <p className="text-xs max-w-xs truncate">{String(v)}</p> },
     { key: 'type', label: 'Type', render: (v: any) => <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${v === 'SUCCESS' ? 'bg-green-500/10 text-green-500' : v === 'ERROR' ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-500'}`}>{String(v)}</span> },
     { key: 'createdAt', label: 'Sent', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },

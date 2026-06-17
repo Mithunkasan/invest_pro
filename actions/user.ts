@@ -357,14 +357,17 @@ export async function buyMembershipPlanAction(planId: string): Promise<ApiRespon
       return { success: false, message: 'You already have a pending upgrade request. Please wait for admin approval.' }
     }
 
-    if (wallet.mainBalance < plan.price) {
-      return { success: false, message: 'Insufficient balance in main wallet' }
+    if (wallet.depositBalance < plan.price) {
+      return { success: false, message: 'Insufficient balance in Deposit Wallet' }
     }
 
     await prisma.$transaction(async (tx) => {
       // Deduct from wallet if price > 0
       if (plan.price > 0) {
-        await deductFromWallets(tx, session.id, plan.price)
+        await tx.wallet.update({
+          where: { userId: session.id },
+          data: { depositBalance: { decrement: plan.price } }
+        })
         
         // Create pending transaction
         await tx.transaction.create({
@@ -572,5 +575,23 @@ export async function markProfilePicturePopupAsSeenAction(): Promise<ApiResponse
     return { success: true, message: 'Flag updated successfully' }
   } catch (e) {
     return { success: false, message: 'Failed to update flag' }
+  }
+}
+
+// ── Mark All Notifications As Read ───────────────────────────────────────────────
+export async function markAllNotificationsAsReadAction(): Promise<ApiResponse> {
+  const session = await getSession()
+  if (!session) return { success: false, message: 'Unauthorized' }
+
+  try {
+    await prisma.notification.updateMany({
+      where: { userId: session.id, isRead: false },
+      data: { isRead: true }
+    })
+    revalidatePath('/dashboard')
+    revalidatePath('/dashboard/notifications')
+    return { success: true, message: 'All notifications marked as read.' }
+  } catch (e) {
+    return { success: false, message: 'Failed to mark notifications as read.' }
   }
 }

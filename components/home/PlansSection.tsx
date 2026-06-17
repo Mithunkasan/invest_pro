@@ -262,12 +262,12 @@ function PlanCard({ plan }: { plan: PlanData }) {
 
       <div className="flex flex-col flex-1 p-5 sm:p-6 pt-7">
         {/* Icon + Name row */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 min-h-[56px] sm:min-h-[64px]">
           <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0">
             <PlanGem name={plan.name} />
           </div>
           <h3
-            className={`text-xl sm:text-2xl font-black tracking-widest ${s.nameCls}`}
+            className={`text-xl sm:text-2xl font-black tracking-widest leading-tight ${s.nameCls}`}
             style={{ letterSpacing: '0.1em' }}
           >
             {plan.name}

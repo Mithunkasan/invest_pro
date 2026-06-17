@@ -1,38 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { DataTable } from '@/components/dashboard/DataTable'
-import { Button } from '@/components/ui/button'
-import { toast } from '@/hooks/use-toast'
 import { formatCurrency, formatDate, getStatusColor } from '@/utils/formatters'
-import { handleUserPayRequestAction } from '@/actions/userPay'
 
 interface RequestsTableProps {
   initialRequests: any[]
 }
 
 export function UserPayRequestsTable({ initialRequests }: RequestsTableProps) {
-  const [requests, setRequests] = useState(initialRequests)
-  const [isPending, startTransition] = useTransition()
-
-  const onHandle = (id: string, action: 'APPROVED' | 'REJECTED') => {
-    if (!confirm(`Are you sure you want to ${action.toLowerCase()} this User Pay request?`)) {
-      return
-    }
-
-    startTransition(async () => {
-      const res = await handleUserPayRequestAction(id, action)
-      if (res.success) {
-        toast({ title: 'Success', description: res.message })
-        // Update local state status
-        setRequests((prev) =>
-          prev.map((req) => (req.id === id ? { ...req, status: action } : req))
-        )
-      } else {
-        toast({ title: 'Error', description: res.message, variant: 'destructive' })
-      }
-    })
-  }
+  const [requests] = useState(initialRequests)
 
   const cols = [
     {
@@ -75,7 +52,7 @@ export function UserPayRequestsTable({ initialRequests }: RequestsTableProps) {
     },
     {
       key: 'createdAt',
-      label: 'Request Date',
+      label: 'Date',
       sortable: true,
       render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span>,
     },
@@ -85,33 +62,6 @@ export function UserPayRequestsTable({ initialRequests }: RequestsTableProps) {
       sortable: true,
       render: (v: any) => <span className={`status-badge ${getStatusColor(String(v))}`}>{String(v)}</span>,
     },
-    {
-      key: 'id',
-      label: 'Actions',
-      render: (id: string, row: any) =>
-        row.status === 'PENDING' && (
-          <div className="flex gap-1.5">
-            <Button
-              size="sm"
-              variant="default"
-              className="h-7 px-3 text-xs bg-green-600 hover:bg-green-700"
-              onClick={() => onHandle(id, 'APPROVED')}
-              disabled={isPending}
-            >
-              Approve
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="h-7 px-3 text-xs"
-              onClick={() => onHandle(id, 'REJECTED')}
-              disabled={isPending}
-            >
-              Reject
-            </Button>
-          </div>
-        ),
-    },
   ]
 
   return (
@@ -119,7 +69,7 @@ export function UserPayRequestsTable({ initialRequests }: RequestsTableProps) {
       data={requests}
       columns={cols as any}
       rowKey="id"
-      searchPlaceholder="Search requests by sender/receiver..."
+      searchPlaceholder="Search history by sender/receiver..."
     />
   )
 }

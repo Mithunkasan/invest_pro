@@ -43,7 +43,7 @@
     "title1": "CONNECT.",
     "title2": "PROMOTE.",
     "title3": "EARN.",
-    "subtitle": "Join the future of high-yield digital investments and decentralized network rewards. Connect with our global community, promote curated investment plans, and earn secure daily ROI starting today.",
+    "subtitle": "VR GALAXY NETWORKS offers innovative online earning opportunities for students, employees, entrepreneurs, and investors through task-based income, referral rewards, memberships, and investment programs.",
     "cta": "Join Now",
     "ctaSecondary": "Explore More",
     "liveStats": "LIVE STATS",
@@ -65,30 +65,39 @@
   "whyUs": {
     "label": "WHY VR GALAXY NETWORKS?",
     "heading": "Unlocking Smart Digital Earning and Financial Growth Opportunities.",
+    "description": "Our platform focuses on network growth, task participation, membership benefits, referral rewards, leadership recognition, and business development opportunities rather than investment-based returns. Join VR GALAXY NETWORKS today and explore smart digital earning opportunities, community networking, leadership growth, skill development, and long-term business success.",
     "features": {
-      "globalNetwork": {
-        "title": "Peer Networking",
-        "desc": "Connect with a global community and build lucrative passive income streams."
+      "networkGrowth": {
+        "title": "Network Growth",
+        "desc": "Build a strong Business Growth Network of like-minded individuals to drive collaborative expansion."
       },
-      "partTime": {
-        "title": "Digital Earning",
-        "desc": "Access diverse high-yield digital earning opportunities designed for steady income."
+      "taskEarnings": {
+        "title": "Task-Based Earnings",
+        "desc": "Participate in simple digital tasks and secure steady streams of Task-Based Earnings on our Online Earning Platform."
       },
-      "earnRewards": {
-        "title": "Income Generation",
-        "desc": "Generate daily recurring yield directly into your secure wallets."
+      "referralRewards": {
+        "title": "Referral Rewards",
+        "desc": "Unlock tiered Referral Rewards and discover Multiple Income Opportunities as you introduce members to the platform."
       },
-      "membership": {
-        "title": "Business Growth",
-        "desc": "Scale your financial portfolio and accelerate long-term wealth creation."
+      "membershipBenefits": {
+        "title": "Membership Benefits",
+        "desc": "Gain premium Membership Benefits and access tools tailored for Financial Growth Opportunities."
       },
-      "secure": {
-        "title": "Secure Ecosystem",
-        "desc": "Experience complete transparency with verified transactions and robust KYC."
+      "leadershipRecognition": {
+        "title": "Leadership Recognition",
+        "desc": "Earn prestigious Leadership Rewards, badges, and recognition for your contributions to Community Development."
       },
-      "web3": {
+      "businessDevelopment": {
+        "title": "Business Development",
+        "desc": "Access exclusive entrepreneurial ventures designed to foster long-term Business Growth Network expansion."
+      },
+      "communityNetworking": {
+        "title": "Community Networking",
+        "desc": "Engage with a global Business Networking Community focused on joint networking and growth."
+      },
+      "skillDevelopment": {
         "title": "Skill Development",
-        "desc": "Enhance your financial literacy with hands-on trading and investment tasks."
+        "desc": "Participate in our structured Skill Development Program to enhance digital literacy and leadership skills."
       }
     }
   },

@@ -4,7 +4,7 @@ import { useTransition, useState, useMemo, useEffect } from 'react'
 import { DataTable } from '@/components/dashboard/DataTable'
 import { formatDate, formatCurrency, getStatusColor } from '@/utils/formatters'
 import { Button } from '@/components/ui/button'
-import { toggleUserStatus, toggleUserRankAction, upgradeUserToPremiumAction, updateUserAction } from '@/actions/admin'
+import { toggleUserStatus, toggleUserRankAction, upgradeUserToPremiumAction, updateUserAction, impersonateUserAction } from '@/actions/admin'
 import { toast } from '@/hooks/use-toast'
 import { Search, X, Pencil, Crown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -773,6 +773,18 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
     })
   }
 
+  const handleGoToSite = (userId: string) => {
+    startTransition(async () => {
+      const res = await impersonateUserAction(userId)
+      if (res.success && res.data?.redirectUrl) {
+        toast({ title: 'Success', description: res.message })
+        window.open(res.data.redirectUrl, '_blank')
+      } else {
+        toast({ title: 'Error', description: res.message, variant: 'destructive' })
+      }
+    })
+  }
+
   const cols = [
     { key: 'name', label: 'Name', sortable: true, render: (v: unknown, row: any) => (
       <div>
@@ -847,6 +859,16 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
         >
           <Pencil className="w-3 h-3 mr-1" />
           Edit
+        </Button>
+        {/* Go to Site Button */}
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 px-2 text-[10px] border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 transition-colors font-semibold"
+          onClick={() => handleGoToSite(id)}
+          disabled={isPending}
+        >
+          Go to Site
         </Button>
         <Button 
           size="sm" 

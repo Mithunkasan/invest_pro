@@ -240,7 +240,7 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, initial
               disabled={isPending || !recipientId || enteredAmount <= 0 || enteredAmount > walletBalance}
               className="w-full h-11 transition-all"
             >
-              {isPending ? 'Submitting Transfer Request...' : 'Send'}
+              {isPending ? 'Sending...' : 'Send'}
             </Button>
           </form>
         </div>
@@ -266,15 +266,15 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, initial
             <ul className="text-xs text-muted-foreground space-y-2.5 leading-normal">
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                <span>Peer-to-peer transfers are not immediate. Admin approval is required for all request releases.</span>
+                <span>Peer-to-peer transfers are instant and credited directly to the receiver's account.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                <span>The sender must possess sufficient Main Wallet balance at both request creation and approval time.</span>
+                <span>The sender must possess sufficient Main Wallet balance.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                <span>A platform deduction percentage is automatically computed from the entered amount, yielding a final transfer net value.</span>
+                <span>A transfer fee percentage is automatically computed from the entered amount, yielding a final transfer net value.</span>
               </li>
             </ul>
           </div>
@@ -283,12 +283,12 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, initial
 
       {/* Requests History Log */}
       <div className="premium-card p-6">
-        <h2 className="text-lg font-bold text-white mb-4">Transfer Requests History</h2>
+        <h2 className="text-lg font-bold text-white mb-4">Transfer History</h2>
         
         {requests.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Clock className="w-8 h-8 mx-auto text-muted-foreground/30 mb-2" />
-            <p className="text-sm">No transfer requests logged yet.</p>
+            <p className="text-sm">No transfers logged yet.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

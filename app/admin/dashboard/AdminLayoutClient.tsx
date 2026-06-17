@@ -32,7 +32,7 @@ const adminNavItems = [
   { href: '/admin/dashboard/security', label: 'Security Logs', icon: Lock },
 ]
 
-function AdminSidebarContent({ onClose }: { onClose?: () => void }) {
+function AdminSidebarContent({ onClose, unreadNotificationCount = 0 }: { onClose?: () => void; unreadNotificationCount?: number }) {
   const pathname = usePathname()
   return (
     <div className="flex flex-col h-full">
@@ -48,6 +48,7 @@ function AdminSidebarContent({ onClose }: { onClose?: () => void }) {
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto no-scrollbar">
         {adminNavItems.map(({ href, label, icon: Icon }) => {
           const isActive = href === '/admin/dashboard' ? pathname === href : pathname.startsWith(href)
+          const isNotifications = label === 'Notifications'
           return (
             <Link
               key={href}
@@ -57,7 +58,12 @@ function AdminSidebarContent({ onClose }: { onClose?: () => void }) {
             >
               <Icon className="w-4 h-4 shrink-0" />
               <span className="text-sm">{label}</span>
-              {isActive && <ChevronRight className="ml-auto w-3 h-3 text-primary" />}
+              {isNotifications && unreadNotificationCount > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                  {unreadNotificationCount}
+                </span>
+              )}
+              {isActive && !isNotifications && <ChevronRight className="ml-auto w-3 h-3 text-primary" />}
             </Link>
           )
         })}
@@ -75,9 +81,10 @@ function AdminSidebarContent({ onClose }: { onClose?: () => void }) {
 interface AdminLayoutClientProps {
   children: React.ReactNode
   admin: { name: string; email: string }
+  unreadNotificationCount?: number
 }
 
-export function AdminLayoutClient({ children, admin }: AdminLayoutClientProps) {
+export function AdminLayoutClient({ children, admin, unreadNotificationCount = 0 }: AdminLayoutClientProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const initials = admin.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
 
@@ -85,7 +92,7 @@ export function AdminLayoutClient({ children, admin }: AdminLayoutClientProps) {
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-sidebar h-screen sticky top-0 border-r border-sidebar-border">
-        <AdminSidebarContent />
+        <AdminSidebarContent unreadNotificationCount={unreadNotificationCount} />
       </aside>
 
       {/* Mobile Drawer */}
@@ -97,7 +104,7 @@ export function AdminLayoutClient({ children, admin }: AdminLayoutClientProps) {
               <div className="absolute top-4 right-4">
                 <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/60"><X className="w-4 h-4" /></button>
               </div>
-              <AdminSidebarContent onClose={() => setSidebarOpen(false)} />
+              <AdminSidebarContent onClose={() => setSidebarOpen(false)} unreadNotificationCount={unreadNotificationCount} />
             </motion.aside>
           </>
         )}

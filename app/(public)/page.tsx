@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 }
 
+export const revalidate = 60
+
 export default async function HomePage() {
   const [userCount, totalAum, settings, membershipPlans, usersRaw] = await Promise.all([
     prisma.user.count(),
