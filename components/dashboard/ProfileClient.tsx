@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { User, Lock, Shield, Calendar } from 'lucide-react'
+import { User, Lock, Shield, Calendar, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { formatDate } from '@/utils/formatters'
+import { formatDate, formatCurrency } from '@/utils/formatters'
 import { logoutAction } from '@/actions/auth'
 import { updateProfileAction, uploadProfilePictureAction } from '@/actions/user'
 
@@ -17,6 +17,12 @@ interface ProfileClientProps {
     city?: string | null
     state?: string | null
     pinCode?: string | null
+    membershipPlan?: {
+      name: string
+      price: number
+    } | null
+    membershipPlanActivatedAt?: string | null
+    membershipPlanExpiresAt?: string | null
   }
 }
 
@@ -155,6 +161,48 @@ export function ProfileClient({ user }: ProfileClientProps) {
           </div>
           <Button type="submit" loading={saving}>Save Changes</Button>
         </form>
+      </div>
+
+      {/* Active Membership Details */}
+      <div className="premium-card p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Crown className="w-4 h-4 text-amber-500" />
+          <h2 className="font-semibold text-white">Active Membership Details</h2>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4 text-sm text-brand-200">
+          <div>
+            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Active Plan Name</p>
+            <p className="text-base font-bold text-white mt-1">{user.membershipPlan?.name || 'Free Membership'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Plan Amount</p>
+            <p className="text-base font-bold text-white mt-1">{formatCurrency(user.membershipPlan?.price || 0)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Plan Activation Date</p>
+            <p className="text-base font-bold text-white mt-1">
+              {user.membershipPlanActivatedAt ? formatDate(user.membershipPlanActivatedAt) : 'N/A'}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Plan Expiry Date</p>
+            <p className="text-base font-bold text-white mt-1">
+              {user.membershipPlanExpiresAt ? formatDate(user.membershipPlanExpiresAt) : 'N/A'}
+            </p>
+          </div>
+          <div className="sm:col-span-2">
+            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Current Plan Status</p>
+            <p className="mt-1">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                user.membershipPlanExpiresAt && new Date() > new Date(user.membershipPlanExpiresAt)
+                  ? 'bg-red-500/10 text-red-500 border border-red-500/25'
+                  : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/25'
+              }`}>
+                {user.membershipPlanExpiresAt && new Date() > new Date(user.membershipPlanExpiresAt) ? 'Expired' : 'Active'}
+              </span>
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Security */}

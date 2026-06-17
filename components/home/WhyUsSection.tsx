@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 /* ─────────────────────────────────────────────
    SVG Icon Components — custom-drawn to match
    the reference image exactly
-───────────────────────────────────────────── */
+   ───────────────────────────────────────────── */
 
 /** Globe / Global Network */
 const GlobalNetworkIcon = () => (
@@ -114,87 +114,97 @@ const MembershipIcon = () => (
   </svg>
 )
 
-/** Shield / Secure & Transparent */
-const SecureIcon = () => (
+/** Trophy / Leadership Recognition */
+const LeadershipIcon = () => (
   <svg viewBox="0 0 80 80" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
-      <linearGradient id="shield-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#38bdf8" />
-        <stop offset="50%" stopColor="#0284c7" />
-        <stop offset="100%" stopColor="#1d4ed8" />
+      <linearGradient id="trophy-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#fef08a" />
+        <stop offset="50%" stopColor="#eab308" />
+        <stop offset="100%" stopColor="#ca8a04" />
       </linearGradient>
     </defs>
-    {/* Shield body */}
-    <path
-      d="M40 10 L65 22 L65 42 Q65 60 40 70 Q15 60 15 42 L15 22 Z"
-      fill="url(#shield-grad)"
-      opacity="0.9"
-    />
-    {/* Inner shield */}
-    <path
-      d="M40 17 L59 27 L59 42 Q59 56 40 64 Q21 56 21 42 L21 27 Z"
-      fill="none"
-      stroke="#7dd3fc"
-      strokeWidth="1.5"
-      opacity="0.5"
-    />
-    {/* Checkmark */}
-    <path
-      d="M28 40 L36 49 L53 31"
-      stroke="white"
-      strokeWidth="4.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    {/* Shine */}
-    <path d="M22 25 Q32 19 42 22" stroke="white" strokeWidth="1.5" opacity="0.35" strokeLinecap="round" />
+    <circle cx="40" cy="40" r="32" fill="#eab308" opacity="0.15" />
+    {/* Trophy Cup */}
+    <path d="M25 22 L55 22 L52 42 Q52 50 40 50 Q28 50 28 42 Z" fill="url(#trophy-grad)" />
+    {/* Trophy handles */}
+    <path d="M25 26 Q18 28 25 38" stroke="#eab308" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+    <path d="M55 26 Q62 28 55 38" stroke="#eab308" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+    {/* Stem & Base */}
+    <rect x="37" y="50" width="6" height="12" fill="url(#trophy-grad)" />
+    <rect x="28" y="62" width="24" height="6" rx="2" fill="url(#trophy-grad)" />
+    {/* Star inside trophy */}
+    <polygon points="40,28 43,34 50,35 45,40 46,47 40,43 34,47 35,40 30,35 37,34" fill="#713f12" />
   </svg>
 )
 
-/** Blockchain Cubes / Web3 Future */
-const Web3Icon = () => (
+/** Upward Trend / Business Development */
+const BusinessIcon = () => (
   <svg viewBox="0 0 80 80" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
-      <linearGradient id="cube-top" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#67e8f9" />
-        <stop offset="100%" stopColor="#22d3ee" />
-      </linearGradient>
-      <linearGradient id="cube-left" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#0891b2" />
-        <stop offset="100%" stopColor="#0e7490" />
-      </linearGradient>
-      <linearGradient id="cube-right" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#155e75" />
-        <stop offset="100%" stopColor="#164e63" />
+      <linearGradient id="business-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#86efac" />
+        <stop offset="100%" stopColor="#15803d" />
       </linearGradient>
     </defs>
-    {/* Bottom-left cube */}
-    <g transform="translate(8, 38)">
-      <polygon points="16,0 32,9 32,27 16,36 0,27 0,9" fill="url(#cube-left)" opacity="0.75" />
-      <polygon points="16,0 32,9 16,18 0,9" fill="url(#cube-top)" opacity="0.85" />
-      <polygon points="32,9 32,27 16,36 16,18" fill="url(#cube-right)" opacity="0.8" />
-    </g>
-    {/* Top cube */}
-    <g transform="translate(30, 10)">
-      <polygon points="16,0 32,9 32,27 16,36 0,27 0,9" fill="url(#cube-left)" opacity="0.8" />
-      <polygon points="16,0 32,9 16,18 0,9" fill="url(#cube-top)" />
-      <polygon points="32,9 32,27 16,36 16,18" fill="url(#cube-right)" opacity="0.85" />
-    </g>
-    {/* Right cube (partial) */}
-    <g transform="translate(46, 42)">
-      <polygon points="14,0 28,8 28,24 14,32 0,24 0,8" fill="url(#cube-left)" opacity="0.7" />
-      <polygon points="14,0 28,8 14,16 0,8" fill="url(#cube-top)" opacity="0.9" />
-      <polygon points="28,8 28,24 14,32 14,16" fill="url(#cube-right)" opacity="0.75" />
-    </g>
+    <circle cx="40" cy="40" r="32" fill="#22c55e" opacity="0.15" />
+    {/* Trend chart bars */}
+    <rect x="22" y="44" width="8" height="18" rx="1.5" fill="url(#business-grad)" />
+    <rect x="36" y="32" width="8" height="30" rx="1.5" fill="url(#business-grad)" />
+    <rect x="50" y="20" width="8" height="42" rx="1.5" fill="url(#business-grad)" />
+    {/* Upward arrow line */}
+    <path d="M20 48 L34 32 L48 20 L58 20" stroke="#4ade80" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M52 14 L60 20 L54 28" stroke="#4ade80" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+/** Group / Community Networking */
+const CommunityIcon = () => (
+  <svg viewBox="0 0 80 80" fill="none" className="w-full h-full" aria-hidden="true">
+    <defs>
+      <linearGradient id="comm-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#fed7aa" />
+        <stop offset="100%" stopColor="#ea580c" />
+      </linearGradient>
+    </defs>
+    <circle cx="40" cy="40" r="32" fill="#f97316" opacity="0.15" />
+    {/* Central user */}
+    <circle cx="40" cy="32" r="8" fill="url(#comm-grad)" />
+    <path d="M28 52 C28 45 33 44 40 44 C47 44 52 45 52 52" fill="url(#comm-grad)" />
+    {/* Side user left */}
+    <circle cx="24" cy="38" r="6" fill="url(#comm-grad)" opacity="0.75" />
+    <path d="M16 54 C16 48 20 48 24 48 C28 48 32 48 32 54" fill="url(#comm-grad)" opacity="0.75" />
+    {/* Side user right */}
+    <circle cx="56" cy="38" r="6" fill="url(#comm-grad)" opacity="0.75" />
+    <path d="M48 54 C48 48 52 48 56 48 C60 48 64 48 64 54" fill="url(#comm-grad)" opacity="0.75" />
+  </svg>
+)
+
+/** Graduation Cap / Skill Development */
+const SkillIcon = () => (
+  <svg viewBox="0 0 80 80" fill="none" className="w-full h-full" aria-hidden="true">
+    <defs>
+      <linearGradient id="skill-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#a5f3fc" />
+        <stop offset="100%" stopColor="#0891b2" />
+      </linearGradient>
+    </defs>
+    <circle cx="40" cy="40" r="32" fill="#06b6d4" opacity="0.15" />
+    {/* Cap diamond */}
+    <polygon points="40,20 64,30 40,40 16,30" fill="url(#skill-grad)" />
+    {/* Cap base */}
+    <path d="M26 36 L26 48 Q26 54 40 54 Q54 54 54 48 L54 36" fill="url(#skill-grad)" opacity="0.8" />
+    {/* Tassel */}
+    <path d="M52 32 L60 44 L60 48" stroke="#22d3ee" strokeWidth="2" fill="none" strokeLinecap="round" />
   </svg>
 )
 
 /* ─────────────────────────────────────────────
    Feature card data — icons + i18n key mapping
-───────────────────────────────────────────── */
+   ───────────────────────────────────────────── */
 const FEATURES = [
   {
-    key:            'globalNetwork',
+    key:            'networkGrowth',
     Icon:           GlobalNetworkIcon,
     glowColor:      'rgba(59,130,246,0.35)',
     borderColor:    'rgba(59,130,246,0.3)',
@@ -202,7 +212,7 @@ const FEATURES = [
     delay:          0.0,
   },
   {
-    key:            'partTime',
+    key:            'taskEarnings',
     Icon:           PartTimeIcon,
     glowColor:      'rgba(14,165,233,0.35)',
     borderColor:    'rgba(14,165,233,0.3)',
@@ -210,7 +220,7 @@ const FEATURES = [
     delay:          0.1,
   },
   {
-    key:            'earnRewards',
+    key:            'referralRewards',
     Icon:           EarnRewardsIcon,
     glowColor:      'rgba(245,158,11,0.4)',
     borderColor:    'rgba(245,158,11,0.3)',
@@ -218,7 +228,7 @@ const FEATURES = [
     delay:          0.2,
   },
   {
-    key:            'membership',
+    key:            'membershipBenefits',
     Icon:           MembershipIcon,
     glowColor:      'rgba(168,85,247,0.4)',
     borderColor:    'rgba(168,85,247,0.3)',
@@ -226,20 +236,36 @@ const FEATURES = [
     delay:          0.3,
   },
   {
-    key:            'secure',
-    Icon:           SecureIcon,
-    glowColor:      'rgba(59,130,246,0.35)',
-    borderColor:    'rgba(59,130,246,0.3)',
-    bannerGradient: 'linear-gradient(135deg, rgba(56, 189, 248, 0.45) 0%, rgba(29, 78, 216, 0.75) 100%)',
+    key:            'leadershipRecognition',
+    Icon:           LeadershipIcon,
+    glowColor:      'rgba(234,179,8,0.4)',
+    borderColor:    'rgba(234,179,8,0.3)',
+    bannerGradient: 'linear-gradient(135deg, rgba(253, 224, 71, 0.45) 0%, rgba(202, 138, 4, 0.75) 100%)',
     delay:          0.4,
   },
   {
-    key:            'web3',
-    Icon:           Web3Icon,
-    glowColor:      'rgba(34,211,238,0.35)',
-    borderColor:    'rgba(34,211,238,0.3)',
-    bannerGradient: 'linear-gradient(135deg, rgba(103, 232, 249, 0.45) 0%, rgba(14, 116, 144, 0.75) 100%)',
+    key:            'businessDevelopment',
+    Icon:           BusinessIcon,
+    glowColor:      'rgba(34,197,94,0.35)',
+    borderColor:    'rgba(34,197,94,0.3)',
+    bannerGradient: 'linear-gradient(135deg, rgba(134, 239, 172, 0.45) 0%, rgba(21, 128, 61, 0.75) 100%)',
     delay:          0.5,
+  },
+  {
+    key:            'communityNetworking',
+    Icon:           CommunityIcon,
+    glowColor:      'rgba(249,115,22,0.35)',
+    borderColor:    'rgba(249,115,22,0.3)',
+    bannerGradient: 'linear-gradient(135deg, rgba(253, 186, 116, 0.45) 0%, rgba(234, 88, 12, 0.75) 100%)',
+    delay:          0.6,
+  },
+  {
+    key:            'skillDevelopment',
+    Icon:           SkillIcon,
+    glowColor:      'rgba(6,182,212,0.35)',
+    borderColor:    'rgba(6,182,212,0.3)',
+    bannerGradient: 'linear-gradient(135deg, rgba(165, 243, 252, 0.45) 0%, rgba(8, 145, 178, 0.75) 100%)',
+    delay:          0.7,
   },
 ] as const
 
@@ -256,7 +282,7 @@ const cardVariants = {
 
 /* ─────────────────────────────────────────────
    WhyUsSection Component
-───────────────────────────────────────────── */
+   ───────────────────────────────────────────── */
 export function WhyUsSection() {
   const t = useTranslations('whyUs')
 
@@ -288,14 +314,14 @@ export function WhyUsSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
 
         {/* ── Section Header ── */}
-        <div className="text-center mb-12 sm:mb-14 lg:mb-16">
+        <div className="text-center mb-12 sm:mb-14 lg:mb-16 space-y-4">
           {/* Sub-label */}
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="inline-block text-xs sm:text-sm font-black tracking-[0.22em] uppercase mb-3 bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent"
+            className="inline-block text-xs sm:text-sm font-black tracking-[0.22em] uppercase bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent"
           >
             {t('label')}
           </motion.p>
@@ -308,10 +334,21 @@ export function WhyUsSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.55, delay: 0.08 }}
             className="text-white font-extrabold tracking-tight leading-tight"
-            style={{ fontSize: 'clamp(1.6rem,4vw,2.6rem)' }}
+            style={{ fontSize: 'clamp(1.6rem, 4vw, 2.6rem)' }}
           >
             {t('heading')}
           </motion.h2>
+
+          {/* Business Model Description */}
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.55, delay: 0.12 }}
+            className="text-slate-400 text-sm max-w-3xl mx-auto leading-relaxed font-medium pt-2"
+          >
+            {t('description')}
+          </motion.p>
         </div>
 
         {/* ── Feature Cards Grid ── */}
@@ -320,7 +357,7 @@ export function WhyUsSection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-60px' }}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-3 xl:gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
           role="list"
           aria-label={t('label')}
         >
@@ -366,7 +403,7 @@ export function WhyUsSection() {
                 {/* Title */}
                 <h3
                   className="text-white font-bold leading-snug mb-2.5"
-                  style={{ fontSize: 'clamp(0.82rem,1.4vw,1rem)' }}
+                  style={{ fontSize: 'clamp(0.85rem,1.4vw,1.05rem)' }}
                 >
                   {t(`features.${key}.title` as Parameters<typeof t>[0])}
                 </h3>
@@ -382,9 +419,32 @@ export function WhyUsSection() {
             </motion.article>
           ))}
         </motion.div>
+
+        {/* ── Mobile-Only Highlights & SEO Bullet Points ── */}
+        <div className="block sm:hidden mt-10 p-5 rounded-2xl bg-gradient-to-br from-brand-900/90 to-brand-950/90 border border-purple-500/20 space-y-4">
+          <h4 className="text-sm font-extrabold tracking-wider uppercase bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
+            Why Join VR Galaxy Networks?
+          </h4>
+          <ul className="space-y-3 text-xs text-slate-300">
+            <li className="flex items-start gap-2.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
+              <span><strong>Digital Earning Platform</strong>: Access multiple income opportunities designed for community development and financial growth.</span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-pink-500 mt-1.5 shrink-0" />
+              <span><strong>Task-Based Earnings</strong>: Earn daily rewards by participating in simple digital tasks on our online earning platform. No investment-based returns required.</span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+              <span><strong>Referral & Leadership Rewards</strong>: Unlock multiple tiers of referral rewards and claim leadership recognition as you grow your network.</span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
+              <span><strong>Business Networking Community</strong>: Collaborate with professionals in our skill development program for long-term entrepreneurial success.</span>
+            </li>
+          </ul>
+        </div>
       </div>
-
-
     </section>
   )
 }

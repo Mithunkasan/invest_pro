@@ -17,6 +17,15 @@ export default async function ProfilePage() {
       status: true,
       createdAt: true,
       referralCode: true,
+      membershipPlanId: true,
+      membershipPlan: {
+        select: {
+          name: true,
+          price: true,
+        }
+      },
+      membershipPlanActivatedAt: true,
+      membershipPlanExpiresAt: true,
       profilePictureUrl: true,
       dateOfBirth: true,
       addressLine: true,

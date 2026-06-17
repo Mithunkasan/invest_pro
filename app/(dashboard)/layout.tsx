@@ -28,6 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       city: true,
       state: true,
       pinCode: true,
+      membershipPlanExpiresAt: true,
     }
   })
 
@@ -57,6 +58,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     )
   )
 
+  const isMembershipExpired = dbUser?.membershipPlanExpiresAt
+    ? new Date() > new Date(dbUser.membershipPlanExpiresAt)
+    : false
+
   return (
     <DashboardLayoutClient
       user={{ 
@@ -66,6 +71,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         profilePictureUrl: dbUser?.profilePictureUrl,
         hasSeenProfilePicturePopup: dbUser?.hasSeenProfilePicturePopup ?? false,
         profileCompleted: isProfileComplete,
+        isMembershipExpired,
       }}
       notificationCount={unreadCount}
       isKycApproved={isKycApproved}

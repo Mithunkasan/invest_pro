@@ -482,12 +482,12 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
         </div>
       </div>
 
-      {/* ── Section: User Pay Settings ─────────────────────────── */}
+      {/* ── Section: Send Money Settings ─────────────────────────── */}
       <div className="premium-card p-6 space-y-6">
-        <h2 className="text-lg font-bold border-b pb-3 border-muted/50 text-white/90">User Pay Settings</h2>
+        <h2 className="text-lg font-bold border-b pb-3 border-muted/50 text-white/90">Send Money Settings</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
           <div className="space-y-2">
-            <Label htmlFor="userPayDeductionPercent" className="text-sm font-semibold">User Pay Deduction Percentage (%)</Label>
+            <Label htmlFor="userPayDeductionPercent" className="text-sm font-semibold">Send Money Deduction Percentage (%)</Label>
             <div className="relative flex items-center">
               <Input
                 id="userPayDeductionPercent"
@@ -503,7 +503,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
               />
               <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">The percentage dynamically deducted from User Pay transfers (e.g. 5%). Set to 0 for no deduction.</p>
+            <p className="text-[11px] text-muted-foreground">The percentage dynamically deducted from Send Money transfers (e.g. 5%). Set to 0 for no deduction.</p>
           </div>
         </div>
       </div>

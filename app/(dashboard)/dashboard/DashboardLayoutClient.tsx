@@ -18,6 +18,7 @@ interface DashboardLayoutClientProps {
     profilePictureUrl?: string | null
     hasSeenProfilePicturePopup?: boolean
     profileCompleted?: boolean
+    isMembershipExpired?: boolean
   }
   notificationCount: number
   isKycApproved: boolean
@@ -35,6 +36,16 @@ export function DashboardLayoutClient({
   const showProfilePopup = user.memberType === 'FREE' && !user.profileCompleted && !pathname.startsWith('/dashboard/profile')
 
   useEffect(() => {
+    if (user.isMembershipExpired) {
+      const allowedRoutes = ['/dashboard/membership', '/dashboard/withdraw']
+      const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
+
+      if (!isAllowed) {
+        router.push('/dashboard/membership')
+      }
+      return
+    }
+
     if (!isKycApproved) {
       const allowedRoutes = ['/dashboard/kyc', '/dashboard/profile']
       const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
@@ -43,7 +54,7 @@ export function DashboardLayoutClient({
         router.push('/dashboard/kyc')
       }
     }
-  }, [isKycApproved, pathname, router])
+  }, [user.isMembershipExpired, isKycApproved, pathname, router])
 
   const openProfileForm = () => {
     router.push('/dashboard/profile')

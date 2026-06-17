@@ -13,20 +13,11 @@ export default async function NotificationsPage() {
     orderBy: { createdAt: 'desc' },
   })
 
-  // Mark all as read
-  await prisma.notification.updateMany({
-    where: { userId: session.id, isRead: false },
-    data: { isRead: true },
-  })
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div>
         <h1 className="text-2xl font-bold">Notifications</h1>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <CheckCheck className="w-4 h-4" />
-          All marked as read
-        </div>
+        <p className="text-sm text-muted-foreground mt-1">Stay updated with your account activity and alerts</p>
       </div>
 
       <UserNotificationsList notifications={JSON.parse(JSON.stringify(notifications))} />

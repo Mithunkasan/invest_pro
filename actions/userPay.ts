@@ -126,9 +126,15 @@ export async function submitUserPayRequestAction(data: { recipientEmail: string,
   if (isNaN(amount) || amount <= 0) return { success: false, message: 'Amount must be a positive number' }
 
   try {
+    const sender = await prisma.user.findUnique({
+      where: { id: session.id },
+      select: { name: true, email: true }
+    })
+    if (!sender) return { success: false, message: 'Sender account not found.' }
+
     const recipient = await prisma.user.findUnique({
       where: { email: recipientEmail },
-      select: { id: true, name: true }
+      select: { id: true, name: true, email: true }
     })
     if (!recipient) return { success: false, message: 'Recipient email does not exist.' }
     if (recipient.id === session.id) return { success: false, message: 'You cannot transfer to yourself.' }
@@ -147,24 +153,78 @@ export async function submitUserPayRequestAction(data: { recipientEmail: string,
     const deductionAmount = (amount * deductionPercent) / 100
     const finalAmount = amount - deductionAmount
 
-    await prisma.userPayRequest.create({
-      data: {
-        senderId: session.id,
-        receiverId: recipient.id,
-        amount,
-        deductionPercent,
-        deductionAmount,
-        finalAmount,
-        status: 'PENDING'
-      }
+    await prisma.$transaction(async (tx) => {
+      // Create the userPayRequest with APPROVED status directly
+      const request = await tx.userPayRequest.create({
+        data: {
+          senderId: session.id,
+          receiverId: recipient.id,
+          amount,
+          deductionPercent,
+          deductionAmount,
+          finalAmount,
+          status: 'APPROVED'
+        }
+      })
+
+      // Deduct from sender
+      await deductFromMainWallets(tx, session.id, amount)
+
+      // Credit to receiver
+      await creditToMainWallet(tx, recipient.id, finalAmount)
+
+      // Create transaction logs
+      await tx.transaction.create({
+        data: {
+          userId: session.id,
+          type: 'USER_PAY_SENT',
+          amount,
+          status: 'COMPLETED',
+          description: `Sent Money to ${recipient.name} (${recipient.email})`,
+          walletType: 'MAIN',
+          reference: request.id
+        }
+      })
+
+      await tx.transaction.create({
+        data: {
+          userId: recipient.id,
+          type: 'USER_PAY_RECEIVED',
+          amount: finalAmount,
+          status: 'COMPLETED',
+          description: `Received Money from ${sender.name} (${sender.email})`,
+          walletType: 'BONUS',
+          reference: request.id
+        }
+      })
+
+      // Create notifications
+      await tx.notification.create({
+        data: {
+          userId: session.id,
+          title: 'Money Sent ✅',
+          message: `Your transfer of ₹${amount} to ${recipient.name} was completed instantly.`,
+          type: 'SUCCESS'
+        }
+      })
+
+      await tx.notification.create({
+        data: {
+          userId: recipient.id,
+          title: 'Money Received 💰',
+          message: `You received ₹${finalAmount} from ${sender.name}.`,
+          type: 'SUCCESS'
+        }
+      })
     })
 
     revalidatePath('/dashboard/user-pay')
+    revalidatePath('/dashboard/wallet')
     revalidatePath('/dashboard/transactions')
-    return { success: true, message: 'Transfer request submitted for Admin approval.' }
+    return { success: true, message: 'Transfer completed successfully.' }
   } catch (error) {
     console.error('Submit User Pay Request error:', error)
-    return { success: false, message: 'Failed to submit transfer request' }
+    return { success: false, message: 'Failed to process money transfer' }
   }
 }
 
@@ -187,14 +247,11 @@ export async function getUserPayRequestsAction() {
   })
 }
 
-export async function getAllUserPayRequestsAction(status?: string) {
+export async function getAllUserPayRequestsAction() {
   const admin = await getAdminSession()
   if (!admin) return []
 
-  const where = status && status !== 'ALL' ? { status: status as any } : {}
-
   return prisma.userPayRequest.findMany({
-    where,
     include: {
       sender: { select: { name: true, email: true } },
       receiver: { select: { name: true, email: true } }
@@ -204,103 +261,5 @@ export async function getAllUserPayRequestsAction(status?: string) {
 }
 
 export async function handleUserPayRequestAction(requestId: string, status: 'APPROVED' | 'REJECTED'): Promise<ApiResponse> {
-  const admin = await getAdminSession()
-  if (!admin) return { success: false, message: 'Unauthorized' }
-
-  const request = await prisma.userPayRequest.findUnique({
-    where: { id: requestId },
-    include: {
-      sender: { include: { wallet: true } },
-      receiver: { include: { wallet: true } }
-    }
-  })
-  if (!request) return { success: false, message: 'User Pay request not found' }
-  if (request.status !== 'PENDING') return { success: false, message: 'Request is already processed' }
-
-  try {
-    if (status === 'APPROVED') {
-      if (!request.sender.wallet || (request.sender.wallet.mainBalance || 0) < request.amount) {
-        return { success: false, message: 'Sender has insufficient Main Wallet balance now.' }
-      }
-
-      await prisma.$transaction(async (tx) => {
-        await tx.userPayRequest.update({
-          where: { id: requestId },
-          data: { status: 'APPROVED' }
-        })
-
-        await deductFromMainWallets(tx, request.senderId, request.amount)
-        await creditToMainWallet(tx, request.receiverId, request.finalAmount)
-
-        await tx.transaction.create({
-          data: {
-            userId: request.senderId,
-            type: 'USER_PAY_SENT',
-            amount: request.amount,
-            status: 'COMPLETED',
-            description: `User Pay to ${request.receiver.name} (${request.receiver.email})`,
-            walletType: 'MAIN',
-            reference: request.id
-          }
-        })
-
-        await tx.transaction.create({
-          data: {
-            userId: request.receiverId,
-            type: 'USER_PAY_RECEIVED',
-            amount: request.finalAmount,
-            status: 'COMPLETED',
-            description: `User Pay from ${request.sender.name} (${request.sender.email})`,
-            walletType: 'MAIN',
-            reference: request.id
-          }
-        })
-
-        await tx.notification.create({
-          data: {
-            userId: request.senderId,
-            title: 'User Pay Sent ✅',
-            message: `Your transfer of ₹${request.amount} to ${request.receiver.name} has been approved and processed.`,
-            type: 'SUCCESS'
-          }
-        })
-
-        await tx.notification.create({
-          data: {
-            userId: request.receiverId,
-            title: 'User Pay Received 💰',
-            message: `You received ₹${request.finalAmount} from ${request.sender.name}.`,
-            type: 'SUCCESS'
-          }
-        })
-      })
-
-      revalidatePath('/admin/dashboard/user-pay')
-      revalidatePath('/dashboard/user-pay')
-      revalidatePath('/dashboard/wallet')
-      revalidatePath('/dashboard/transactions')
-      return { success: true, message: 'User Pay request approved successfully.' }
-    } else {
-      await prisma.userPayRequest.update({
-        where: { id: requestId },
-        data: { status: 'REJECTED' }
-      })
-
-      await prisma.notification.create({
-        data: {
-          userId: request.senderId,
-          title: 'User Pay Request Rejected ❌',
-          message: `Your transfer request of ₹${request.amount} to ${request.receiver.name} was rejected.`,
-          type: 'ERROR'
-        }
-      })
-
-      revalidatePath('/admin/dashboard/user-pay')
-      revalidatePath('/dashboard/user-pay')
-      return { success: true, message: 'User Pay request rejected.' }
-    }
-  } catch (error) {
-    console.error('Handle User Pay Request error:', error)
-    return { success: false, message: 'Failed to process User Pay request' }
-  }
+  return { success: false, message: 'Admin approval is disabled. Transfers are processed instantly.' }
 }

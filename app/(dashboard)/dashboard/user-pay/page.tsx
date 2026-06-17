@@ -6,7 +6,7 @@ import { getUserPayRequestsAction } from '@/actions/userPay'
 import { UserPayClient } from './UserPayClient'
 
 export const metadata: Metadata = {
-  title: 'User Pay — VR Galaxy',
+  title: 'Send Money — VR Galaxy',
 }
 
 export default async function UserPayPage() {
@@ -51,9 +51,9 @@ export default async function UserPayPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">User Pay</h1>
+        <h1 className="text-2xl font-bold">Send Money</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Transfer funds instantly to another VR Galaxy user via email. Requests are approved by administration.
+          Transfer funds instantly to another VR Galaxy user via email.
         </p>
       </div>
 

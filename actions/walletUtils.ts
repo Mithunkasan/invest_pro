@@ -39,14 +39,7 @@ export async function deductFromWallets(tx: any, userId: string, amountToDeduct:
   let remaining = amountToDeduct
   const updates: any = {}
 
-  // 1. Deposit
-  if (remaining > 0 && wallet.depositBalance > 0) {
-    const deduct = Math.min(remaining, wallet.depositBalance)
-    updates.depositBalance = { decrement: deduct }
-    remaining -= deduct
-  }
-
-  // 2. Reward
+  // 1. Reward
   if (remaining > 0 && wallet.rewardBalance > 0) {
     const deduct = Math.min(remaining, wallet.rewardBalance)
     updates.rewardBalance = { decrement: deduct }

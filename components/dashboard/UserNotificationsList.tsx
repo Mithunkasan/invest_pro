@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Bell, Calendar, X } from 'lucide-react'
+import { useState, useMemo, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { Bell, Calendar, X, CheckCheck } from 'lucide-react'
 import { formatRelativeTime } from '@/utils/formatters'
 import { Button } from '@/components/ui/button'
+import { markAllNotificationsAsReadAction } from '@/actions/user'
 
 interface UserNotificationsListProps {
   notifications: any[]
@@ -12,6 +14,21 @@ interface UserNotificationsListProps {
 export function UserNotificationsList({ notifications }: UserNotificationsListProps) {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+
+  const unreadCount = useMemo(() => {
+    return notifications.filter((n) => !n.isRead).length
+  }, [notifications])
+
+  const handleMarkAllAsRead = () => {
+    startTransition(async () => {
+      const res = await markAllNotificationsAsReadAction()
+      if (res.success) {
+        router.refresh()
+      }
+    })
+  }
 
   const filtered = useMemo(() => {
     return notifications.filter((n) => {
@@ -48,6 +65,24 @@ export function UserNotificationsList({ notifications }: UserNotificationsListPr
 
   return (
     <div className="space-y-4">
+      {/* Mark All as Read Header */}
+      <div className="flex items-center justify-between p-4 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+        <span className="text-sm text-slate-400 font-semibold">
+          {unreadCount > 0 ? `${unreadCount} unread notification(s)` : 'No unread notifications'}
+        </span>
+        {unreadCount > 0 && (
+          <Button
+            size="sm"
+            onClick={handleMarkAllAsRead}
+            loading={isPending}
+            className="flex items-center gap-1.5 bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 font-bold"
+          >
+            <CheckCheck className="w-4 h-4" />
+            Mark All as Read
+          </Button>
+        )}
+      </div>
+
       {/* Date Filter Bar */}
       <div className="flex flex-wrap items-end gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 backdrop-blur-sm">
         <div className="space-y-1.5 flex-1 min-w-[200px]">
@@ -97,12 +132,23 @@ export function UserNotificationsList({ notifications }: UserNotificationsListPr
           {filtered.map((n: any) => (
             <div
               key={n.id}
-              className={`premium-card p-4 border-l-4 transition-all ${typeColors[n.type] || typeColors.INFO}`}
+              className={`premium-card p-4 border-l-4 transition-all ${
+                !n.isRead 
+                  ? 'bg-slate-900/40 border-l-primary shadow-[0_0_15px_rgba(59,130,246,0.08)]' 
+                  : typeColors[n.type] || typeColors.INFO
+              }`}
             >
               <div className="flex items-start gap-3">
                 <span className="text-lg shrink-0">{typeIcons[n.type]}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{n.title}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm">{n.title}</p>
+                    {!n.isRead && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/20 text-primary border border-primary/20 animate-pulse">
+                        NEW
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground mt-0.5">{n.message}</p>
                 </div>
                 <span className="text-xs text-muted-foreground shrink-0">{formatRelativeTime(n.createdAt)}</span>

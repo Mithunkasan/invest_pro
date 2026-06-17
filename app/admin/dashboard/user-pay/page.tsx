@@ -5,7 +5,7 @@ import { getAllUserPayRequestsAction } from '@/actions/userPay'
 import { UserPayRequestsTable } from './UserPayRequestsTable'
 
 export const metadata: Metadata = {
-  title: 'User Pay Requests — Admin Console',
+  title: 'Send Money History — Admin Console',
 }
 
 export default async function AdminUserPayPage() {
@@ -17,9 +17,9 @@ export default async function AdminUserPayPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">User Pay Requests</h1>
+        <h1 className="text-2xl font-bold">Send Money History</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Review and approve or reject peer-to-peer wallet transfer requests.
+          View all peer-to-peer wallet transfers completed on the platform.
         </p>
       </div>
 
