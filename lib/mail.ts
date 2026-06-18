@@ -90,3 +90,61 @@ export async function sendPasswordResetAdminEmail(to: string, newPasswordRaw: st
 
   return transporter.sendMail(mailOptions)
 }
+
+export async function sendContactFormEmail({
+  name,
+  email,
+  phone,
+  subject,
+  message,
+}: {
+  name: string
+  email: string
+  phone: string
+  subject: string
+  message: string
+}) {
+  const mailOptions = {
+    from: defaultFrom,
+    to: 'Smartvinish1995@gmail.com',
+    subject: `Contact Form Submission: ${subject}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; background-color: #ffffff; color: #333333;">
+        <h2 style="color: #3b82f6; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-top: 0;">New Contact Message</h2>
+        <p>A user has submitted the contact form with the following details:</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; width: 130px; border-bottom: 1px solid #eee;">Full Name:</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${name}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; border-bottom: 1px solid #eee;">Email Address:</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><a href="mailto:${email}">${email}</a></td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; border-bottom: 1px solid #eee;">Phone Number:</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${phone}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; border-bottom: 1px solid #eee;">Subject:</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${subject}</td>
+          </tr>
+        </table>
+        
+        <div style="margin-top: 20px; padding: 15px; background-color: #f9fafb; border-left: 4px solid #3b82f6; border-radius: 4px;">
+          <h4 style="margin: 0 0 10px 0; color: #111827;">Message Body:</h4>
+          <p style="margin: 0; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+        </div>
+        
+        <br />
+        <p style="font-size: 12px; color: #6b7280; margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px;">
+          This email was sent automatically from the VR Galaxy Networks Contact Form.
+        </p>
+      </div>
+    `,
+  }
+
+  return transporter.sendMail(mailOptions)
+}
+

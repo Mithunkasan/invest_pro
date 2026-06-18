@@ -23,10 +23,14 @@ interface EditMembershipModalProps {
 
 function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps) {
   const [isPending, startTransition] = useTransition()
+
+  // Find user's current database membership plan to synchronize details
+  const initialPlan = plans.find(p => p.id === user.membershipPlanId)
+
   const [form, setForm] = useState({
-    memberType: user.memberType || 'FREE',
-    membershipPlanId: user.membershipPlanId || '',
-    basicMembershipAmount: user.basicMembershipAmount || 0,
+    memberType: initialPlan ? (initialPlan.name === 'Free Membership' ? 'FREE' : initialPlan.name === 'Basic Membership' ? 'BASIC' : 'PREMIUM') : 'FREE',
+    membershipPlanId: initialPlan ? initialPlan.id : '',
+    basicMembershipAmount: initialPlan ? initialPlan.price : 0,
     basicMembershipActivatedAt: user.basicMembershipActivatedAt ? new Date(user.basicMembershipActivatedAt).toISOString().split('T')[0] : '',
     basicMembershipExpiresAt: user.basicMembershipExpiresAt ? new Date(user.basicMembershipExpiresAt).toISOString().split('T')[0] : '',
     lastDailyYieldAt: user.lastDailyYieldAt ? new Date(user.lastDailyYieldAt).toISOString().split('T')[0] : '',
@@ -40,18 +44,18 @@ function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps)
     setForm(prev => {
       const next = { ...prev, membershipPlanId: planId }
       
-      // If Bronze/Silver/Gold/etc are selected, set type to PREMIUM
       if (selectedPlan) {
+        next.basicMembershipAmount = selectedPlan.price
         if (selectedPlan.name === 'Basic Membership') {
           next.memberType = 'BASIC'
-          next.basicMembershipAmount = selectedPlan.price
         } else if (selectedPlan.name === 'Free Membership') {
           next.memberType = 'FREE'
-          next.basicMembershipAmount = 0
         } else {
           next.memberType = 'PREMIUM'
-          next.basicMembershipAmount = 0
         }
+      } else {
+        next.basicMembershipAmount = 0
+        next.memberType = 'FREE'
       }
       return next
     })
@@ -61,7 +65,7 @@ function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps)
     e.preventDefault()
     startTransition(async () => {
       const payload = {
-        memberType: form.memberType,
+        memberType: form.memberType as 'FREE' | 'BASIC' | 'PREMIUM',
         membershipPlanId: form.membershipPlanId || null,
         basicMembershipAmount: Number(form.basicMembershipAmount) || 0,
         basicMembershipActivatedAt: form.basicMembershipActivatedAt || null,
@@ -126,7 +130,7 @@ function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps)
                 className="w-full h-9.5 px-3 rounded-lg bg-background border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
               >
                 <option value="">No Active Plan (Free)</option>
-                {plans.map((p) => (
+                {plans.filter(p => p.isActive).map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name} (₹{p.price.toLocaleString('en-IN')})
                   </option>

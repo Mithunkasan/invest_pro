@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Mail, Phone, MapPin, Clock } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import ContactClient from './ContactClient'
 
 export const metadata: Metadata = {
   title: 'Contact Us',
@@ -59,33 +59,11 @@ export default function ContactPage() {
             ))}
           </div>
 
-          {/* Contact Form */}
-          <div className="premium-card p-6">
-            <h2 className="font-bold text-xl mb-4">Send a Message</h2>
-            <form className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium block mb-1.5">Full Name</label>
-                  <input type="text" placeholder="Arjun Kumar" className="form-input" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium block mb-1.5">Email</label>
-                  <input type="email" placeholder="arjun@example.com" className="form-input" />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-1.5">Subject</label>
-                <input type="text" placeholder="Investment inquiry" className="form-input" />
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-1.5">Message</label>
-                <textarea rows={5} placeholder="Describe your query in detail..." className="form-input resize-none" />
-              </div>
-              <Button type="submit" size="lg" className="w-full">Send Message</Button>
-            </form>
-          </div>
+          {/* Contact Form Client Wrapper */}
+          <ContactClient />
         </div>
       </div>
     </div>
   )
 }
+

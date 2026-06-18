@@ -7,29 +7,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { faqs } from '@/lib/faq-data'
+import { CheckCircle2 } from 'lucide-react'
 
-const faqs = [
-  {
-    q: 'How safe is my investment?',
-    a: 'We use bank-grade security protocols and secure our funds with diversified assets to ensure maximum safety and consistent returns for our investors.'
-  },
-  {
-    q: 'What is the minimum deposit?',
-    a: 'The minimum deposit starts at just ₹1,000 for our Bronze plan, making it accessible for everyone to start their investment journey.'
-  },
-  {
-    q: 'When can I withdraw my earnings?',
-    a: 'You can request a withdrawal of your daily earnings anytime. Withdrawal requests are usually processed within 24 hours.'
-  },
-  {
-    q: 'How does the referral program work?',
-    a: 'You earn a percentage of every investment made by your direct referrals, and even from their referrals, up to 3 levels deep.'
-  },
-  {
-    q: 'Are there any hidden fees?',
-    a: 'No, we believe in complete transparency. There are no registration fees or hidden charges. All fees are clearly mentioned in our terms.'
-  }
-]
+// Selected questions for the landing page
+const landingFaqs = faqs.filter(faq => 
+  ['faq-1', 'faq-2', 'faq-3', 'faq-4', 'faq-5', 'faq-16'].includes(faq.id)
+)
 
 export function FAQSection() {
   return (
@@ -40,30 +24,53 @@ export function FAQSection() {
             Frequently Asked <span className="text-primary">Questions</span>
           </h2>
           <p className="text-muted-foreground mb-8 text-lg">
-            Have questions? We have answers. If you don't find what you are looking for, feel free to contact our support team.
+            Have questions about VR Galaxy Networks? We have answers. If you don't find what you are looking for, feel free to contact our support team or check our full FAQ page.
           </p>
-          <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10">
+          <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10 mb-6">
             <h4 className="font-bold mb-2">Still have questions?</h4>
             <p className="text-sm text-muted-foreground mb-4">Can't find the answer you're looking for? Please chat to our friendly team.</p>
             <a href="/contact" className="text-primary font-black hover:underline">Get in touch →</a>
           </div>
+          <a href="/faq" className="inline-flex items-center text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+            View all 16 FAQs on our dedicated FAQ page →
+          </a>
         </div>
 
         <div className="premium-card p-4 sm:p-8">
           <Accordion type="single" collapsible className="w-full">
-            {faqs.map((faq, i) => (
-              <AccordionItem key={i} value={`item-${i}`} className="border-border">
-                <AccordionTrigger className="text-left font-bold hover:text-primary transition-colors text-base py-5">
-                  {faq.q}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
-                  {faq.a}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
+            {landingFaqs.map((faq, i) => {
+              const isChecklist = faq.id === 'faq-16';
+              return (
+                <AccordionItem key={faq.id} value={`item-${i}`} className="border-border">
+                  <AccordionTrigger className="text-left font-bold hover:text-primary transition-colors text-base py-5">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
+                    {faq.answer && (
+                      <p className="mb-3 text-white/80">{faq.answer}</p>
+                    )}
+                    {faq.listItems && (
+                      <ul className={`space-y-2 mt-2 ${isChecklist ? 'grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 space-y-0' : 'list-none pl-1'}`}>
+                        {faq.listItems.map((item, index) => (
+                          <li key={index} className="flex items-start gap-2 text-sm">
+                            {isChecklist ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                            ) : (
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-2" />
+                            )}
+                            <span className="text-white/70">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
           </Accordion>
         </div>
       </div>
     </section>
   )
 }
+
