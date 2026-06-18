@@ -44,10 +44,19 @@ interface DashboardSidebarProps {
   mobileOpen: boolean
   onClose: () => void
   isKycApproved: boolean
-  user: { name: string; email: string; memberType?: 'FREE' | 'BASIC' | 'PREMIUM'; isMembershipExpired?: boolean }
+  hasApprovedDeposit: boolean
+  isMembershipActivated: boolean
+  user: { name: string; email: string; memberType?: 'FREE' | 'BASIC' | 'PREMIUM'; isMembershipExpired?: boolean; profileCompleted?: boolean }
 }
 
-export function DashboardSidebar({ mobileOpen, onClose, isKycApproved, user }: DashboardSidebarProps) {
+export function DashboardSidebar({
+  mobileOpen,
+  onClose,
+  isKycApproved,
+  hasApprovedDeposit,
+  isMembershipActivated,
+  user,
+}: DashboardSidebarProps) {
   const pathname = usePathname()
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
 
@@ -98,14 +107,25 @@ export function DashboardSidebar({ mobileOpen, onClose, isKycApproved, user }: D
       }
     }
 
-    // 2. Filter out non-KYC / non-Profile if KYC is not approved and user is not FREE
-    let filteredItems = isKycApproved
-      ? baseItems
-      : baseItems.filter((item) => item.label === 'KYC' || item.label === 'Profile')
+    const isFullAccess = user?.profileCompleted && (hasApprovedDeposit || user?.memberType === 'BASIC') && isMembershipActivated && user?.memberType !== 'FREE'
 
-    if (user?.isMembershipExpired) {
-      filteredItems = baseItems.filter((item) => item.label === 'Membership' || item.label === 'Withdraw')
+    let filteredItems = baseItems
+    if (!isKycApproved) {
+      filteredItems = baseItems.filter((item) => item.label === 'KYC' || item.label === 'Profile')
+    } else if (!isFullAccess) {
+      filteredItems = baseItems.filter((item) =>
+        item.label === 'Deposit' ||
+        item.label === 'Membership' ||
+        item.label === 'Notifications' ||
+        item.label === 'KYC' ||
+        item.label === 'Profile'
+      )
+    } else {
+      if (user?.isMembershipExpired) {
+        filteredItems = baseItems.filter((item) => item.label === 'Membership' || item.label === 'Withdraw')
+      }
     }
+
 
     return (
       <div className="flex flex-col h-full">

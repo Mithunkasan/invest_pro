@@ -45,21 +45,21 @@ export function StatsCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
       className={cn(
-        "premium-card group p-5 sm:p-6 hover:shadow-[0_8px_30px_rgb(var(--primary-rgb),0.12)] hover:-translate-y-1.5 transition-all duration-300 hover:border-primary/30",
+        "premium-card group p-4 sm:p-5 hover:shadow-[0_8px_30px_rgb(var(--primary-rgb),0.12)] hover:-translate-y-1.5 transition-all duration-300 hover:border-primary/30 h-full flex flex-col justify-between",
         onClick && "cursor-pointer select-none hover:border-primary/60",
         className
       )}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground font-medium">{title}</p>
+      <div className="flex items-start justify-between gap-2 w-full">
+        <div className="space-y-1 min-w-0 flex-1">
+          <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate">{title}</p>
           <AnimatePresence>
             <motion.p
               key={String(value)}
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent group-hover:from-primary group-hover:to-blue-400 transition-all duration-300"
+              className="text-lg sm:text-xl xl:text-lg 2xl:text-2xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent group-hover:from-primary group-hover:to-blue-400 transition-all duration-300 break-words"
             >
               {displayValue}
             </motion.p>
@@ -88,7 +88,7 @@ export function StatsCard({
           )}
         </div>
         <motion.div 
-          className={cn('p-3 rounded-xl transition-all duration-300 relative overflow-hidden', iconBg)}
+          className={cn('p-2.5 sm:p-3 rounded-xl transition-all duration-300 relative overflow-hidden shrink-0', iconBg)}
           whileHover={{ scale: 1.15, rotate: [0, -12, 12, 0] }}
           transition={{
             scale: { type: "spring", stiffness: 300, damping: 15 },
@@ -112,5 +112,6 @@ export function StatsCard({
         </motion.div>
       </div>
     </motion.div>
+
   )
 }

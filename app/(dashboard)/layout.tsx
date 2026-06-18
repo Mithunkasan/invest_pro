@@ -29,6 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       state: true,
       pinCode: true,
       membershipPlanExpiresAt: true,
+      membershipPlanId: true,
     }
   })
 
@@ -62,6 +63,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ? new Date() > new Date(dbUser.membershipPlanExpiresAt)
     : false
 
+  const approvedDepositCount = await prisma.deposit.count({
+    where: { userId: session.id, status: 'APPROVED' }
+  })
+  const hasApprovedDeposit = approvedDepositCount > 0
+  const isMembershipActivated = dbUser?.membershipPlanId !== null
+
   return (
     <DashboardLayoutClient
       user={{ 
@@ -75,8 +82,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       }}
       notificationCount={unreadCount}
       isKycApproved={isKycApproved}
+      hasApprovedDeposit={hasApprovedDeposit}
+      isMembershipActivated={isMembershipActivated}
     >
       {children}
     </DashboardLayoutClient>
   )
 }
+

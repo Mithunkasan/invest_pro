@@ -22,6 +22,8 @@ interface DashboardLayoutClientProps {
   }
   notificationCount: number
   isKycApproved: boolean
+  hasApprovedDeposit: boolean
+  isMembershipActivated: boolean
 }
 
 export function DashboardLayoutClient({
@@ -29,11 +31,13 @@ export function DashboardLayoutClient({
   user,
   notificationCount,
   isKycApproved,
+  hasApprovedDeposit,
+  isMembershipActivated,
 }: DashboardLayoutClientProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
-  const showProfilePopup = user.memberType === 'FREE' && !user.profileCompleted && !pathname.startsWith('/dashboard/profile')
+  const showProfilePopup = isKycApproved && !user.profileCompleted && !pathname.startsWith('/dashboard/profile')
 
   useEffect(() => {
     if (user.isMembershipExpired) {
@@ -53,8 +57,44 @@ export function DashboardLayoutClient({
       if (!isAllowed) {
         router.push('/dashboard/kyc')
       }
+      return
     }
-  }, [user.isMembershipExpired, isKycApproved, pathname, router])
+
+    const isFullAccess = user.profileCompleted && (hasApprovedDeposit || user.memberType === 'BASIC') && isMembershipActivated && user.memberType !== 'FREE'
+
+    if (!isFullAccess) {
+      const allowedRoutes = [
+        '/dashboard/deposit',
+        '/dashboard/membership',
+        '/dashboard/notifications',
+        '/dashboard/kyc',
+        '/dashboard/profile'
+      ]
+
+      if (!user.profileCompleted) {
+        allowedRoutes.push('/dashboard')
+      }
+
+      const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
+
+      if (!isAllowed) {
+        if (!user.profileCompleted) {
+          router.push('/dashboard')
+        } else {
+          router.push('/dashboard/membership')
+        }
+      }
+    }
+  }, [
+    user.isMembershipExpired,
+    isKycApproved,
+    pathname,
+    router,
+    user.profileCompleted,
+    hasApprovedDeposit,
+    isMembershipActivated,
+    user.memberType
+  ])
 
   const openProfileForm = () => {
     router.push('/dashboard/profile')
@@ -77,6 +117,8 @@ export function DashboardLayoutClient({
         mobileOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         isKycApproved={isKycApproved}
+        hasApprovedDeposit={hasApprovedDeposit}
+        isMembershipActivated={isMembershipActivated}
         user={user}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -113,7 +155,7 @@ export function DashboardLayoutClient({
 
                 <h3 className="text-xl font-extrabold text-white tracking-tight">Please Update Your Profile</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Complete your required profile details to continue as a Free Member.
+                  Complete your required profile details to continue.
                 </p>
 
                 <Button

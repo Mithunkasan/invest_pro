@@ -41,3 +41,27 @@ export async function getCitiesAction(
     return { success: false, cities: [] }
   }
 }
+
+export async function getDistrictForCityAction(
+  state: string,
+  city: string
+): Promise<{ success: boolean; district: string }> {
+  try {
+    if (!state || !city) return { success: true, district: '' }
+    const tree = await getLocationsTree()
+    let district = ''
+    if (tree[state]) {
+      for (const [dist, cities] of Object.entries(tree[state])) {
+        if (cities[city]) {
+          district = dist
+          break
+        }
+      }
+    }
+    return { success: true, district }
+  } catch (err) {
+    console.error('Failed to get district for city:', err)
+    return { success: false, district: '' }
+  }
+}
+

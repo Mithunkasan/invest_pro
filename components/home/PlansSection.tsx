@@ -260,30 +260,54 @@ function PlanCard({ plan }: { plan: PlanData }) {
         </div>
       )}
 
-      <div className="flex flex-col flex-1 p-5 sm:p-6 pt-7">
-        {/* Icon + Name row */}
-        <div className="flex items-center gap-3 mb-4 min-h-[56px] sm:min-h-[64px]">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0">
-            <PlanGem name={plan.name} />
+      <div className="flex flex-col flex-1 p-5 sm:p-6 pt-7 relative overflow-hidden">
+        {/* Credit Card Gloss Effect overlay */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/10 pointer-events-none" />
+        
+        {/* Card Header: Chip & Logo */}
+        <div className="flex justify-between items-center mb-6">
+          {/* SIM Chip SVG */}
+          <div className="w-11 h-8 bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 rounded-md relative overflow-hidden border border-amber-600/35 flex flex-col justify-between p-1 shadow-md shrink-0">
+            {/* Chip Grid Lines */}
+            <div className="border-b border-amber-600/30 h-1/2 w-full flex">
+              <div className="border-r border-amber-600/30 w-1/3 h-full" />
+              <div className="border-r border-amber-600/30 w-1/3 h-full" />
+            </div>
+            <div className="h-1/2 w-full flex">
+              <div className="border-r border-amber-600/30 w-1/3 h-full" />
+              <div className="border-r border-amber-600/30 w-1/3 h-full" />
+            </div>
           </div>
-          <h3
-            className={`text-xl sm:text-2xl font-black tracking-widest leading-tight ${s.nameCls}`}
-            style={{ letterSpacing: '0.1em' }}
-          >
+          {/* Logo on the right */}
+          <div className="flex items-center gap-1.5">
+            <img src="/logo.png" className="h-7 w-auto object-contain filter drop-shadow-[0_2px_4px_rgba(255,255,255,0.15)]" alt="Logo" />
+            <span className="font-extrabold text-xs tracking-wider text-white/80">VR GALAXY</span>
+          </div>
+        </div>
+
+        {/* Plan Name (Membership Plan Name) */}
+        <div className="mb-4">
+          <h3 className={`text-xl sm:text-2xl font-black tracking-widest leading-none ${s.nameCls} uppercase`} style={{ letterSpacing: '0.12em', fontFamily: 'monospace' }}>
             {plan.name}
           </h3>
+          <p className="text-[9px] text-white/40 uppercase tracking-widest font-semibold mt-1">MEMBERSHIP CARD</p>
         </div>
 
         {/* Price */}
         <div className="mb-4">
-          <p className={`text-3xl sm:text-4xl font-black ${s.priceCls} leading-none`}>
+          <p className={`text-3xl sm:text-4xl font-black ${s.priceCls} leading-none font-mono`}>
             {plan.price}
           </p>
-          <p className="text-slate-400 text-xs sm:text-sm font-medium mt-1.5">{plan.period}</p>
+          <p className="text-slate-400 text-xs sm:text-sm font-semibold mt-1.5">{plan.period}</p>
+        </div>
+
+        {/* Card Number Decoration */}
+        <div className="text-white/30 font-mono text-sm tracking-[0.22em] mb-5">
+          •••• •••• •••• {plan.name.toLowerCase().includes('silver') ? '0010' : plan.name.toLowerCase().includes('gold') ? '0020' : '0030'}
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-white/[0.07] mb-4" />
+        <div className="h-px bg-white/[0.08] mb-5" />
 
         {/* Features list */}
         <ul className="space-y-3 flex-1 mb-5" role="list">
@@ -303,13 +327,14 @@ function PlanCard({ plan }: { plan: PlanData }) {
         {/* CTA Button */}
         <Link href={plan.ctaHref} className="block mt-auto" aria-label={`${plan.ctaLabel} membership`}>
           <button
-            className={`w-full py-3 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] ${s.btnCls}`}
+            className={`w-full py-3.5 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wider transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] ${s.btnCls}`}
             style={s.btnStyle}
           >
             {plan.ctaLabel}
           </button>
         </Link>
       </div>
+
     </motion.article>
     </div>
   )
