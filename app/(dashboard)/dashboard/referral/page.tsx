@@ -87,9 +87,13 @@ export default async function ReferralPage() {
   const team = [...directReferrals, ...indirectReferrals]
   const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const referralLink = `${baseUrl}/register?ref=${user?.referralCode || ''}`
+
   return (
     <ReferralClient
       referralCode={user?.referralCode || ''}
+      referralLink={referralLink}
       team={JSON.parse(JSON.stringify(team))}
       totalReferrals={directReferrals.length}
       referralCommissionStructure={settings?.referralCommissionStructure || '10,5,3'}

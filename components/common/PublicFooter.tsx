@@ -5,7 +5,7 @@ const footerLinks = {
   quickLinks: [
     { href: '/', label: 'Home' },
     { href: '/about', label: 'About Us' },
-    { href: '/plans', label: 'Investment Plans' },
+    { href: '/membership-plans', label: 'Membership Plans' },
     { href: '/faq', label: 'FAQ' },
     { href: '/contact', label: 'Contact' },
   ],

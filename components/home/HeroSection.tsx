@@ -188,7 +188,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
                     <Rocket className="w-4.5 h-4.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0" />
                   </Button>
                 </Link>
-                <Link href="/plans" className="w-full sm:w-auto">
+                <Link href="/membership-plans" className="w-full sm:w-auto">
                   <Button
                     size="lg"
                     variant="outline"

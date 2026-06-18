@@ -32,13 +32,19 @@ export function Footer() {
           <div>
             <h4 className="font-black mb-6 uppercase tracking-widest text-xs">Quick Links</h4>
             <ul className="space-y-4">
-              {['Home', 'Investment Plans', 'About Us', 'FAQ', 'Contact Us'].map((link) => (
-                <li key={link}>
-                  <Link href={`/${link.toLowerCase().replace(/ /g, '-')}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                    {link}
-                  </Link>
-                </li>
-              ))}
+              {['Home', 'Membership Plans', 'About Us', 'FAQ', 'Contact Us'].map((link) => {
+                let href = `/${link.toLowerCase().replace(/ /g, '-')}`
+                if (link === 'Home') href = '/'
+                if (link === 'About Us') href = '/about'
+                if (link === 'Contact Us') href = '/contact'
+                return (
+                  <li key={link}>
+                    <Link href={href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      {link}
+                    </Link>
+                  </li>
+                )
+              })}
             </ul>
           </div>
 

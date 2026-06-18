@@ -120,12 +120,51 @@ export async function updateUserAction(
         })
         if (data.membershipPlanId) {
           const plan = await prisma.membershipPlan.findUnique({ where: { id: data.membershipPlanId } })
-          if (plan) {
-            updateData.membershipPlanActivatedAt = new Date()
-            const exp = new Date()
-            exp.setDate(exp.getDate() + 1000)
-            updateData.membershipPlanExpiresAt = exp
+          if (!plan) {
+            return { success: false, message: `Membership plan not found.` }
           }
+
+          // Deduct from Deposit Wallet balance
+          if (plan.price > 0) {
+            const wallet = await prisma.wallet.findUnique({ where: { userId } })
+            if (!wallet) {
+              return { success: false, message: 'User wallet not found' }
+            }
+
+            if (wallet.depositBalance < plan.price) {
+              return {
+                success: false,
+                message: `Insufficient balance in Deposit Wallet (Available: ₹${wallet.depositBalance.toLocaleString('en-IN')}, Required: ₹${plan.price.toLocaleString('en-IN')})`
+              }
+            }
+
+            await prisma.wallet.update({
+              where: { userId },
+              data: {
+                depositBalance: { decrement: plan.price }
+              }
+            })
+
+            // Create a completed transaction record
+            await prisma.transaction.create({
+              data: {
+                userId,
+                type: 'INVESTMENT',
+                amount: plan.price,
+                status: 'COMPLETED',
+                description: `Activated ${plan.name} by Admin`,
+                walletType: 'MAIN',
+              }
+            })
+
+            // Sync main balance
+            await syncWalletMainBalance(prisma, userId)
+          }
+
+          updateData.membershipPlanActivatedAt = new Date()
+          const exp = new Date()
+          exp.setDate(exp.getDate() + 1000)
+          updateData.membershipPlanExpiresAt = exp
         } else {
           updateData.membershipPlanActivatedAt = null
           updateData.membershipPlanExpiresAt = null

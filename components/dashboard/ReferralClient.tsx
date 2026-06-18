@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Copy, Check, Users } from 'lucide-react'
 import { DataTable } from '@/components/dashboard/DataTable'
-import { formatCurrency, formatDate, generateReferralLink } from '@/utils/formatters'
+import { formatCurrency, formatDate } from '@/utils/formatters'
 import { StatsCard } from './StatsCard'
 
 interface TeamMember {
@@ -18,6 +18,7 @@ interface TeamMember {
 
 interface ReferralClientProps {
   referralCode: string
+  referralLink: string
   team: TeamMember[]
   totalReferrals: number
   referralCommissionStructure: string
@@ -79,11 +80,11 @@ const cols = [
 
 export function ReferralClient({ 
   referralCode, 
+  referralLink,
   team, 
   totalReferrals, 
   referralCommissionStructure 
 }: ReferralClientProps) {
-  const referralLink = generateReferralLink(referralCode)
   const [copied, setCopied] = useState<string | null>(null)
 
   const copy = (text: string, key: string) => {

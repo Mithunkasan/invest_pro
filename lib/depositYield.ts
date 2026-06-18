@@ -23,27 +23,50 @@ export async function creditDueDepositYields(userId: string) {
 
   if (!user || !user.membershipPlan || !user.membershipPlanActivatedAt) return
 
-  // Determine yield percentage.
-  const yieldPercent = user.membershipPlan.depositBonus
+  // Verify that the membership plan is valid and has a price > 0
+  if (user.membershipPlan.price <= 0) return
+
+  // Fetch yield percentage configured by the admin from system settings
+  const settings = await prisma.systemSettings.findUnique({
+    where: { id: 'default' },
+  })
+  const yieldPercent = settings?.basicDailyYieldPercent ?? 0.2
   if (yieldPercent <= 0) return
 
   const now = new Date()
   const activationDate = user.membershipPlanActivatedAt
+  const expiresAt = user.membershipPlanExpiresAt
 
-  // Generate 1000 daily 10:00 AM IST timestamps starting from activationDate
+  // Generate daily 10:00 AM IST timestamps starting from activationDate
   const T_0 = get10AMIST(activationDate)
   const firstCreditDate = activationDate.getTime() < T_0.getTime() ? T_0 : new Date(T_0.getTime() + 24 * 60 * 60 * 1000)
 
-  // Filter the 1000 days for those that are <= now and >= activationDate.getTime()
-  // and > user.lastDailyYieldAt (or if lastDailyYieldAt is null)
+  // Filter the daily dates for those that are <= now and >= activationDate.getTime()
+  // and <= expiresAt (if it is set) and > user.lastDailyYieldAt (or if lastDailyYieldAt is null)
   let eligibleTimestamps: Date[] = []
-  for (let k = 1; k <= 1000; k++) {
+  let k = 1
+  while (true) {
     const D_k = new Date(firstCreditDate.getTime() + (k - 1) * 24 * 60 * 60 * 1000)
-    if (D_k.getTime() <= now.getTime() && D_k.getTime() >= activationDate.getTime()) {
+    
+    // Stop generating if D_k is in the future
+    if (D_k.getTime() > now.getTime()) {
+      break
+    }
+    
+    // Stop generating if D_k is after expiration date
+    if (expiresAt && D_k.getTime() > expiresAt.getTime()) {
+      break
+    }
+
+    if (D_k.getTime() >= activationDate.getTime()) {
       if (!user.lastDailyYieldAt || D_k.getTime() > user.lastDailyYieldAt.getTime()) {
         eligibleTimestamps.push(D_k)
       }
     }
+    k++
+    
+    // Safety break to prevent infinite loop
+    if (k > 5000) break
   }
 
   const dueDays = eligibleTimestamps.length
