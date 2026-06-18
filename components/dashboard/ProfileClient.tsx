@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { User, Lock, Shield, Calendar, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDate, formatCurrency } from '@/utils/formatters'
 import { logoutAction } from '@/actions/auth'
 import { updateProfileAction, uploadProfilePictureAction } from '@/actions/user'
+import { getStatesAction, getDistrictsAction, getCitiesAction, getDistrictForCityAction } from '@/actions/locations'
+
 
 interface ProfileClientProps {
   user: {
@@ -38,6 +40,101 @@ export function ProfileClient({ user }: ProfileClientProps) {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [msg, setMsg] = useState('')
+
+  const [states, setStates] = useState<string[]>([])
+  const [districts, setDistricts] = useState<string[]>([])
+  const [cities, setCities] = useState<{ name: string; pinCode: string }[]>([])
+  const [district, setDistrict] = useState('')
+
+  const [loadingStates, setLoadingStates] = useState(false)
+  const [loadingDistricts, setLoadingDistricts] = useState(false)
+  const [loadingCities, setLoadingCities] = useState(false)
+
+  // Fetch all states on mount
+  useEffect(() => {
+    async function loadStates() {
+      setLoadingStates(true)
+      const res = await getStatesAction()
+      if (res.success) {
+        setStates(res.states)
+      }
+      setLoadingStates(false)
+    }
+    loadStates()
+  }, [])
+
+  // On mount, if state is pre-populated, load districts and cities
+  useEffect(() => {
+    async function loadPrePopulated() {
+      if (user.state) {
+        setLoadingDistricts(true)
+        const resDist = await getDistrictsAction(user.state)
+        if (resDist.success) {
+          setDistricts(resDist.districts)
+        }
+        setLoadingDistricts(false)
+
+        if (user.city) {
+          const resFindDist = await getDistrictForCityAction(user.state, user.city)
+          if (resFindDist.success && resFindDist.district) {
+            setDistrict(resFindDist.district)
+            setLoadingCities(true)
+            const resCity = await getCitiesAction(user.state, resFindDist.district)
+            if (resCity.success) {
+              setCities(resCity.cities)
+            }
+            setLoadingCities(false)
+          }
+        }
+      }
+    }
+    loadPrePopulated()
+  }, [user.state, user.city])
+
+  // --- HANDLERS ---
+  const handleStateChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const stateName = e.target.value
+    setState(stateName)
+    setDistrict('')
+    setCity('')
+    setPinCode('')
+    setDistricts([])
+    setCities([])
+
+    if (stateName) {
+      setLoadingDistricts(true)
+      const res = await getDistrictsAction(stateName)
+      if (res.success) {
+        setDistricts(res.districts)
+      }
+      setLoadingDistricts(false)
+    }
+  }
+
+  const handleDistrictChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const districtName = e.target.value
+    setDistrict(districtName)
+    setCity('')
+    setPinCode('')
+    setCities([])
+
+    if (districtName && state) {
+      setLoadingCities(true)
+      const res = await getCitiesAction(state, districtName)
+      if (res.success) {
+        setCities(res.cities)
+      }
+      setLoadingCities(false)
+    }
+  }
+
+  const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const cityName = e.target.value
+    const cityObj = cities.find(c => c.name === cityName)
+    setCity(cityName)
+    setPinCode(cityObj?.pinCode || '')
+  }
+
 
   const initials = user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 
@@ -143,17 +240,66 @@ export function ProfileClient({ user }: ProfileClientProps) {
               <input type="text" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} className="form-input" required />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1.5">City</label>
-              <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="form-input" required />
-            </div>
-            <div>
               <label className="text-sm font-medium block mb-1.5">State</label>
-              <input type="text" value={state} onChange={(e) => setState(e.target.value)} className="form-input" required />
+              <select
+                required
+                value={state}
+                onChange={handleStateChange}
+                disabled={loadingStates}
+                className="form-input"
+              >
+                <option value="">Select State</option>
+                {states.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1.5">PIN Code</label>
-              <input type="text" value={pinCode} onChange={(e) => setPinCode(e.target.value)} className="form-input" required />
+              <label className="text-sm font-medium block mb-1.5">
+                District {loadingDistricts && '(Loading...)'}
+              </label>
+              <select
+                required
+                disabled={!state || loadingDistricts}
+                value={district}
+                onChange={handleDistrictChange}
+                className="form-input"
+              >
+                <option value="">Select District</option>
+                {districts.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
+            <div>
+              <label className="text-sm font-medium block mb-1.5">
+                City / Region {loadingCities && '(Loading...)'}
+              </label>
+              <select
+                required
+                disabled={!district || loadingCities}
+                value={city}
+                onChange={handleCityChange}
+                className="form-input"
+              >
+                <option value="">Select City</option>
+                {cities.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium block mb-1.5">PIN Code (Auto Fill)</label>
+              <input
+                type="text"
+                required
+                readOnly
+                value={pinCode}
+                placeholder="Auto-populated"
+                className="form-input opacity-60 cursor-not-allowed select-all font-mono font-bold tracking-wider"
+              />
+            </div>
+
             <div>
               <label className="text-sm font-medium block mb-1.5">Referral Code</label>
               <input type="text" value={user.referralCode} readOnly className="form-input opacity-60 cursor-not-allowed font-mono" />

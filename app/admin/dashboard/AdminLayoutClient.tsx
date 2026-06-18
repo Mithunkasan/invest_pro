@@ -119,7 +119,16 @@ export function AdminLayoutClient({ children, admin, unreadNotificationCount = 0
           <div className="flex-1">
             <span className="text-sm text-muted-foreground">Admin Console</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <Link href="/admin/dashboard/notifications" className="relative w-9 h-9 rounded-xl flex items-center justify-center hover:bg-accent transition-colors">
+              <Bell className="w-4 h-4 text-foreground" />
+              {unreadNotificationCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                </span>
+              )}
+            </Link>
+
             <div className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-accent">
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white text-xs font-bold">{initials}</div>
               <div className="hidden sm:block">
@@ -128,6 +137,7 @@ export function AdminLayoutClient({ children, admin, unreadNotificationCount = 0
               </div>
             </div>
           </div>
+
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
