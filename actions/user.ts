@@ -167,15 +167,7 @@ export async function startInvestment(planId: string, amount: number): Promise<A
       })
     })
 
-    // Retrieve latest active investment
-    const investment = await prisma.investment.findFirst({
-      where: { userId: session.id, planId, amount, status: 'ACTIVE' },
-      orderBy: { createdAt: 'desc' }
-    })
-    if (investment) {
-      const { distributeReferralAndLevelCommissions } = require('./rules')
-      await distributeReferralAndLevelCommissions(session.id, amount, investment.id)
-    }
+
 
     revalidatePath('/dashboard')
     revalidatePath('/dashboard/investments')

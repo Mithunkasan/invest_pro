@@ -8,9 +8,10 @@ import { formatCurrency } from '@/utils/formatters'
 interface KycApprovedFreeDashboardProps {
   userName: string
   mainBalance: number
+  depositBalance: number
 }
 
-export function KycApprovedFreeDashboard({ userName, mainBalance }: KycApprovedFreeDashboardProps) {
+export function KycApprovedFreeDashboard({ userName, mainBalance, depositBalance }: KycApprovedFreeDashboardProps) {
   return (
     <div className="space-y-6">
       {/* Welcome heading */}
@@ -58,28 +59,54 @@ export function KycApprovedFreeDashboard({ userName, mainBalance }: KycApprovedF
         </div>
       </motion.div>
 
-      {/* Main Wallet Balance Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="premium-card p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/50 shadow-lg"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-primary/10 text-primary border border-primary/20">
-              <Wallet className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Main Wallet</p>
-              <p className="text-3xl font-black text-white mt-1 tracking-tight">
-                {formatCurrency(mainBalance)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">Available balance for withdrawal</p>
+      {/* Wallet Balance Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Main Wallet Balance Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="premium-card p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/50 shadow-lg"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-primary/10 text-primary border border-primary/20">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Main Wallet</p>
+                <p className="text-3xl font-black text-white mt-1 tracking-tight">
+                  {formatCurrency(mainBalance)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Available balance for withdrawal</p>
+              </div>
             </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+
+        {/* Deposit Wallet Balance Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="premium-card p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/50 shadow-lg"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Deposit Wallet</p>
+                <p className="text-3xl font-black text-white mt-1 tracking-tight">
+                  {formatCurrency(depositBalance)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Balance for activating plans</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
 
       {/* KYC Verified notice */}
       <motion.div
