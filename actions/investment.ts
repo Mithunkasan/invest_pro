@@ -87,9 +87,7 @@ export async function createInvestmentAction(
     },
   })
 
-  // Trigger referral and level commissions distribution
-  const { distributeReferralAndLevelCommissions } = require('./rules')
-  await distributeReferralAndLevelCommissions(session.id, amount, investment.id)
+
 
   revalidatePath('/dashboard/investments')
   return { success: true, message: 'Investment created successfully!' }

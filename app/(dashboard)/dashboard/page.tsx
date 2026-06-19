@@ -185,12 +185,13 @@ export default async function DashboardPage() {
     totalBonusEarned,
   }
 
-  // KYC-approved FREE users: show simple Free Membership overview (Main Wallet + status)
+  // KYC-approved FREE users: show simple Free Membership overview (Main Wallet + Deposit Wallet + status)
   if (dbUser?.memberType === 'FREE') {
     return (
       <KycApprovedFreeDashboard
         userName={session.name}
         mainBalance={dbWallet?.mainBalance || 0}
+        depositBalance={dbWallet?.depositBalance || 0}
       />
     )
   }

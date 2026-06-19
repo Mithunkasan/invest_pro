@@ -82,9 +82,9 @@ export function DashboardSidebar({
     const isFree = user?.memberType === 'FREE'
 
     if (isFree) {
-      // KYC-approved FREE users: Overview, KYC, Profile, and Deposit
+      // KYC-approved FREE users: Overview, KYC, Profile, Deposit and Withdraw
       // If they have deposited, they can also see Membership to upgrade
-      const allowedLabels = ['Overview', 'KYC', 'Profile', 'Deposit']
+      const allowedLabels = ['Overview', 'KYC', 'Profile', 'Deposit', 'Withdraw']
       if (hasApprovedDeposit) allowedLabels.push('Membership')
 
       baseItems = baseItems.filter((item) => allowedLabels.includes(item.label))

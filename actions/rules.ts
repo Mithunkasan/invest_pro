@@ -222,17 +222,23 @@ export async function distributeReferralAndLevelCommissions(
 
       if (percentage > 0) {
         const directReferralsCount = await prisma.user.count({
-          where: { referredById: referrer.id }
+          where: { 
+            referredById: referrer.id,
+            memberType: { not: 'FREE' },
+            OR: [
+              { membershipPlanExpiresAt: null },
+              { membershipPlanExpiresAt: { gt: new Date() } }
+            ]
+          }
         })
 
         if (directReferralsCount >= level) {
           const commissionAmount = (investmentAmount * percentage) / 100
 
-          // L1 → referralBalance (Referral Income Wallet)
-          // L2+ → levelBalance (Level Income Wallet)
-          const balanceField = level === 1 ? 'referralBalance' : 'levelBalance'
-          const walletEnum = level === 1 ? 'REFERRAL' : 'LEVEL'
-          const txType = level === 1 ? 'REFERRAL_BONUS' : 'LEVEL_INCOME'
+          // All levels -> referralBalance (Referral Income Wallet)
+          const balanceField = 'referralBalance'
+          const walletEnum = 'REFERRAL'
+          const txType = 'REFERRAL_BONUS'
 
           await prisma.$transaction([
             // Credit the commission to the referrer's correct wallet and increment totalEarned
