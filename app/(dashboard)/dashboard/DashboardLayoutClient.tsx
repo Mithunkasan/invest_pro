@@ -37,7 +37,7 @@ export function DashboardLayoutClient({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
-  const showProfilePopup = isKycApproved && !user.profileCompleted && !pathname.startsWith('/dashboard/profile')
+  const showProfilePopup = !user.profileCompleted && !pathname.startsWith('/dashboard/profile')
 
   useEffect(() => {
     if (user.isMembershipExpired) {
@@ -46,6 +46,40 @@ export function DashboardLayoutClient({
 
       if (!isAllowed) {
         router.push('/dashboard/membership')
+      }
+      return
+    }
+
+    if (!user.profileCompleted) {
+      const allowedRoutes = ['/dashboard', '/dashboard/profile']
+      const isAllowed = allowedRoutes.some((route) => {
+        if (route === '/dashboard') return pathname === '/dashboard'
+        return pathname === route || pathname.startsWith(route)
+      })
+
+      if (!isAllowed) {
+        router.push('/dashboard')
+      }
+      return
+    }
+
+    const adminApproved = hasApprovedDeposit && isMembershipActivated
+
+    if (!adminApproved) {
+      const isFree = user.memberType === 'FREE'
+      const allowedRoutes = isFree
+        ? (hasApprovedDeposit
+            ? ['/dashboard', '/dashboard/profile', '/dashboard/deposit', '/dashboard/membership']
+            : ['/dashboard', '/dashboard/profile', '/dashboard/deposit'])
+        : ['/dashboard', '/dashboard/deposit', '/dashboard/gift', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile']
+
+      const isAllowed = allowedRoutes.some((route) => {
+        if (route === '/dashboard') return pathname === '/dashboard'
+        return pathname === route || pathname.startsWith(route)
+      })
+
+      if (!isAllowed) {
+        router.push('/dashboard')
       }
       return
     }
@@ -77,10 +111,6 @@ export function DashboardLayoutClient({
             '/dashboard/kyc',
             '/dashboard/profile',
           ]
-
-      if (!user.profileCompleted && !isFree) {
-        allowedRoutes.push('/dashboard')
-      }
 
       const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
 
