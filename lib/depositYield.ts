@@ -82,15 +82,17 @@ export async function creditDueDepositYields(userId: string) {
   const lastYieldTimestamp = eligibleTimestamps[dueDays - 1]
 
   await prisma.$transaction(async (tx) => {
-    // Increment Reward Wallet
+    // Increment Reward Wallet and totalEarned (daily yield is income)
     await tx.wallet.upsert({
       where: { userId: user.id },
       update: {
         rewardBalance: { increment: totalCreditAmount },
+        totalEarned: { increment: totalCreditAmount },
       },
       create: {
         userId: user.id,
         rewardBalance: totalCreditAmount,
+        totalEarned: totalCreditAmount,
       },
     })
 

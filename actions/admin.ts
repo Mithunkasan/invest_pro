@@ -341,15 +341,20 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
 
             if (directReferralsCount >= level) {
               const commissionAmount = (depositAmount * percentage) / 100
-              const balanceField = 'referralBalance'
-              const walletEnum = 'REFERRAL'
+              // L1 → referralBalance (Referral Income Wallet)
+              // L2+ → levelBalance (Level Income Wallet)
+              const balanceField = level === 1 ? 'referralBalance' : 'levelBalance'
+              const walletEnum = level === 1 ? 'REFERRAL' : 'LEVEL'
               const txType = level === 1 ? 'REFERRAL_BONUS' : 'LEVEL_INCOME'
               
-              // 1. Credit referrer's wallet
+              // 1. Credit referrer's wallet + increment totalEarned
               dbOps.push(
                 prisma.wallet.update({
                   where: { userId: referrer.id },
-                  data: { [balanceField]: { increment: commissionAmount } }
+                  data: {
+                    [balanceField]: { increment: commissionAmount },
+                    totalEarned: { increment: commissionAmount },
+                  }
                 })
               )
               
@@ -805,7 +810,10 @@ export async function adjustUserBalanceAction(
         await prisma.$transaction([
           prisma.wallet.update({
             where: { userId },
-            data: { bonusBalance: { increment: amount } },
+            data: {
+              bonusBalance: { increment: amount },
+              totalEarned: { increment: amount },
+            },
           }),
           prisma.transaction.create({
             data: {
@@ -889,7 +897,11 @@ export async function adjustUserBalanceAction(
       await prisma.$transaction([
         prisma.wallet.update({
           where: { userId },
-          data: { [field]: { increment: delta } },
+          data: {
+            [field]: { increment: delta },
+            // Only credit totalEarned on ADD (never on subtract)
+            ...(operation === 'ADD' ? { totalEarned: { increment: amount } } : {}),
+          },
         }),
         prisma.transaction.create({
           data: {
@@ -1065,12 +1077,15 @@ export async function sendAdminBonusAction(
 
     let field: 'bonusBalance' | 'referralBalance' | 'rewardBalance' | 'levelBalance' | 'shareBalance' | 'depositBalance'
     let walletType: 'MAIN' | 'BONUS' | 'REFERRAL' | 'LEVEL' | 'REWARD' | 'SHARE'
+    // depositBalance is not earnings — do not increment totalEarned for it
+    let isEarnings = true
 
     switch (walletName) {
       case 'Main Wallet':
       case 'Deposit Wallet':
-        field = 'depositBalance' // Credit to Deposit Wallet as the active component of Main
+        field = 'depositBalance' // Deposit Wallet — not earnings income
         walletType = 'MAIN'
+        isEarnings = false
         break
       case 'Referral Wallet':
         field = 'referralBalance'
@@ -1118,10 +1133,13 @@ export async function sendAdminBonusAction(
         })
       }
 
-      // Increment balance
+      // Increment balance (and totalEarned if this is an earnings wallet, not deposit)
       await tx.wallet.update({
         where: { userId: user.id },
-        data: { [field]: { increment: amount } }
+        data: {
+          [field]: { increment: amount },
+          ...(isEarnings ? { totalEarned: { increment: amount } } : {}),
+        }
       })
 
       // Create transaction log

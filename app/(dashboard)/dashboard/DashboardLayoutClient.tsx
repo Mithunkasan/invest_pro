@@ -63,26 +63,29 @@ export function DashboardLayoutClient({
     const isFullAccess = user.profileCompleted && (hasApprovedDeposit || user.memberType === 'BASIC') && isMembershipActivated && user.memberType !== 'FREE'
 
     if (!isFullAccess) {
-      const allowedRoutes = [
-        '/dashboard/deposit',
-        '/dashboard/membership',
-        '/dashboard/notifications',
-        '/dashboard/kyc',
-        '/dashboard/profile'
-      ]
+      const isFree = user.memberType === 'FREE'
 
-      if (!user.profileCompleted) {
+      const allowedRoutes = isFree
+        ? (hasApprovedDeposit
+            ? ['/dashboard', '/dashboard/kyc', '/dashboard/profile', '/dashboard/deposit', '/dashboard/membership']
+            : ['/dashboard', '/dashboard/kyc', '/dashboard/profile', '/dashboard/deposit'])
+        : [
+            '/dashboard',
+            '/dashboard/deposit',
+            '/dashboard/membership',
+            '/dashboard/notifications',
+            '/dashboard/kyc',
+            '/dashboard/profile',
+          ]
+
+      if (!user.profileCompleted && !isFree) {
         allowedRoutes.push('/dashboard')
       }
 
       const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
 
       if (!isAllowed) {
-        if (!user.profileCompleted) {
-          router.push('/dashboard')
-        } else {
-          router.push('/dashboard/membership')
-        }
+        router.push('/dashboard')
       }
     }
   }, [

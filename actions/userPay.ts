@@ -62,12 +62,14 @@ async function deductFromMainWallets(tx: any, userId: string, amountToDeduct: nu
   }
 }
 
-// Helper to credit receiver's Main Wallet (credits to bonusBalance)
+// Helper to credit receiver's Bonus Wallet (user-pay received goes to bonusBalance)
 async function creditToMainWallet(tx: any, userId: string, amountToCredit: number) {
   await tx.wallet.update({
     where: { userId },
     data: {
-      bonusBalance: { increment: amountToCredit }
+      bonusBalance: { increment: amountToCredit },
+      // User-pay received is income — increment Total Wallet
+      totalEarned: { increment: amountToCredit },
     }
   })
 
@@ -76,7 +78,7 @@ async function creditToMainWallet(tx: any, userId: string, amountToCredit: numbe
     where: { userId }
   })
   if (updatedWallet) {
-    const newMainBalance = 
+    const newMainBalance =
       (updatedWallet.rewardBalance || 0) +
       (updatedWallet.referralBalance || 0) +
       (updatedWallet.levelBalance || 0) +

@@ -227,15 +227,21 @@ export async function distributeReferralAndLevelCommissions(
 
         if (directReferralsCount >= level) {
           const commissionAmount = (investmentAmount * percentage) / 100
-          const balanceField = 'referralBalance'
-          const walletEnum = 'REFERRAL'
+
+          // L1 → referralBalance (Referral Income Wallet)
+          // L2+ → levelBalance (Level Income Wallet)
+          const balanceField = level === 1 ? 'referralBalance' : 'levelBalance'
+          const walletEnum = level === 1 ? 'REFERRAL' : 'LEVEL'
           const txType = level === 1 ? 'REFERRAL_BONUS' : 'LEVEL_INCOME'
 
           await prisma.$transaction([
-            // Credit the commission to the referrer's balance
+            // Credit the commission to the referrer's correct wallet and increment totalEarned
             prisma.wallet.update({
               where: { userId: referrer.id },
-              data: { [balanceField]: { increment: commissionAmount } }
+              data: {
+                [balanceField]: { increment: commissionAmount },
+                totalEarned: { increment: commissionAmount },
+              }
             }),
             // Create a transaction record
             prisma.transaction.create({

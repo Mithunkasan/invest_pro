@@ -169,6 +169,7 @@ model Wallet {
   rewardBalance   Float  @default(0)
   levelBalance    Float  @default(0)
   shareBalance    Float  @default(0)
+  totalEarned     Float  @default(0) // Cumulative lifetime earnings — never decremented on withdrawal
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
