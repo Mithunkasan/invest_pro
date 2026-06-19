@@ -308,6 +308,21 @@ export async function submitKYC(formData: FormData): Promise<ApiResponse> {
       },
     })
 
+    // Get current pending count
+    const pendingCount = await prisma.kYC.count({
+      where: { status: 'PENDING' }
+    })
+
+    // Create Notification
+    await prisma.notification.create({
+      data: {
+        userId: session.id,
+        title: `KYC Submission (Pending: ${pendingCount})`,
+        message: `KYC documents submitted. Total pending KYC: ${pendingCount}.`,
+        type: 'INFO',
+      },
+    })
+
     revalidatePath('/dashboard/kyc')
     revalidatePath('/admin/dashboard/kyc')
     return { success: true, message: 'KYC documents submitted and images uploaded successfully. Waiting for admin approval.' }
@@ -391,12 +406,17 @@ export async function buyMembershipPlanAction(planId: string): Promise<ApiRespon
         },
       })
 
+      // Get current pending count
+      const pendingCount = await tx.membershipUpgradeRequest.count({
+        where: { status: 'PENDING' }
+      })
+
       // Send notification
       await tx.notification.create({
         data: {
           userId: session.id,
-          title: 'Upgrade Request Submitted 👑',
-          message: `Your request to upgrade to ${plan.name} has been submitted for admin approval. ₹${plan.price.toLocaleString('en-IN')} has been put on hold.`,
+          title: `Upgrade Request Submitted 👑 (Pending: ${pendingCount})`,
+          message: `Your request to upgrade to ${plan.name} has been submitted for admin approval. ₹${plan.price.toLocaleString('en-IN')} has been put on hold. Total pending upgrades: ${pendingCount}.`,
           type: 'INFO',
         },
       })

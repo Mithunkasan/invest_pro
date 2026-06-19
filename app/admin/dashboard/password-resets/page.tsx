@@ -11,9 +11,12 @@ export default async function PasswordResetsPage() {
   const admin = await getAdminSession()
   if (!admin) redirect('/admin/login')
 
-  const requests = await prisma.passwordResetRequest.findMany({
-    orderBy: { createdAt: 'desc' }
-  })
+  const [requests, pendingCount] = await Promise.all([
+    prisma.passwordResetRequest.findMany({
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.passwordResetRequest.count({ where: { status: 'PENDING' } })
+  ])
 
-  return <PasswordResetClient initialRequests={requests} />
+  return <PasswordResetClient initialRequests={requests} pendingCount={pendingCount} />
 }

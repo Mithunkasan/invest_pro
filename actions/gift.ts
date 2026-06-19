@@ -52,6 +52,21 @@ export async function submitGiftAction(
       return { success: false, message: 'You must activate a membership plan before applying for a welcome gift.' }
     }
 
+    // 1d. Check if a gift deposit is required and has been approved
+    const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
+    const requiredGiftDeposit = settings?.giftDepositAmount ?? 0
+    if (requiredGiftDeposit > 0) {
+      const approvedGiftDeposit = await prisma.giftDeposit.findFirst({
+        where: { userId: session.id, status: 'APPROVED' }
+      })
+      if (!approvedGiftDeposit) {
+        return {
+          success: false,
+          message: `A gift deposit of ₹${requiredGiftDeposit.toLocaleString('en-IN')} is required and must be approved by admin before you can submit a shipping address.`
+        }
+      }
+    }
+
     // 2. Validate details with Zod
     const parsed = giftSchema.safeParse(data)
     if (!parsed.success) {
@@ -185,12 +200,19 @@ export async function submitGiftAction(
       }
     }
 
-    // 4. Create an in-app notification
+    // 4. Get current pending welcome gifts and gift deposits count
+    const [pendingGifts, pendingGiftDeps] = await Promise.all([
+      prisma.gift.count({ where: { deliveryStatus: 'PENDING' } }),
+      prisma.giftDeposit.count({ where: { status: 'PENDING' } }),
+    ])
+    const totalGiftsPending = pendingGifts + pendingGiftDeps
+
+    // Create an in-app notification
     await prisma.notification.create({
       data: {
         userId: session.id,
-        title: 'Gift Address Received! 🎁',
-        message: 'Your address details for the Premium Welcome Gift have been saved. We are preparing it for shipment.',
+        title: `Gift Address Received! 🎁 (Pending: ${totalGiftsPending})`,
+        message: `Your address details for the Premium Welcome Gift have been saved. Total pending gifts/deposits: ${totalGiftsPending}.`,
         type: 'SUCCESS'
       }
     })

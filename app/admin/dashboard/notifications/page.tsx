@@ -3,9 +3,10 @@ import { Send, CheckCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AdminNotificationsTable } from '@/components/admin/AdminTables'
 import { markAllAdminNotificationsAsReadAction } from '@/actions/admin'
+import { getAdminPendingCounts } from '@/actions/adminCounts'
 
 export default async function AdminNotificationsPage() {
-  const [notifications, plans] = await Promise.all([
+  const [notifications, plans, pendingCounts] = await Promise.all([
     prisma.notification.findMany({
       include: {
         user: {
@@ -23,6 +24,7 @@ export default async function AdminNotificationsPage() {
     prisma.membershipPlan.findMany({
       orderBy: { price: 'asc' },
     }),
+    getAdminPendingCounts(),
   ])
 
   const unreadCount = notifications.filter((n) => !n.isRead).length
@@ -55,6 +57,7 @@ export default async function AdminNotificationsPage() {
         <AdminNotificationsTable 
           data={JSON.parse(JSON.stringify(notifications))} 
           plans={JSON.parse(JSON.stringify(plans))} 
+          pendingCounts={pendingCounts ?? undefined}
         />
       </div>
     </div>

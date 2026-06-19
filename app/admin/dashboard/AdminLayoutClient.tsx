@@ -11,28 +11,52 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { adminLogoutAction } from '@/actions/auth'
+import type { AdminPendingCounts } from '@/actions/adminCounts'
 
-const adminNavItems = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/dashboard/users', label: 'User Management', icon: Users },
-  { href: '/admin/dashboard/password-resets', label: 'Password Resets', icon: Key },
-  { href: '/admin/dashboard/tickets', label: 'Ticket Management', icon: MessageSquare },
-  { href: '/admin/dashboard/bonus', label: 'Admin Bonus', icon: Coins },
-  { href: '/admin/dashboard/tasks', label: 'Offline Tasks', icon: ClipboardList },
-  { href: '/admin/dashboard/deposits', label: 'Deposits', icon: ArrowDownToLine },
-  { href: '/admin/dashboard/withdrawals', label: 'Withdrawals', icon: ArrowUpFromLine },
-  { href: '/admin/dashboard/user-pay', label: 'User Pay Requests', icon: Send },
-  { href: '/admin/dashboard/memberships', label: 'Manage Membership', icon: Crown },
-  { href: '/admin/dashboard/gifts', label: 'Gifts Management', icon: Gift },
-  { href: '/admin/dashboard/kyc', label: 'KYC Management', icon: ShieldCheck },
-  { href: '/admin/dashboard/settings', label: 'System Settings', icon: Settings },
-  { href: '/admin/dashboard/wallet', label: 'Wallet Management', icon: Wallet },
-  { href: '/admin/dashboard/notifications', label: 'Notifications', icon: Bell },
-  { href: '/admin/dashboard/reports', label: 'Reports & Analytics', icon: BarChart3 },
-  { href: '/admin/dashboard/security', label: 'Security Logs', icon: Lock },
+// ── Nav items — badge key maps to AdminPendingCounts field ─────────────────────
+const adminNavItems: {
+  href: string
+  label: string
+  icon: React.ElementType
+  badgeKey?: keyof AdminPendingCounts
+}[] = [
+  { href: '/admin/dashboard',                  label: 'Dashboard',           icon: LayoutDashboard },
+  { href: '/admin/dashboard/users',             label: 'User Management',     icon: Users },
+  { href: '/admin/dashboard/password-resets',   label: 'Password Resets',     icon: Key,            badgeKey: 'passwordResets' },
+  { href: '/admin/dashboard/tickets',           label: 'Ticket Management',   icon: MessageSquare,  badgeKey: 'tickets' },
+  { href: '/admin/dashboard/bonus',             label: 'Admin Bonus',         icon: Coins },
+  { href: '/admin/dashboard/tasks',             label: 'Offline Tasks',       icon: ClipboardList },
+  { href: '/admin/dashboard/deposits',          label: 'Deposits',            icon: ArrowDownToLine, badgeKey: 'deposits' },
+  { href: '/admin/dashboard/withdrawals',       label: 'Withdrawals',         icon: ArrowUpFromLine, badgeKey: 'withdrawals' },
+  { href: '/admin/dashboard/user-pay',          label: 'User Pay Requests',   icon: Send,            badgeKey: 'userPay' },
+  { href: '/admin/dashboard/memberships',       label: 'Manage Membership',   icon: Crown,           badgeKey: 'memberships' },
+  { href: '/admin/dashboard/gifts',             label: 'Gifts Management',    icon: Gift,            badgeKey: 'gifts' },
+  { href: '/admin/dashboard/kyc',               label: 'KYC Management',      icon: ShieldCheck,     badgeKey: 'kyc' },
+  { href: '/admin/dashboard/settings',          label: 'System Settings',     icon: Settings },
+  { href: '/admin/dashboard/wallet',            label: 'Wallet Management',   icon: Wallet },
+  { href: '/admin/dashboard/notifications',     label: 'Notifications',       icon: Bell },
+  { href: '/admin/dashboard/reports',           label: 'Reports & Analytics', icon: BarChart3 },
+  { href: '/admin/dashboard/security',          label: 'Security Logs',       icon: Lock },
 ]
 
-function AdminSidebarContent({ onClose, unreadNotificationCount = 0 }: { onClose?: () => void; unreadNotificationCount?: number }) {
+function BadgePill({ count }: { count: number }) {
+  if (count <= 0) return null
+  return (
+    <span className="ml-auto min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-black px-1.5 rounded-full flex items-center justify-center shrink-0 tabular-nums">
+      {count > 99 ? '99+' : count}
+    </span>
+  )
+}
+
+function AdminSidebarContent({
+  onClose,
+  unreadNotificationCount = 0,
+  pendingCounts,
+}: {
+  onClose?: () => void
+  unreadNotificationCount?: number
+  pendingCounts?: AdminPendingCounts
+}) {
   const pathname = usePathname()
   return (
     <div className="flex flex-col h-full">
@@ -46,9 +70,18 @@ function AdminSidebarContent({ onClose, unreadNotificationCount = 0 }: { onClose
         </div>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto no-scrollbar">
-        {adminNavItems.map(({ href, label, icon: Icon }) => {
+        {adminNavItems.map(({ href, label, icon: Icon, badgeKey }) => {
           const isActive = href === '/admin/dashboard' ? pathname === href : pathname.startsWith(href)
           const isNotifications = label === 'Notifications'
+
+          // Resolve badge count
+          let badgeCount = 0
+          if (isNotifications) {
+            badgeCount = unreadNotificationCount
+          } else if (badgeKey && pendingCounts) {
+            badgeCount = pendingCounts[badgeKey] ?? 0
+          }
+
           return (
             <Link
               key={href}
@@ -58,12 +91,11 @@ function AdminSidebarContent({ onClose, unreadNotificationCount = 0 }: { onClose
             >
               <Icon className="w-4 h-4 shrink-0" />
               <span className="text-sm">{label}</span>
-              {isNotifications && unreadNotificationCount > 0 && (
-                <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
-                  {unreadNotificationCount}
-                </span>
+              {badgeCount > 0 ? (
+                <BadgePill count={badgeCount} />
+              ) : (
+                isActive && <ChevronRight className="ml-auto w-3 h-3 text-primary" />
               )}
-              {isActive && !isNotifications && <ChevronRight className="ml-auto w-3 h-3 text-primary" />}
             </Link>
           )
         })}
@@ -82,17 +114,23 @@ interface AdminLayoutClientProps {
   children: React.ReactNode
   admin: { name: string; email: string }
   unreadNotificationCount?: number
+  pendingCounts?: AdminPendingCounts
 }
 
-export function AdminLayoutClient({ children, admin, unreadNotificationCount = 0 }: AdminLayoutClientProps) {
+export function AdminLayoutClient({ children, admin, unreadNotificationCount = 0, pendingCounts }: AdminLayoutClientProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const initials = admin.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+
+  // Total pending across all sections for the header bell
+  const totalPending = pendingCounts
+    ? Object.values(pendingCounts).reduce((a, b) => a + b, 0)
+    : 0
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-sidebar h-screen sticky top-0 border-r border-sidebar-border">
-        <AdminSidebarContent unreadNotificationCount={unreadNotificationCount} />
+        <AdminSidebarContent unreadNotificationCount={unreadNotificationCount} pendingCounts={pendingCounts} />
       </aside>
 
       {/* Mobile Drawer */}
@@ -104,7 +142,7 @@ export function AdminLayoutClient({ children, admin, unreadNotificationCount = 0
               <div className="absolute top-4 right-4">
                 <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/60"><X className="w-4 h-4" /></button>
               </div>
-              <AdminSidebarContent onClose={() => setSidebarOpen(false)} unreadNotificationCount={unreadNotificationCount} />
+              <AdminSidebarContent onClose={() => setSidebarOpen(false)} unreadNotificationCount={unreadNotificationCount} pendingCounts={pendingCounts} />
             </motion.aside>
           </>
         )}

@@ -39,6 +39,21 @@ export async function createTicketAction(formData: FormData): Promise<ApiRespons
       }
     })
 
+    // Get current open tickets count
+    const pendingCount = await prisma.ticket.count({
+      where: { status: 'OPEN' }
+    })
+
+    // Create Notification
+    await prisma.notification.create({
+      data: {
+        userId: session.id,
+        title: `New Support Ticket (Pending: ${pendingCount})`,
+        message: `Support ticket "${subject}" has been raised. Total open tickets: ${pendingCount}.`,
+        type: 'INFO',
+      },
+    })
+
     revalidatePath('/dashboard/tickets')
     return { success: true, message: 'Ticket raised successfully' }
   } catch (error) {

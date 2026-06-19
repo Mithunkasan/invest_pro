@@ -47,6 +47,7 @@ model User {
   kyc           KYC?
   notifications Notification[]
   gifts         Gift[]
+  giftDeposits  GiftDeposit[]
   assignedTasks OfflineTask[]
   tickets       Ticket[]
   ticketNotifications TicketNotification[]
@@ -451,6 +452,7 @@ model SystemSettings {
   heroActive              String   @default("8,932+")
   heroPaid                String   @default("₹12.45 Cr+")
   heroRate                String   @default("99.8%")
+  giftDepositAmount        Float    @default(0)
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 }
@@ -516,6 +518,34 @@ model Gift {
 
   @@index([userId])
   @@index([deliveryStatus])
+}
+
+// ============================================================
+// GIFT DEPOSIT MODEL
+// ============================================================
+model GiftDeposit {
+  id           String            @id @default(cuid())
+  userId       String
+  amount       Float
+  proofUrl     String?           // Uploaded payment screenshot
+  utrNumber    String?           // UTR/transaction reference
+  status       GiftDepositStatus @default(PENDING)
+  remarks      String?
+  approvedById String?
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum GiftDepositStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 // ============================================================

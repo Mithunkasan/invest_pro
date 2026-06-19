@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Eye, Truck, Package, CheckCircle, Clock, X,
-  Phone, Mail, User, MapPin, ChevronRight
+  Phone, Mail, User, MapPin, ChevronRight, AlertCircle, DollarSign
 } from 'lucide-react'
 import { updateGiftTrackingAction, acceptGiftAction } from '@/actions/adminGift'
+import { approveGiftDepositAction, rejectGiftDepositAction } from '@/actions/adminGiftDeposit'
 import { formatDate } from '@/utils/formatters'
 import { ModalPortal } from '@/components/common/ModalPortal'
 
@@ -42,6 +43,23 @@ interface GiftAdminItem {
 
 interface GiftsAdminClientProps {
   gifts: GiftAdminItem[]
+  giftDeposits: GiftDepositAdminItem[]
+}
+
+interface GiftDepositAdminItem {
+  id: string
+  userId: string
+  amount: number
+  proofUrl: string | null
+  utrNumber: string | null
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  remarks: string | null
+  createdAt: string
+  user: {
+    name: string
+    email: string
+    phone: string | null
+  }
 }
 
 // ── ShipmentDrawer ─────────────────────────────────────────────────────────────
@@ -408,12 +426,16 @@ function ShipmentDrawer({ gift, onClose, onUpdated }: ShipmentDrawerProps) {
 
 // ── GiftsAdminClient ───────────────────────────────────────────────────────────
 
-export function GiftsAdminClient({ gifts: initialGifts }: GiftsAdminClientProps) {
+export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGiftDeposits }: GiftsAdminClientProps) {
   const [gifts, setGifts] = useState<GiftAdminItem[]>(initialGifts)
+  const [giftDeposits, setGiftDeposits] = useState<GiftDepositAdminItem[]>(initialGiftDeposits)
+  const [activeTab, setActiveTab] = useState<'gifts' | 'deposits'>('gifts')
+  const pendingDepositsCount = giftDeposits.filter(d => d.status === 'PENDING').length
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [selectedGift, setSelectedGift] = useState<GiftAdminItem | null>(null)
   const [acceptingIds, setAcceptingIds] = useState<Record<string, boolean>>({})
+  const [depositActionIds, setDepositActionIds] = useState<Record<string, boolean>>({})
 
   // ── Stats ──
   const totalCount = gifts.length
@@ -461,6 +483,27 @@ export function GiftsAdminClient({ gifts: initialGifts }: GiftsAdminClientProps)
     }
   }
 
+  // ── Deposit callbacks ──
+  const handleDepositAction = async (id: string, action: 'approve' | 'reject') => {
+    setDepositActionIds((prev) => ({ ...prev, [id]: true }))
+    try {
+      const res = action === 'approve'
+        ? await approveGiftDepositAction(id)
+        : await rejectGiftDepositAction(id)
+      if (res.success) {
+        setGiftDeposits((prev) =>
+          prev.map((d) => d.id === id ? { ...d, status: action === 'approve' ? 'APPROVED' : 'REJECTED' } : d)
+        )
+      } else {
+        alert(res.message || `Failed to ${action} deposit`)
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setDepositActionIds((prev) => ({ ...prev, [id]: false }))
+    }
+  }
+
   // ── Drawer callbacks ──
   const handleGiftUpdated = (id: string, patch: Partial<GiftAdminItem>) => {
     setGifts((prev) => prev.map((g) => (g.id === id ? { ...g, ...patch } : g)))
@@ -483,6 +526,26 @@ export function GiftsAdminClient({ gifts: initialGifts }: GiftsAdminClientProps)
   return (
     <div className="space-y-6">
 
+      {/* ── Tab switcher ── */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setActiveTab('gifts')}
+          className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${activeTab === 'gifts' ? 'bg-gradient-to-r from-primary to-blue-500 text-white shadow-md' : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'}`}
+        >
+          🎁 Gift Requests
+        </button>
+        <button
+          onClick={() => setActiveTab('deposits')}
+          className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer relative ${activeTab === 'deposits' ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md' : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'}`}
+        >
+          💰 Gift Deposits
+          {pendingDepositsCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center">{pendingDepositsCount}</span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'gifts' && (<>
       {/* ── Stats cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
@@ -618,6 +681,89 @@ export function GiftsAdminClient({ gifts: initialGifts }: GiftsAdminClientProps)
         onClose={() => setSelectedGift(null)}
         onUpdated={handleGiftUpdated}
       />
+      </>)}
+
+      {activeTab === 'deposits' && (
+        <div className="premium-card overflow-hidden">
+          {giftDeposits.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground text-xs font-semibold">
+              No gift deposit requests found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs font-semibold">
+                <thead>
+                  <tr className="border-b border-white/5 text-muted-foreground text-[10px] uppercase tracking-wider bg-white/5">
+                    <th className="px-6 py-4">Member</th>
+                    <th className="px-6 py-4">Amount</th>
+                    <th className="px-6 py-4">UTR / Proof</th>
+                    <th className="px-6 py-4">Submitted</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {giftDeposits.map((dep) => {
+                    const statusColor = dep.status === 'APPROVED'
+                      ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                      : dep.status === 'REJECTED'
+                      ? 'text-rose-400 bg-rose-500/10 border-rose-500/20'
+                      : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                    return (
+                      <tr key={dep.id} className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4">
+                          <p className="font-extrabold text-white">{dep.user.name}</p>
+                          <p className="text-[10px] text-muted-foreground tracking-tight select-all">{dep.user.email}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-indigo-300 font-black text-sm">₹{dep.amount.toLocaleString('en-IN')}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {dep.utrNumber && <p className="font-mono text-white">{dep.utrNumber}</p>}
+                          {dep.proofUrl && (
+                            <a href={dep.proofUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline text-[10px]">View Proof</a>
+                          )}
+                          {!dep.utrNumber && !dep.proofUrl && <span className="text-white/30">—</span>}
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground">{formatDate(dep.createdAt)}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-full border text-[9px] uppercase font-black ${statusColor}`}>
+                            {dep.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {dep.status === 'PENDING' ? (
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => handleDepositAction(dep.id, 'approve')}
+                                disabled={depositActionIds[dep.id]}
+                                className="py-1.5 px-3 rounded-lg bg-emerald-600/20 border border-emerald-500/30 hover:bg-emerald-600/30 text-emerald-400 font-bold text-[10px] inline-flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                {depositActionIds[dep.id] ? '...' : 'Approve'}
+                              </button>
+                              <button
+                                onClick={() => handleDepositAction(dep.id, 'reject')}
+                                disabled={depositActionIds[dep.id]}
+                                className="py-1.5 px-3 rounded-lg bg-rose-600/20 border border-rose-500/30 hover:bg-rose-600/30 text-rose-400 font-bold text-[10px] inline-flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-white/30 text-[10px]">Processed</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
