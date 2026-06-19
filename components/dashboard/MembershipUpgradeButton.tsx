@@ -11,7 +11,7 @@ interface UpgradeButtonProps {
   planId: string
   planName: string
   price: number
-  mainBalance: number
+  depositBalance: number
   isActivePlan: boolean
   color: string
   hasPendingRequest?: boolean
@@ -19,10 +19,10 @@ interface UpgradeButtonProps {
 }
 
 export function MembershipUpgradeButton({ 
-  planId, 
+  planId,
   planName, 
   price, 
-  mainBalance, 
+  depositBalance, 
   isActivePlan, 
   color,
   hasPendingRequest,
@@ -35,10 +35,10 @@ export function MembershipUpgradeButton({
     if (isActivePlan) return
     if (isLowerOrEqual) return
     if (hasPendingRequest) return
-    if (mainBalance < price) {
+    if (depositBalance < price) {
       toast({
         title: 'Insufficient Balance',
-        description: 'Please deposit funds into your main wallet first.',
+        description: 'Please deposit funds into your Deposit Wallet first.',
         variant: 'destructive',
       })
       return
@@ -95,7 +95,7 @@ export function MembershipUpgradeButton({
     )
   }
 
-  if (mainBalance < price) {
+  if (depositBalance < price) {
     return (
       <div className="space-y-3">
         <Button disabled className="w-full bg-white/10 text-white/40 font-bold cursor-not-allowed border border-white/5 rounded-xl h-10.5">

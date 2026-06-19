@@ -55,10 +55,6 @@ export default async function UserMembershipPage() {
     redirect('/login')
   }
 
-  if (user.memberType === 'FREE') {
-    redirect('/dashboard/kyc')
-  }
-
   // Determine current active plan
   const currentPlan = user.membershipPlan || {
     id: 'free-fallback',
@@ -212,7 +208,7 @@ export default async function UserMembershipPage() {
                     </div>
                   </div>
 
-                  {/* Core Numeric Benefits (Yield & Referral Rates) */}
+                  {/* Core Numeric Benefits (Yield) */}
                   <div className="p-3.5 rounded-xl bg-brand-950/40 border border-brand-850 space-y-2.5 my-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground flex items-center gap-1">
@@ -220,26 +216,6 @@ export default async function UserMembershipPage() {
                         Yield Multiplier Bonus:
                       </span>
                       <span className="font-black text-amber-400">+{plan.depositBonus}% yield</span>
-                    </div>
-                    
-                    <div className="h-px bg-brand-850/60" />
-
-                    <div className="space-y-1.5">
-                      <span className="text-muted-foreground text-[10px] font-black uppercase tracking-wider block">Referral Rates:</span>
-                      <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
-                        <div className="bg-brand-900/50 border border-brand-800 rounded-lg p-1">
-                          <span className="text-purple-400 font-bold block">Level 1</span>
-                          <span className="font-extrabold text-white block mt-0.5">{plan.referralLevel1}%</span>
-                        </div>
-                        <div className="bg-brand-900/50 border border-brand-800 rounded-lg p-1">
-                          <span className="text-purple-300 font-bold block">Level 2</span>
-                          <span className="font-extrabold text-white block mt-0.5">{plan.referralLevel2}%</span>
-                        </div>
-                        <div className="bg-brand-900/50 border border-brand-800 rounded-lg p-1">
-                          <span className="text-purple-300 font-bold block">Level 3</span>
-                          <span className="font-extrabold text-white block mt-0.5">{plan.referralLevel3}%</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -250,7 +226,7 @@ export default async function UserMembershipPage() {
                         planId={plan.id}
                         planName={plan.name}
                         price={plan.price}
-                        mainBalance={wallet.mainBalance}
+                        depositBalance={wallet.depositBalance}
                         isActivePlan={isCurrent}
                         color={plan.color}
                         hasPendingRequest={!!pendingRequest}

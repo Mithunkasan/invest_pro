@@ -82,12 +82,12 @@ export function DashboardSidebar({
     const isFree = user?.memberType === 'FREE'
 
     if (isFree) {
-      // Free users can access games, wallet, membership/KYC upgrade, tasks, and profile.
-      baseItems = baseItems.filter((item) => 
-        item.label !== 'Deposit' && 
-        item.label !== 'Referral' &&
-        item.label !== 'Overview'
-      )
+      // KYC-approved FREE users: Overview, KYC, Profile, and Deposit
+      // If they have deposited, they can also see Membership to upgrade
+      const allowedLabels = ['Overview', 'KYC', 'Profile', 'Deposit']
+      if (hasApprovedDeposit) allowedLabels.push('Membership')
+
+      baseItems = baseItems.filter((item) => allowedLabels.includes(item.label))
     } else {
       baseItems = baseItems.filter((item) => item.label !== 'Game Section')
       // Premium users see the Gift Section
@@ -112,8 +112,12 @@ export function DashboardSidebar({
     let filteredItems = baseItems
     if (!isKycApproved) {
       filteredItems = baseItems.filter((item) => item.label === 'KYC' || item.label === 'Profile')
+    } else if (isFree) {
+      // KYC-approved FREE: already filtered above — use baseItems as-is
+      filteredItems = baseItems
     } else if (!isFullAccess) {
       filteredItems = baseItems.filter((item) =>
+        item.label === 'Overview' ||
         item.label === 'Deposit' ||
         item.label === 'Membership' ||
         item.label === 'Notifications' ||

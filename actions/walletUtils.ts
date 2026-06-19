@@ -4,7 +4,8 @@ import { prisma } from '@/lib/prisma'
 
 /**
  * Recalculates and updates the mainBalance of a user's wallet
- * to be the sum of: depositBalance + rewardBalance + referralBalance + levelBalance + shareBalance + bonusBalance
+ * to be the sum of: rewardBalance + referralBalance + levelBalance + shareBalance + bonusBalance
+ * NOTE: depositBalance is intentionally excluded from mainBalance.
  */
 export async function syncWalletMainBalance(tx: any, userId: string) {
   const wallet = await tx.wallet.findUnique({
@@ -12,7 +13,7 @@ export async function syncWalletMainBalance(tx: any, userId: string) {
   })
   if (!wallet) return
 
-  const newMainBalance = 
+  const newMainBalance =
     (wallet.rewardBalance || 0) +
     (wallet.referralBalance || 0) +
     (wallet.levelBalance || 0) +
@@ -26,9 +27,25 @@ export async function syncWalletMainBalance(tx: any, userId: string) {
 }
 
 /**
- * Deducts a given amount from the user's sub-wallets in priority order,
+ * Increments the totalEarned (Total Wallet) for a user.
+ * This is a permanent, cumulative counter that tracks all lifetime earnings.
+ * It is NEVER decremented — not even on withdrawals.
+ * Only earnings count: reward, referral, level, share, bonus.
+ * Deposit funds are NOT earnings and must NOT be included.
+ */
+export async function incrementTotalEarned(tx: any, userId: string, amount: number) {
+  if (!amount || amount <= 0) return
+  await tx.wallet.update({
+    where: { userId },
+    data: { totalEarned: { increment: amount } },
+  })
+}
+
+/**
+ * Deducts a given amount from the user's Main Wallet sub-wallets in priority order,
  * ensuring no sub-wallet goes negative.
- * Priority order: depositBalance, rewardBalance, referralBalance, levelBalance, shareBalance, bonusBalance
+ * Priority order: rewardBalance, referralBalance, levelBalance, shareBalance, bonusBalance
+ * NOTE: depositBalance is never touched here — it can only be used for membership activation.
  */
 export async function deductFromWallets(tx: any, userId: string, amountToDeduct: number) {
   const wallet = await tx.wallet.findUnique({
@@ -46,28 +63,28 @@ export async function deductFromWallets(tx: any, userId: string, amountToDeduct:
     remaining -= deduct
   }
 
-  // 3. Referral
+  // 2. Referral
   if (remaining > 0 && wallet.referralBalance > 0) {
     const deduct = Math.min(remaining, wallet.referralBalance)
     updates.referralBalance = { decrement: deduct }
     remaining -= deduct
   }
 
-  // 4. Level
+  // 3. Level
   if (remaining > 0 && wallet.levelBalance > 0) {
     const deduct = Math.min(remaining, wallet.levelBalance)
     updates.levelBalance = { decrement: deduct }
     remaining -= deduct
   }
 
-  // 5. Share
+  // 4. Share
   if (remaining > 0 && wallet.shareBalance > 0) {
     const deduct = Math.min(remaining, wallet.shareBalance)
     updates.shareBalance = { decrement: deduct }
     remaining -= deduct
   }
 
-  // 6. Bonus
+  // 5. Bonus
   if (remaining > 0 && wallet.bonusBalance > 0) {
     const deduct = Math.min(remaining, wallet.bonusBalance)
     updates.bonusBalance = { decrement: deduct }
@@ -90,7 +107,7 @@ export async function deductFromWallets(tx: any, userId: string, amountToDeduct:
     where: { userId }
   })
   if (updatedWallet) {
-    const newMainBalance = 
+    const newMainBalance =
       (updatedWallet.rewardBalance || 0) +
       (updatedWallet.referralBalance || 0) +
       (updatedWallet.levelBalance || 0) +

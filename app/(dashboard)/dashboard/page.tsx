@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { DashboardOverview } from '@/components/dashboard/DashboardOverview'
-import { FreeDashboardOverview } from '@/components/dashboard/FreeDashboardOverview'
+import { KycApprovedFreeDashboard } from '@/components/dashboard/KycApprovedFreeDashboard'
 
 export const metadata: Metadata = {
   title: 'Dashboard — InvestPro',
@@ -185,12 +185,12 @@ export default async function DashboardPage() {
     totalBonusEarned,
   }
 
+  // KYC-approved FREE users: show simple Free Membership overview (Main Wallet + status)
   if (dbUser?.memberType === 'FREE') {
     return (
-      <FreeDashboardOverview
-        user={session}
-        stats={stats}
-        adminBonuses={adminBonuses}
+      <KycApprovedFreeDashboard
+        userName={session.name}
+        mainBalance={dbWallet?.mainBalance || 0}
       />
     )
   }
