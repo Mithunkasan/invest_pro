@@ -31,18 +31,41 @@ export default async function AdminGiftsPage() {
     }
   })
 
+  // Fetch all gift deposit requests
+  const giftDeposits = await prisma.giftDeposit.findMany({
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+          phone: true,
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  // Fetch pending counts
+  const [pendingGifts, pendingGiftDeps] = await Promise.all([
+    prisma.gift.count({ where: { deliveryStatus: 'PENDING' } }),
+    prisma.giftDeposit.count({ where: { status: 'PENDING' } }),
+  ])
+  const totalPending = pendingGifts + pendingGiftDeps
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-white flex items-center gap-2">
-          🎁 Premium Welcome Gifts Portal
+          🎁 Premium Welcome Gifts Portal ({totalPending})
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
           Review premium member addresses, configure dispatch courier details, and manage parcel delivery statuses.
         </p>
       </div>
 
-      <GiftsAdminClient gifts={JSON.parse(JSON.stringify(gifts))} />
+      <GiftsAdminClient gifts={JSON.parse(JSON.stringify(gifts))} giftDeposits={JSON.parse(JSON.stringify(giftDeposits))} />
     </div>
   )
 }

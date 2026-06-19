@@ -71,6 +71,18 @@ export default async function GiftPage() {
     )
   }
 
+  // Fetch system settings to get the required gift deposit amount
+  const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
+  const requiredGiftDepositAmount = settings?.giftDepositAmount ?? 0
+
+  // Fetch user's latest gift deposit (if any)
+  const latestGiftDeposit = requiredGiftDepositAmount > 0
+    ? await prisma.giftDeposit.findFirst({
+        where: { userId: session.id },
+        orderBy: { createdAt: 'desc' }
+      })
+    : null
+
   // Fetch the latest submitted gift details (to display status)
   const latestGift = await prisma.gift.findFirst({
     where: { userId: session.id },
@@ -101,6 +113,8 @@ export default async function GiftPage() {
         gift={latestGift ? JSON.parse(JSON.stringify(latestGift)) : null} 
         giftCount={giftCount}
         walletBalance={walletBalance}
+        requiredGiftDepositAmount={requiredGiftDepositAmount}
+        giftDeposit={latestGiftDeposit ? JSON.parse(JSON.stringify(latestGiftDeposit)) : null}
       />
     </div>
   )

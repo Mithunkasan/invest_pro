@@ -48,6 +48,7 @@ interface SettingsFormProps {
     withdrawalDeductionPercent?: number
     userPayDeductionPercent?: number
     basicDailyYieldPercent?: number
+    giftDepositAmount?: number
   }
 }
 
@@ -69,6 +70,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
     heroActive: initialSettings.heroActive || '8,932+',
     heroPaid: initialSettings.heroPaid || '₹12.45 Cr+',
     heroRate: initialSettings.heroRate || '99.8%',
+    giftDepositAmount: initialSettings.giftDepositAmount ?? 0,
   })
 
   // Initialize referral levels
@@ -504,6 +506,31 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
               <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
             </div>
             <p className="text-[11px] text-muted-foreground">The percentage dynamically deducted from Send Money transfers (e.g. 5%). Set to 0 for no deduction.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section: Gift Deposit Settings ────────────────────── */}
+      <div className="premium-card p-6 space-y-6">
+        <h2 className="text-lg font-bold border-b pb-3 border-muted/50 text-white/90">Gift Deposit Settings</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          <div className="space-y-2">
+            <Label htmlFor="giftDepositAmount" className="text-sm font-semibold">Required Gift Deposit Amount (₹)</Label>
+            <div className="relative flex items-center">
+              <Input
+                id="giftDepositAmount"
+                name="giftDepositAmount"
+                type="number"
+                step="1"
+                min="0"
+                value={settings.giftDepositAmount}
+                onChange={handleChange}
+                disabled={loading}
+                className="pl-8 bg-background/50 font-medium text-white"
+              />
+              <span className="absolute left-3 text-sm text-muted-foreground font-bold pointer-events-none">₹</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Amount users must deposit and get admin approval before they can submit a gift shipping address. Set to 0 to disable the requirement.</p>
           </div>
         </div>
       </div>

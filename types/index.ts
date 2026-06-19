@@ -199,6 +199,9 @@ export interface SystemSettings {
   heroPaid: string
   heroRate: string
   basicDailyYieldPercent: number
+  withdrawalDeductionPercent: number
+  userPayDeductionPercent: number
+  giftDepositAmount: number
   createdAt: Date
   updatedAt: Date
 }

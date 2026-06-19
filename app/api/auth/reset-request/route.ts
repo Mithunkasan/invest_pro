@@ -30,6 +30,21 @@ export async function POST(req: Request) {
       data: { email },
     })
 
+    // Get current pending count
+    const pendingCount = await prisma.passwordResetRequest.count({
+      where: { status: 'PENDING' }
+    })
+
+    // Create Notification
+    await prisma.notification.create({
+      data: {
+        userId: user.id,
+        title: `Password Reset Request (Pending: ${pendingCount})`,
+        message: `A password reset request has been initiated for ${email}. Total pending resets: ${pendingCount}.`,
+        type: 'WARNING',
+      }
+    })
+
     return NextResponse.json({ success: true, message: 'Password reset request sent to admin.' })
   } catch (error) {
     console.error('Error creating password reset request:', error)

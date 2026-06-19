@@ -823,7 +823,15 @@ export function WalletsTable({ data }: TableProps) {
   )
 }
 
-export function AdminNotificationsTable({ data, plans = [] }: { data: any[]; plans?: any[] }) {
+export function AdminNotificationsTable({ 
+  data, 
+  plans = [], 
+  pendingCounts 
+}: { 
+  data: any[]; 
+  plans?: any[]; 
+  pendingCounts?: any; 
+}) {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [filterMembership, setFilterMembership] = useState('ALL')
@@ -873,14 +881,43 @@ export function AdminNotificationsTable({ data, plans = [] }: { data: any[]; pla
         </span>
       </div>
     )},
-    { key: 'title', label: 'Title', render: (v: any, row: any) => (
-      <span className="font-bold flex items-center gap-1.5">
-        {String(v)}
-        {!row.isRead && (
-          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0" title="Unread" />
-        )}
-      </span>
-    ) },
+    { key: 'title', label: 'Title', render: (v: any, row: any) => {
+      const titleStr = String(v)
+      let countToShow: number | undefined = undefined
+
+      if (pendingCounts) {
+        const lowerTitle = titleStr.toLowerCase()
+        if (lowerTitle.includes('deposit')) {
+          countToShow = pendingCounts.deposits
+        } else if (lowerTitle.includes('withdrawal')) {
+          countToShow = pendingCounts.withdrawals
+        } else if (lowerTitle.includes('kyc') || lowerTitle.includes('document')) {
+          countToShow = pendingCounts.kyc
+        } else if (lowerTitle.includes('gift')) {
+          countToShow = pendingCounts.gifts
+        } else if (lowerTitle.includes('upgrade') || lowerTitle.includes('membership')) {
+          countToShow = pendingCounts.memberships
+        } else if (lowerTitle.includes('ticket')) {
+          countToShow = pendingCounts.tickets
+        } else if (lowerTitle.includes('password')) {
+          countToShow = pendingCounts.passwordResets
+        }
+      }
+
+      return (
+        <span className="font-bold flex items-center gap-1.5 flex-wrap">
+          {titleStr}
+          {countToShow !== undefined && countToShow > 0 && (
+            <span className="bg-red-500/10 text-red-500 text-[10px] font-black px-1.5 py-0.5 rounded border border-red-500/25 shrink-0">
+              Pending: {countToShow}
+            </span>
+          )}
+          {!row.isRead && (
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0" title="Unread" />
+          )}
+        </span>
+      )
+    } },
     { key: 'message', label: 'Message', render: (v: any) => <p className="text-xs max-w-xs truncate">{String(v)}</p> },
     { key: 'type', label: 'Type', render: (v: any) => <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${v === 'SUCCESS' ? 'bg-green-500/10 text-green-500' : v === 'ERROR' ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-500'}`}>{String(v)}</span> },
     { key: 'createdAt', label: 'Sent', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },

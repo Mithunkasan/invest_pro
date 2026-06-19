@@ -665,6 +665,7 @@ export async function getSystemSettings(): Promise<any> {
           heroActive: '8,932+',
           heroPaid: '₹12.45 Cr+',
           heroRate: '99.8%',
+          giftDepositAmount: 0,
         }
       })
     }
@@ -724,6 +725,7 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         heroActive: String(data.heroActive),
         heroPaid: String(data.heroPaid),
         heroRate: String(data.heroRate),
+        giftDepositAmount: Number(data.giftDepositAmount ?? 0),
       },
       create: {
         id: 'default',
@@ -753,6 +755,7 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
         heroActive: String(data.heroActive),
         heroPaid: String(data.heroPaid),
         heroRate: String(data.heroRate),
+        giftDepositAmount: Number(data.giftDepositAmount ?? 0),
       }
     })
 

@@ -59,11 +59,16 @@ export async function requestWithdrawalAction(
     })
   })
 
+  // Get current pending count
+  const pendingCount = await prisma.withdrawal.count({
+    where: { status: 'PENDING' }
+  })
+
   await prisma.notification.create({
     data: {
       userId: session.id,
-      title: 'Withdrawal Request Submitted',
-      message: `Your withdrawal of ₹${amount.toLocaleString('en-IN')} (Net: ₹${netAmount.toLocaleString('en-IN')}) is being processed.`,
+      title: `Withdrawal Request Submitted (Pending: ${pendingCount})`,
+      message: `Your withdrawal of ₹${amount.toLocaleString('en-IN')} (Net: ₹${netAmount.toLocaleString('en-IN')}) is being processed. Total pending withdrawals: ${pendingCount}.`,
       type: 'INFO',
     },
   })

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { getStatesAction, getDistrictsAction, getCitiesAction } from '@/actions/locations'
 import { submitGiftAction } from '@/actions/gift'
+import { submitGiftDepositAction } from '@/actions/giftDeposit'
 import { formatDate } from '@/utils/formatters'
 
 interface GiftFormClientProps {
@@ -34,14 +35,33 @@ interface GiftFormClientProps {
   } | null
   giftCount: number
   walletBalance: number
+  requiredGiftDepositAmount: number
+  giftDeposit: {
+    id: string
+    amount: number
+    proofUrl: string | null
+    utrNumber: string | null
+    status: 'PENDING' | 'APPROVED' | 'REJECTED'
+    remarks: string | null
+    createdAt: string
+  } | null
 }
 
-export function GiftFormClient({ gift: initialGift, giftCount, walletBalance }: GiftFormClientProps) {
+export function GiftFormClient({ gift: initialGift, giftCount, walletBalance, requiredGiftDepositAmount, giftDeposit: initialGiftDeposit }: GiftFormClientProps) {
   const [gift, setGift] = useState(initialGift)
+  const [giftDeposit, setGiftDeposit] = useState(initialGiftDeposit)
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Gift Deposit Step state
+  const [depositLoading, setDepositLoading] = useState(false)
+  const [depositError, setDepositError] = useState('')
+  const [depositSuccess, setDepositSuccess] = useState('')
+  const [depositAmount] = useState(requiredGiftDepositAmount.toString())
+  const [depositUtr, setDepositUtr] = useState('')
+  const [depositProofUrl, setDepositProofUrl] = useState('')
 
   // Form Fields
   const [formData, setFormData] = useState({
@@ -174,6 +194,35 @@ export function GiftFormClient({ gift: initialGift, giftCount, walletBalance }: 
       city: cityName,
       pinCode: cityObj?.pinCode || ''
     }))
+  }
+
+  const handleDepositSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setDepositLoading(true)
+    setDepositError('')
+    setDepositSuccess('')
+
+    const res = await submitGiftDepositAction({
+      amount: Number(depositAmount),
+      utrNumber: depositUtr || undefined,
+      proofUrl: depositProofUrl || undefined,
+    })
+
+    if (res.success) {
+      setDepositSuccess(res.message)
+      setGiftDeposit({
+        id: '',
+        amount: Number(depositAmount),
+        proofUrl: depositProofUrl || null,
+        utrNumber: depositUtr || null,
+        status: 'PENDING',
+        remarks: null,
+        createdAt: new Date().toISOString()
+      })
+    } else {
+      setDepositError(res.message)
+    }
+    setDepositLoading(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -453,10 +502,179 @@ export function GiftFormClient({ gift: initialGift, giftCount, walletBalance }: 
     )
   }
 
+  // --- RENDER GIFT DEPOSIT STEP (Step 1, if required and not yet approved) ---
+  if (requiredGiftDepositAmount > 0 && (!giftDeposit || giftDeposit.status === 'REJECTED')) {
+    return (
+      <div className="max-w-2xl mx-auto premium-card p-6 md:p-8 space-y-6">
+        {/* Step indicator */}
+        <div className="flex items-center gap-4 border-b border-white/5 pb-4">
+          <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-black text-sm shrink-0">1</div>
+          <div>
+            <h2 className="text-lg font-black text-white">Gift Deposit</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Complete this deposit step first to unlock the shipping address form.</p>
+          </div>
+        </div>
+
+        {/* Deposit amount info */}
+        <div className="rounded-2xl bg-indigo-500/10 border border-indigo-500/20 p-5 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">💰</span>
+            <span className="text-white font-extrabold text-sm">Required Deposit Amount</span>
+          </div>
+          <p className="text-3xl font-black text-indigo-300">₹{requiredGiftDepositAmount.toLocaleString('en-IN')}</p>
+          <p className="text-xs text-white/60 leading-relaxed">
+            Please deposit the above amount via UPI or Bank Transfer to our official account and submit the payment proof below.
+            Once verified by our admin, you will be able to proceed to Step 2 (Shipping Address).
+          </p>
+        </div>
+
+        {giftDeposit?.status === 'REJECTED' && (
+          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <span className="block text-white font-extrabold">Previous Deposit Rejected</span>
+              {giftDeposit.remarks && <span className="block text-white/70 mt-1">Reason: {giftDeposit.remarks}</span>}
+              <span className="block text-white/60 mt-1">Please submit a new deposit request.</span>
+            </div>
+          </div>
+        )}
+
+        {depositError && (
+          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <span>{depositError}</span>
+          </div>
+        )}
+
+        {depositSuccess && (
+          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-2">
+            <Check className="w-5 h-5 shrink-0" />
+            <span>{depositSuccess}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleDepositSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-xs text-white/70 font-semibold block">Deposit Amount (₹)</label>
+            <input
+              type="number"
+              readOnly
+              value={depositAmount}
+              className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-indigo-300 placeholder:text-white/20 text-xs font-mono font-black focus:outline-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs text-white/70 font-semibold block">UTR / Transaction Reference Number <span className="text-white/40 font-normal">(optional)</span></label>
+            <input
+              type="text"
+              value={depositUtr}
+              onChange={(e) => setDepositUtr(e.target.value)}
+              placeholder="e.g. 123456789012"
+              className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/20 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs text-white/70 font-semibold block">Payment Screenshot URL <span className="text-white/40 font-normal">(optional)</span></label>
+            <input
+              type="url"
+              value={depositProofUrl}
+              onChange={(e) => setDepositProofUrl(e.target.value)}
+              placeholder="https://..."
+              className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/20 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+            />
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <button
+              type="submit"
+              disabled={depositLoading}
+              className="py-3 px-6 rounded-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/20 transition-all text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {depositLoading ? 'Submitting...' : `Submit Gift Deposit of ₹${requiredGiftDepositAmount.toLocaleString('en-IN')}`}
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
+      </div>
+    )
+  }
+
+  // If deposit required but pending approval, show waiting state
+  if (requiredGiftDepositAmount > 0 && giftDeposit?.status === 'PENDING') {
+    return (
+      <div className="max-w-2xl mx-auto premium-card p-6 md:p-8 space-y-6">
+        <div className="flex items-center gap-4 border-b border-white/5 pb-4">
+          <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-black text-sm shrink-0 animate-pulse">1</div>
+          <div>
+            <h2 className="text-lg font-black text-white">Gift Deposit — Pending Approval</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Your deposit is under review. Step 2 will unlock once approved.</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-amber-400" />
+            <span className="text-white font-extrabold text-sm">Awaiting Admin Verification</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <span className="text-white/40 block text-[10px] uppercase tracking-wider">Amount Submitted</span>
+              <span className="text-amber-300 font-black text-base">₹{giftDeposit.amount.toLocaleString('en-IN')}</span>
+            </div>
+            <div>
+              <span className="text-white/40 block text-[10px] uppercase tracking-wider">Submitted On</span>
+              <span className="text-white font-bold">{formatDate(giftDeposit.createdAt)}</span>
+            </div>
+            {giftDeposit.utrNumber && (
+              <div>
+                <span className="text-white/40 block text-[10px] uppercase tracking-wider">UTR Reference</span>
+                <span className="text-white font-mono font-bold">{giftDeposit.utrNumber}</span>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-white/50 leading-relaxed pt-2 border-t border-white/5">
+            Our admin team will verify your payment and approve it shortly. You will receive a notification once approved.
+          </p>
+        </div>
+
+        {/* Step 2 locked indicator */}
+        <div className="rounded-2xl bg-white/3 border border-white/5 p-5 flex items-center gap-4 opacity-50">
+          <div className="w-8 h-8 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white/40 font-black text-sm shrink-0">2</div>
+          <div>
+            <span className="text-white/50 font-extrabold text-sm block">Shipping Address</span>
+            <span className="text-white/30 text-xs">Unlocks after your gift deposit is approved</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // --- RENDER FORM UI (IF NOT SUBMITTED YET OR PREVIOUS DELIVERED) ---
   return (
-    <div className="max-w-3xl mx-auto premium-card p-6 md:p-8 space-y-6">
+    <div className="max-w-3xl mx-auto space-y-4">
+      {/* Step 2 indicator when deposit was required and approved */}
+      {requiredGiftDepositAmount > 0 && giftDeposit?.status === 'APPROVED' && (
+        <div className="premium-card p-4 flex items-center gap-3 border-emerald-500/20 bg-emerald-500/5">
+          <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+            <Check className="w-4 h-4 stroke-[3]" />
+          </div>
+          <div>
+            <span className="text-white font-extrabold text-sm block">Step 1 Complete — Gift Deposit Approved ✅</span>
+            <span className="text-white/50 text-xs">₹{giftDeposit.amount.toLocaleString('en-IN')} deposit approved. Now complete Step 2 below.</span>
+          </div>
+        </div>
+      )}
+
+    <div className="premium-card p-6 md:p-8 space-y-6">
       <div className="border-b border-white/5 pb-4">
+        {requiredGiftDepositAmount > 0 && (
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white font-black text-xs shrink-0">2</div>
+            <span className="text-xs text-indigo-400 font-bold uppercase tracking-wider">Step 2</span>
+          </div>
+        )}
         <h2 className="text-lg font-black text-white">Shipping Address Registration</h2>
         <p className="text-xs text-muted-foreground mt-0.5">Please provide accurate Indian postal shipping details to avoid courier dispatch rejection.</p>
       </div>
@@ -664,6 +882,7 @@ export function GiftFormClient({ gift: initialGift, giftCount, walletBalance }: 
           </button>
         </div>
       </form>
+    </div>
     </div>
   )
 }

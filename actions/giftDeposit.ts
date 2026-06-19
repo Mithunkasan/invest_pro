@@ -1,0 +1,117 @@
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { prisma } from '@/lib/prisma'
+import { getSession } from '@/lib/auth'
+import type { ApiResponse } from '@/types'
+
+export async function submitGiftDepositAction(data: {
+  amount: number
+  proofUrl?: string
+  utrNumber?: string
+}): Promise<ApiResponse> {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return { success: false, message: 'Unauthorized. Please login again.' }
+    }
+
+    // 1. Verify user is Premium member
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.id },
+      include: { membershipPlan: true }
+    })
+
+    if (!dbUser || dbUser.memberType !== 'PREMIUM') {
+      return { success: false, message: 'This feature is only available for Premium Members.' }
+    }
+
+    // 2. Check approved deposit
+    const approvedDeposit = await prisma.deposit.findFirst({
+      where: { userId: session.id, status: 'APPROVED' }
+    })
+    if (!approvedDeposit) {
+      return { success: false, message: 'You must make a deposit before applying for a welcome gift.' }
+    }
+
+    // 3. Check activated membership
+    const hasMembership =
+      (dbUser.membershipPlanId && dbUser.membershipPlan && dbUser.membershipPlan.price > 0) ||
+      (dbUser.basicMembershipActivatedAt && dbUser.basicMembershipAmount > 0)
+    if (!hasMembership) {
+      return { success: false, message: 'You must activate a membership plan before applying for a welcome gift.' }
+    }
+
+    // 4. Get required gift deposit amount from settings
+    const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
+    const required = settings?.giftDepositAmount ?? 0
+
+    if (required <= 0) {
+      return { success: false, message: 'No gift deposit is required at this time.' }
+    }
+
+    // 5. Validate submitted amount matches required
+    if (data.amount !== required) {
+      return {
+        success: false,
+        message: `The deposit amount must be exactly ₹${required.toLocaleString('en-IN')}.`
+      }
+    }
+
+    // 6. Check for an existing PENDING gift deposit (don't allow duplicates)
+    const existingPending = await prisma.giftDeposit.findFirst({
+      where: { userId: session.id, status: 'PENDING' }
+    })
+    if (existingPending) {
+      return {
+        success: false,
+        message: 'You already have a pending gift deposit request. Please wait for admin approval.'
+      }
+    }
+
+    // 7. Check if already approved
+    const existingApproved = await prisma.giftDeposit.findFirst({
+      where: { userId: session.id, status: 'APPROVED' }
+    })
+    if (existingApproved) {
+      return {
+        success: false,
+        message: 'Your gift deposit has already been approved. You can now fill in your shipping address.'
+      }
+    }
+
+    // 8. Create the gift deposit record
+    await prisma.giftDeposit.create({
+      data: {
+        userId: session.id,
+        amount: data.amount,
+        proofUrl: data.proofUrl || null,
+        utrNumber: data.utrNumber || null,
+        status: 'PENDING'
+      }
+    })
+
+    // Get current pending welcome gifts and gift deposits count
+    const [pendingGifts, pendingGiftDeps] = await Promise.all([
+      prisma.gift.count({ where: { deliveryStatus: 'PENDING' } }),
+      prisma.giftDeposit.count({ where: { status: 'PENDING' } }),
+    ])
+    const totalGiftsPending = pendingGifts + pendingGiftDeps
+
+    // 9. Notify user
+    await prisma.notification.create({
+      data: {
+        userId: session.id,
+        title: `Gift Deposit Submitted 🎁 (Pending: ${totalGiftsPending})`,
+        message: `Your gift deposit of ₹${data.amount.toLocaleString('en-IN')} has been submitted and is pending admin approval. Total pending gifts/deposits: ${totalGiftsPending}.`,
+        type: 'INFO'
+      }
+    })
+
+    revalidatePath('/dashboard/gift')
+    return { success: true, message: 'Gift deposit submitted successfully! Please wait for admin approval.' }
+  } catch (error: any) {
+    console.error('Error submitting gift deposit:', error)
+    return { success: false, message: error.message || 'An unexpected error occurred.' }
+  }
+}

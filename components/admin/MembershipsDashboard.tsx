@@ -23,13 +23,15 @@ export function MembershipsDashboard({ plans, users, upgradeRequests = [] }: Mem
   const premiumCount = users.filter(u => u.memberType === 'PREMIUM').length
   const totalSubscribers = basicCount + premiumCount
 
+  const pendingCount = upgradeRequests.filter(r => r.status === 'PENDING').length
+
   return (
     <div className="space-y-6">
       {/* Title Header */}
       <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
           <Crown className="w-6.5 h-6.5 text-amber-500" />
-          Membership Management
+          Membership Management ({pendingCount})
         </h1>
         <p className="text-sm text-muted-foreground">
           Create, edit, delete, and manage configurations for user membership tiers, pricing structures, and access levels.

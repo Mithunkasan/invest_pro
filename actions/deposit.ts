@@ -35,12 +35,17 @@ export async function submitDepositAction(
     },
   })
 
+  // Get current pending count
+  const pendingCount = await prisma.deposit.count({
+    where: { status: 'PENDING' }
+  })
+
   // Notification
   await prisma.notification.create({
     data: {
       userId: session.id,
-      title: 'Deposit Request Submitted',
-      message: `Your deposit of ₹${amount.toLocaleString('en-IN')} is under review.`,
+      title: `Deposit Request Submitted (Pending: ${pendingCount})`,
+      message: `Your deposit of ₹${amount.toLocaleString('en-IN')} is under review. Total pending deposits: ${pendingCount}.`,
       type: 'INFO',
     },
   })

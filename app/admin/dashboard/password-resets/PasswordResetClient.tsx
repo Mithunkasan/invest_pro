@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button'
 import { resolvePasswordResetRequestAction } from '@/actions/adminPasswordReset'
 import { CheckCircle2, Clock } from 'lucide-react'
 
-export default function PasswordResetClient({ initialRequests }: { initialRequests: any[] }) {
+export default function PasswordResetClient({ 
+  initialRequests,
+  pendingCount = 0
+}: { 
+  initialRequests: any[]
+  pendingCount?: number
+}) {
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -38,7 +44,7 @@ export default function PasswordResetClient({ initialRequests }: { initialReques
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Password Reset Requests</h1>
+        <h1 className="text-2xl font-bold">Password Reset Requests ({pendingCount})</h1>
         <p className="text-muted-foreground text-sm">Manage user password reset requests.</p>
       </div>
 
