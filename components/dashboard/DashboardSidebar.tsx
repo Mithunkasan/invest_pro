@@ -110,23 +110,30 @@ export function DashboardSidebar({
     const isFullAccess = user?.profileCompleted && (hasApprovedDeposit || user?.memberType === 'BASIC') && isMembershipActivated && user?.memberType !== 'FREE'
 
     let filteredItems = baseItems
-    if (!isKycApproved) {
-      filteredItems = baseItems.filter((item) => item.label === 'KYC' || item.label === 'Profile')
-    } else if (isFree) {
-      // KYC-approved FREE: already filtered above — use baseItems as-is
-      filteredItems = baseItems
-    } else if (!isFullAccess) {
-      filteredItems = baseItems.filter((item) =>
-        item.label === 'Overview' ||
-        item.label === 'Deposit' ||
-        item.label === 'Membership' ||
-        item.label === 'Notifications' ||
-        item.label === 'KYC' ||
-        item.label === 'Profile'
-      )
+    if (!user?.profileCompleted) {
+      filteredItems = baseItems.filter((item) => item.label === 'Profile')
     } else {
-      if (user?.isMembershipExpired) {
-        filteredItems = baseItems.filter((item) => item.label === 'Membership' || item.label === 'Withdraw')
+      const adminApproved = hasApprovedDeposit && isMembershipActivated
+
+      if (!adminApproved) {
+        if (isFree) {
+          filteredItems = baseItems.filter(item => item.label !== 'KYC')
+        } else {
+          const allowedLabelsStrict = ['Overview', 'Deposit', 'Gift Section', 'Membership', 'Withdraw', 'Profile']
+          filteredItems = baseItems.filter(item => allowedLabelsStrict.includes(item.label))
+        }
+      } else {
+        if (!isKycApproved) {
+          filteredItems = baseItems.filter((item) => item.label === 'KYC' || item.label === 'Profile')
+        } else if (isFree) {
+          filteredItems = baseItems
+        } else if (user?.isMembershipExpired) {
+          filteredItems = baseItems.filter((item) => item.label === 'Membership' || item.label === 'Withdraw')
+        } else if (!isFullAccess) {
+          filteredItems = baseItems.filter((item) =>
+            ['Overview', 'Deposit', 'Membership', 'Notifications', 'KYC', 'Profile'].includes(item.label)
+          )
+        }
       }
     }
 
