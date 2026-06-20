@@ -90,20 +90,22 @@ export function DashboardSidebar({
       baseItems = baseItems.filter((item) => allowedLabels.includes(item.label))
     } else {
       baseItems = baseItems.filter((item) => item.label !== 'Game Section')
-      // Premium users see the Gift Section
-      const membershipIndex = baseItems.findIndex((item) => item.label === 'Membership')
-      if (membershipIndex !== -1) {
-        baseItems.splice(membershipIndex + 1, 0, {
-          href: '/dashboard/gift',
-          label: 'Gift Section',
-          icon: Gift
-        })
-      } else {
-        baseItems.push({
-          href: '/dashboard/gift',
-          label: 'Gift Section',
-          icon: Gift
-        })
+      // Premium users see the Gift Section ONLY if membership is activated
+      if (isMembershipActivated) {
+        const membershipIndex = baseItems.findIndex((item) => item.label === 'Membership')
+        if (membershipIndex !== -1) {
+          baseItems.splice(membershipIndex + 1, 0, {
+            href: '/dashboard/gift',
+            label: 'Gift Section',
+            icon: Gift
+          })
+        } else {
+          baseItems.push({
+            href: '/dashboard/gift',
+            label: 'Gift Section',
+            icon: Gift
+          })
+        }
       }
     }
 
@@ -119,7 +121,8 @@ export function DashboardSidebar({
         if (isFree) {
           filteredItems = baseItems.filter(item => item.label !== 'KYC')
         } else {
-          const allowedLabelsStrict = ['Overview', 'Deposit', 'Gift Section', 'Membership', 'Withdraw', 'Profile']
+          const allowedLabelsStrict = ['Overview', 'Deposit', 'Membership', 'Withdraw', 'Profile']
+          if (isMembershipActivated) allowedLabelsStrict.push('Gift Section')
           filteredItems = baseItems.filter(item => allowedLabelsStrict.includes(item.label))
         }
       } else {
