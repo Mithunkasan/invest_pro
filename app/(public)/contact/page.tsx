@@ -20,7 +20,7 @@ export default function ContactPage() {
       '@type': 'ContactPoint',
       'telephone': '+91-98765-43210',
       'contactType': 'customer support',
-      'email': 'support@investpro.com',
+      'email': 'support@vrgalaxynetwork.com',
       'availableLanguage': 'en'
     }
   }
@@ -41,7 +41,7 @@ export default function ContactPage() {
           {/* Contact Info */}
           <div className="space-y-6">
             {[
-              { icon: Mail, label: 'Email', value: 'support@investpro.com', desc: 'We reply within 24 hours' },
+              { icon: Mail, label: 'Email', value: 'support@vrgalaxynetwork.com', desc: 'We reply within 24 hours' },
               { icon: Phone, label: 'Phone', value: '+91 98765 43210', desc: 'Mon-Sat, 9AM-6PM IST' },
               { icon: MapPin, label: 'Address', value: 'Chennai, Tamil Nadu, India', desc: '' },
               { icon: Clock, label: 'Support Hours', value: '24/7 Online Support', desc: 'Via email and chat' },

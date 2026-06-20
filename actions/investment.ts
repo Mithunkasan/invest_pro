@@ -6,7 +6,7 @@ import { getSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
 import { deductFromWallets } from './walletUtils'
 
-// ── Get Investment Plans ───────────────────────────────────────────────────────
+// ── Get Activation Plans ───────────────────────────────────────────────────────
 export const getInvestmentPlans = unstable_cache(
   async () => {
     return prisma.investmentPlan.findMany({
@@ -28,7 +28,7 @@ export async function createInvestmentAction(
 
   const plan = await prisma.investmentPlan.findUnique({ where: { id: planId } })
   if (!plan || plan.status !== 'ACTIVE') {
-    return { success: false, message: 'Investment plan not available' }
+    return { success: false, message: 'activation plan not available' }
   }
 
   if (amount < plan.minAmount || amount > plan.maxAmount) {
@@ -81,8 +81,8 @@ export async function createInvestmentAction(
   await prisma.notification.create({
     data: {
       userId: session.id,
-      title: 'Investment Active 🚀',
-      message: `Your ₹${amount.toLocaleString('en-IN')} investment in ${plan.name} is now active. Expected return: ₹${(amount * (plan.roiPercent / 100) * plan.durationDays).toLocaleString('en-IN')}`,
+      title: 'Activation Plan Active 🚀',
+      message: `Your ₹${amount.toLocaleString('en-IN')} activation plan in ${plan.name} is now active. Expected return: ₹${(amount * (plan.roiPercent / 100) * plan.durationDays).toLocaleString('en-IN')}`,
       type: 'SUCCESS',
     },
   })
@@ -90,7 +90,7 @@ export async function createInvestmentAction(
 
 
   revalidatePath('/dashboard/investments')
-  return { success: true, message: 'Investment created successfully!' }
+  return { success: true, message: 'Activation Plan created successfully!' }
 }
 
 // ── Get User Investments ──────────────────────────────────────────────────────

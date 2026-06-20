@@ -51,7 +51,7 @@ const testimonials = [
     profit: '₹75,000',
     invested: '₹1,00,000',
     rating: 5,
-    text: 'Best investment platform I have used. Transparent, reliable, and the returns are exactly as promised. Will continue investing.',
+    text: 'Best activation plan platform I have used. Transparent, reliable, and the returns are exactly as promised. Will continue investing.',
     initials: 'SM',
   },
   {
@@ -61,7 +61,7 @@ const testimonials = [
     profit: '₹27,000',
     invested: '₹30,000',
     rating: 5,
-    text: 'The referral program is amazing! I earn commission from my team and the main investment returns too. Double income!',
+    text: 'The referral program is amazing! I earn commission from my team and the main activation plan returns too. Double income!',
     initials: 'DK',
   },
 ]

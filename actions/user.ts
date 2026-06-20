@@ -131,7 +131,7 @@ export async function startInvestment(planId: string, amount: number): Promise<A
 
     if (!plan || plan.status !== 'ACTIVE') return { success: false, message: 'Plan not available' }
     if (amount < plan.minAmount || amount > plan.maxAmount) {
-      return { success: false, message: `Investment must be between ₹${plan.minAmount} and ₹${plan.maxAmount}` }
+      return { success: false, message: `Activation Plan must be between ₹${plan.minAmount} and ₹${plan.maxAmount}` }
     }
 
     if (!wallet || wallet.mainBalance < amount) {
@@ -161,7 +161,7 @@ export async function startInvestment(planId: string, amount: number): Promise<A
           type: 'INVESTMENT',
           amount,
           status: 'COMPLETED',
-          description: `Investment in ${plan.name}`,
+          description: `activation plan in ${plan.name}`,
           walletType: 'MAIN',
         },
       })

@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { getInvestmentPlans } from '@/actions/investment'
 
 export const metadata: Metadata = {
-  title: 'Investment Plans',
-  description: 'Explore our high-yield daily ROI investment options starting at ₹1,00,000 or less. Choose from Bronze, Silver, Gold, or Platinum plans with daily yields up to 3.0%.',
+  title: 'Activation Plans',
+  description: 'Explore our high-yield daily ROI activation plan options starting at ₹1,00,000 or less. Choose from Bronze, Silver, Gold, or Platinum plans with daily yields up to 3.0%.',
   alternates: { canonical: '/plans' },
 }
 
@@ -14,8 +14,8 @@ export default async function PlansPage() {
   const plansJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    'name': 'VR Galaxy Investment Plans',
-    'description': 'A list of high-yield investment plans offering daily ROI with clear entry limits.',
+    'name': 'VR Galaxy Activation Plans',
+    'description': 'A list of high-yield activation plans offering daily ROI with clear entry limits.',
     'url': `${baseUrl}/plans`,
     'numberOfItems': plans.length,
     'itemListElement': plans.map((plan: any, index: number) => ({
@@ -42,9 +42,9 @@ export default async function PlansPage() {
       />
       <div className="section-container">
         <div className="text-center mb-12">
-          <h1 className="text-4xl sm:text-5xl font-black mb-4">Investment Plans</h1>
+          <h1 className="text-4xl sm:text-5xl font-black mb-4">Activation Plans</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Choose a plan that matches your investment goals. All plans offer daily returns with transparent pricing.
+            Choose a plan that matches your activation plan goals. All plans offer daily returns with transparent pricing.
           </p>
         </div>
 
@@ -64,8 +64,8 @@ export default async function PlansPage() {
                 <div className="space-y-2 text-sm">
                   {[
                     ['Duration', `${plan.durationDays} Days`],
-                    ['Min Investment', `₹${plan.minAmount.toLocaleString('en-IN')}`],
-                    ['Max Investment', `₹${plan.maxAmount.toLocaleString('en-IN')}`],
+                    ['Min Activation Plan', `₹${plan.minAmount.toLocaleString('en-IN')}`],
+                    ['Max Activation Plan', `₹${plan.maxAmount.toLocaleString('en-IN')}`],
                     ['Total ROI', `${(plan.roiPercent * plan.durationDays).toFixed(0)}%`],
                   ].map(([k, v]: any) => (
                     <div key={k} className="flex justify-between border-b border-border pb-1">
@@ -92,7 +92,7 @@ export default async function PlansPage() {
         {/* ROI Calculator */}
         <div className="mt-16 premium-card p-8 text-center">
           <h2 className="text-2xl font-bold mb-4">Quick ROI Calculator</h2>
-          <p className="text-muted-foreground mb-6">See how much you can earn with InvestPro</p>
+          <p className="text-muted-foreground mb-6">See how much you can earn with VR Galaxy Network</p>
           <div className="bg-muted/30 rounded-xl p-6 max-w-lg mx-auto">
             <div className="grid grid-cols-3 gap-4 text-center">
               {[

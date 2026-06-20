@@ -17,7 +17,7 @@ export function Footer() {
               <span className="text-2xl font-black tracking-wider bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent">VR Galaxy</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
-              VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.
+              VR Galaxy is a trusted activation plan platform helping thousands grow their wealth through smart, transparent investments with daily ROI.
             </p>
             <div className="flex gap-4">
               {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
@@ -52,7 +52,7 @@ export function Footer() {
           <div>
             <h4 className="font-black mb-6 uppercase tracking-widest text-xs">Legal</h4>
             <ul className="space-y-4">
-              {['Terms of Service', 'Privacy Policy', 'Cookie Policy', 'Disclaimer', 'Investment Risks'].map((link) => (
+              {['Terms of Service', 'Privacy Policy', 'Cookie Policy', 'Disclaimer', 'Activation Plan Risks'].map((link) => (
                 <li key={link}>
                   <Link href={`/${link.toLowerCase().replace(/ /g, '-')}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     {link}

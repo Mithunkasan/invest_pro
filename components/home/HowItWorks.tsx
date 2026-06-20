@@ -18,7 +18,7 @@ const steps = [
   },
   {
     title: 'Select Plan',
-    desc: 'Pick the investment plan that suits your goals and watch your earnings grow daily.',
+    desc: 'Pick the activation plan that suits your goals and watch your earnings grow daily.',
     icon: TrendingUp,
     color: 'border-green-500/20 bg-green-500/5'
   },

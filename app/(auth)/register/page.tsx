@@ -55,7 +55,7 @@ function RegisterForm() {
           </span>
         </Link>
         <h1 className="text-2xl font-bold text-white mt-2">Create Account</h1>
-        <p className="text-white/60 text-sm mt-1">Start your investment journey today</p>
+        <p className="text-white/60 text-sm mt-1">Start your activation plan journey today</p>
       </div>
 
       {error && (
@@ -69,7 +69,7 @@ function RegisterForm() {
       )}
 
       <form action={handleAction} className="space-y-3">
-        <input type="hidden" name="memberType" value="PREMIUM" />
+        <input type="hidden" name="memberType" value="FREE" />
         {/* Name */}
         <div>
           <label className="text-xs text-white/70 font-medium block mb-1">Full Name</label>

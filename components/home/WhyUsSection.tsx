@@ -432,7 +432,7 @@ export function WhyUsSection() {
             </li>
             <li className="flex items-start gap-2.5">
               <span className="w-1.5 h-1.5 rounded-full bg-pink-500 mt-1.5 shrink-0" />
-              <span><strong>Task-Based Earnings</strong>: Earn daily rewards by participating in simple digital tasks on our online earning platform. No investment-based returns required.</span>
+              <span><strong>Task-Based Earnings</strong>: Earn daily rewards by participating in simple digital tasks on our online earning platform. No activation plan-based returns required.</span>
             </li>
             <li className="flex items-start gap-2.5">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />

@@ -7,7 +7,7 @@ import { Wallet, TrendingUp, Users } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
-export const metadata: Metadata = { title: 'Wallet — InvestPro' }
+export const metadata: Metadata = { title: 'Wallet — VR Galaxy Network' }
 
 export default async function WalletPage() {
   const session = await getSession()

@@ -22,11 +22,11 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: {
-    default: 'VR Galaxy — Smart Investment Platform',
+    default: 'VR Galaxy — Smart activation plan platform',
     template: '%s | VR Galaxy',
   },
   description:
-    'VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.',
+    'VR Galaxy is a trusted activation plan platform helping thousands grow their wealth through smart, transparent investments with daily ROI.',
   keywords: ['investment', 'mutual funds', 'ROI', 'wealth management', 'fintech', 'India'],
   authors: [{ name: 'VR Galaxy Team' }],
   creator: 'VR Galaxy',
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_IN',
     url: process.env.NEXT_PUBLIC_APP_URL,
-    title: 'VR Galaxy — Smart Investment Platform',
+    title: 'VR Galaxy — Smart activation plan platform',
     description: 'Grow your wealth with daily ROI. Join 10,000+ investors.',
     siteName: 'VR Galaxy',
     images: [
@@ -42,13 +42,13 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'VR Galaxy Investment Platform',
+        alt: 'VR Galaxy activation plan platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'VR Galaxy — Smart Investment Platform',
+    title: 'VR Galaxy — Smart activation plan platform',
     description: 'Grow your wealth with daily ROI. Join 10,000+ investors.',
     images: ['/og-image.png'],
   },
@@ -91,7 +91,7 @@ export default async function RootLayout({
       '@type': 'ContactPoint',
       'telephone': '+91-98765-43210',
       'contactType': 'customer support',
-      'email': 'support@investpro.com',
+      'email': 'support@vrgalaxynetwork.com',
       'availableLanguage': 'en'
     }
   }

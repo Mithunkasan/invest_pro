@@ -21,7 +21,7 @@ const testimonials = [
   {
     name: 'Vijay Singh',
     role: 'Business Owner',
-    text: 'The referral program is incredible. I have built a team and now my referral income is more than my direct investment returns.',
+    text: 'The referral program is incredible. I have built a team and now my referral income is more than my direct activation plan returns.',
     avatar: 'VS',
     rating: 5
   }

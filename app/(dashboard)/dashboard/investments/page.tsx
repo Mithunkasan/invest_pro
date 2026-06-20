@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { getInvestmentPlans, getUserInvestments } from '@/actions/investment'
 import { InvestmentsClient } from '@/components/dashboard/InvestmentsClient'
 
-export const metadata: Metadata = { title: 'My Investments — InvestPro' }
+export const metadata: Metadata = { title: 'My Activation Plans — VR Galaxy Network' }
 
 export default async function InvestmentsPage() {
   const session = await getSession()

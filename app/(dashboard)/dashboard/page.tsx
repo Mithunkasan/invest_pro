@@ -6,8 +6,8 @@ import { DashboardOverview } from '@/components/dashboard/DashboardOverview'
 import { KycApprovedFreeDashboard } from '@/components/dashboard/KycApprovedFreeDashboard'
 
 export const metadata: Metadata = {
-  title: 'Dashboard — InvestPro',
-  description: 'View your investment portfolio, wallet balance, and recent transactions.',
+  title: 'Dashboard — VR Galaxy Network',
+  description: 'View your activation plan portfolio, wallet balance, and recent transactions.',
 }
 
 export default async function DashboardPage() {

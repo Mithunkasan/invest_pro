@@ -258,8 +258,8 @@ export async function distributeReferralAndLevelCommissions(
                 status: 'COMPLETED',
                 reference: investmentId,
                 description: level === 1
-                  ? `Level ${level} referral commission from ${investor.name}'s investment`
-                  : `Level ${level} level income from ${investor.name}'s investment`,
+                  ? `Level ${level} referral commission from ${investor.name}'s activation plan`
+                  : `Level ${level} level income from ${investor.name}'s activation plan`,
                 walletType: walletEnum
               }
             }),
@@ -268,7 +268,7 @@ export async function distributeReferralAndLevelCommissions(
               data: {
                 userId: referrer.id,
                 title: level === 1 ? 'Referral Commission Received 👥' : 'Level Income Received 📈',
-                message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} ${level === 1 ? 'referral commission' : 'level income'} from ${investor.name}'s investment.`,
+                message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} ${level === 1 ? 'referral commission' : 'level income'} from ${investor.name}'s activation plan.`,
                 type: 'SUCCESS'
               }
             })

@@ -1,7 +1,7 @@
 {
   "common": {
     "appName": "VR Galaxy",
-    "tagline": "Grow Your Wealth with Smart Investments",
+    "tagline": "Grow Your Wealth with Smart Activation Plans",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
@@ -43,7 +43,7 @@
     "title1": "CONNECT.",
     "title2": "PROMOTE.",
     "title3": "EARN.",
-    "subtitle": "VR GALAXY NETWORKS offers innovative online earning opportunities for students, employees, entrepreneurs, and investors through task-based income, referral rewards, memberships, and investment programs.",
+    "subtitle": "VR GALAXY NETWORKS offers innovative online earning opportunities for students, employees, entrepreneurs, and investors through task-based income, referral rewards, memberships, and activation plan programs.",
     "cta": "Join Now",
     "ctaSecondary": "Explore More",
     "liveStats": "LIVE STATS",
@@ -65,7 +65,7 @@
   "whyUs": {
     "label": "WHY VR GALAXY NETWORKS?",
     "heading": "Unlocking Smart Digital Earning and Financial Growth Opportunities.",
-    "description": "Our platform focuses on network growth, task participation, membership benefits, referral rewards, leadership recognition, and business development opportunities rather than investment-based returns. Join VR GALAXY NETWORKS today and explore smart digital earning opportunities, community networking, leadership growth, skill development, and long-term business success.",
+    "description": "Our platform focuses on network growth, task participation, membership benefits, referral rewards, leadership recognition, and business development opportunities rather than activation plan-based returns. Join VR GALAXY NETWORKS today and explore smart digital earning opportunities, community networking, leadership growth, skill development, and long-term business success.",
     "features": {
       "networkGrowth": {
         "title": "Network Growth",
@@ -102,8 +102,8 @@
     }
   },
   "plans": {
-    "title": "Investment Plans",
-    "subtitle": "Choose the plan that fits your investment goals",
+    "title": "Activation Plans",
+    "subtitle": "Choose the plan that fits your activation plan goals",
     "investNow": "Invest Now",
     "minAmount": "Min. Amount",
     "maxAmount": "Max. Amount",
@@ -118,7 +118,7 @@
     "loginSubtitle": "Sign in to your VR Galaxy account",
     "register": "Create Account",
     "registerTitle": "Join VR Galaxy",
-    "registerSubtitle": "Start your investment journey today",
+    "registerSubtitle": "Start your activation plan journey today",
     "email": "Email Address",
     "password": "Password",
     "confirmPassword": "Confirm Password",
@@ -136,14 +136,14 @@
   },
   "dashboard": {
     "overview": "Dashboard Overview",
-    "totalInvestment": "Total Investment",
+    "totalInvestment": "Total Activation Plan",
     "currentBalance": "Current Balance",
     "totalProfit": "Total Profit",
     "referralIncome": "Referral Income",
     "activePlans": "Active Plans",
     "recentTransactions": "Recent Transactions",
     "welcome": "Welcome back",
-    "investments": "My Investments",
+    "investments": "My Activation Plans",
     "wallet": "Wallet",
     "deposit": "Deposit Funds",
     "withdraw": "Withdraw",
@@ -225,7 +225,7 @@
     "suspended": "Suspended"
   },
   "footer": {
-    "description": "VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments.",
+    "description": "VR Galaxy is a trusted activation plan platform helping thousands grow their wealth through smart, transparent activation plans.",
     "quickLinks": "Quick Links",
     "legal": "Legal",
     "contact": "Contact Us",

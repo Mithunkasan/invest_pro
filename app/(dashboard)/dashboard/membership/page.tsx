@@ -7,7 +7,7 @@ import { Crown, Sparkles, Zap, Shield, Gift, HelpCircle } from 'lucide-react'
 import { MembershipUpgradeButton } from '@/components/dashboard/MembershipUpgradeButton'
 
 export const metadata: Metadata = {
-  title: 'Membership Club — InvestPro',
+  title: 'Membership Club — VR Galaxy Network',
   description: 'Manage and upgrade your membership status to unlock premium trading benefits, yield multipliers, and multi-level referral commissions.',
 }
 
@@ -70,7 +70,7 @@ export default async function UserMembershipPage() {
     color: '#3B82F6',
     features: [
       'Standard L1 Referral Commission (10%)',
-      'Access to standard investment plans',
+      'Access to standard activation plans',
       'Full wallet overview & reports',
       'Daily dividend accrual & payouts',
       'Basic account support (2-3 business days)',
@@ -83,7 +83,7 @@ export default async function UserMembershipPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
           <Crown className="w-8 h-8 text-amber-500 filter drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]" />
-          InvestPro VIP Club
+          VR Galaxy Network VIP Club
         </h1>
         <p className="text-sm text-muted-foreground max-w-xl">
           Elevate your financial compounding potential. Unlock exclusive yield bonuses, speed up withdrawal timelines, and multiply your earnings with recursive multi-level referral commissions.
