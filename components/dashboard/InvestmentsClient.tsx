@@ -84,7 +84,7 @@ export function InvestmentsClient({ plans, investments }: InvestmentsClientProps
             <div className="text-xs text-muted-foreground space-y-0.5">
               <div className="flex justify-between"><span>Duration</span><span>{plan.durationDays} days</span></div>
               <div className="flex justify-between"><span>Min</span><span>{formatCurrency(plan.minAmount)}</span></div>
-              <div className="flex justify-between"><span>Total ROI</span><span className="text-green-500 font-semibold">{(plan.roiPercent * plan.durationDays).toFixed(0)}%</span></div>
+              <div className="flex justify-between"><span>Total Daily Reward Earnings</span><span className="text-green-500 font-semibold">{(plan.roiPercent * plan.durationDays).toFixed(0)}%</span></div>
             </div>
           </motion.div>
         ))}
@@ -129,7 +129,7 @@ export function InvestmentsClient({ plans, investments }: InvestmentsClientProps
           data={investments as Record<string, unknown>[]}
           columns={cols as Parameters<typeof DataTable>[0]['columns']}
           rowKey="id"
-          emptyMessage="No investments yet. Choose a plan above to get started!"
+          emptyMessage="No Smart Hybrid Digital Earnings yet. Choose a plan above to get started!"
         />
       </div>
     </div>

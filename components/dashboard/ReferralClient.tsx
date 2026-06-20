@@ -161,6 +161,9 @@ export function ReferralClient({
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
                   {idx === 0 ? 'Direct Referrals' : idx === 1 ? 'Indirect Upline' : 'Network Upline'}
                 </p>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Requires {idx + 1} active direct membership{idx === 0 ? '' : 's'}
+                </p>
               </div>
             ))}
         </div>

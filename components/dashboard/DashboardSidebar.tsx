@@ -112,7 +112,9 @@ export function DashboardSidebar({
     const isFullAccess = user?.profileCompleted && (hasApprovedDeposit || user?.memberType === 'BASIC') && isMembershipActivated && user?.memberType !== 'FREE'
 
     let filteredItems = baseItems
-    if (!user?.profileCompleted) {
+    if (isMembershipActivated && !isKycApproved) {
+      filteredItems = baseItems.filter((item) => item.label === 'KYC')
+    } else if (!user?.profileCompleted) {
       filteredItems = baseItems.filter((item) => item.label === 'Profile')
     } else {
       const adminApproved = hasApprovedDeposit && isMembershipActivated

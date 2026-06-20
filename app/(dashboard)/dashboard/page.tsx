@@ -97,7 +97,7 @@ export default async function DashboardPage() {
     }
   })
 
-  // Calculate monthly profit/investment for chart
+  // Calculate monthly profit/Smart Hybrid Digital Earning for chart
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const currentMonthIndex = new Date().getMonth()
   const displayMonths = months.slice(Math.max(0, currentMonthIndex - 5), currentMonthIndex + 1)
@@ -178,7 +178,7 @@ export default async function DashboardPage() {
     totalProfit: totalProfit._sum.profit || 0,
     referralIncome: referralIncome._sum.commission || 0,
     activePlans: investments.length,
-    wallet: dbWallet || { mainBalance: 0, depositBalance: 0, bonusBalance: 0, referralBalance: 0, rewardBalance: 0, levelBalance: 0, shareBalance: 0 },
+    wallet: dbWallet || { mainBalance: 0, depositBalance: 0, bonusBalance: 0, referralBalance: 0, rewardBalance: 0, levelBalance: 0, shareBalance: 0, totalEarned: 0 },
     totalRewardEarned,
     totalReferralEarned,
     totalShareEarned,

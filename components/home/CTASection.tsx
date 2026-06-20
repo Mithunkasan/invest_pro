@@ -32,7 +32,7 @@ export function CTASection() {
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4">
             Ready to Start Your{' '}
             <span className="bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent">
-              Investment Journey?
+              Smart Hybrid Digital Earning Journey?
             </span>
           </h2>
           <p className="text-white/70 text-lg mb-8 max-w-2xl mx-auto">

@@ -91,7 +91,8 @@ export default async function WalletPage() {
       {/* Wallet Breakdown Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: 'Main Wallet', value: wallet?.mainBalance || 0, icon: Wallet, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Combined total of all wallets', show: true },
+          { label: 'Main Wallet', value: wallet?.mainBalance || 0, icon: Wallet, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Withdrawable total of earning wallets only', show: true },
+          { label: 'Total Wallet', value: wallet?.totalEarned || 0, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Lifetime earnings; withdrawals do not reduce it', show: true },
           { label: 'Deposit Wallet', value: wallet?.depositBalance || 0, icon: Wallet, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'User deposited amount', show: !isFree },
           { label: 'Reward Wallet', value: wallet?.rewardBalance || 0, icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-500/10', desc: 'Claimed reward balances', show: !isFree },
           { label: 'Referral Income Wallet', value: (wallet?.referralBalance || 0) + (wallet?.levelBalance || 0), icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Commission from direct and multi-level referrals', show: !isFree },
@@ -126,7 +127,7 @@ export default async function WalletPage() {
                     {txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' || txn.type === 'USER_PAY_SENT' ? '↑' : '↓'}
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{txn.description || txn.type.replace(/_/g, ' ')}</p>
+                    <p className="text-sm font-medium">{(txn.description || (txn.type === 'INVESTMENT' ? 'Smart Hybrid Digital Earning' : txn.type.replace(/_/g, ' '))).replace(/\bROI\b/gi, 'Daily Reward Earnings').replace(/\bInvestment\b/gi, 'Smart Hybrid Digital Earning')}</p>
                     <p className="text-xs text-muted-foreground">{formatDateTime(txn.createdAt)}</p>
                   </div>
                 </div>

@@ -17,7 +17,7 @@ export function Footer() {
               <span className="text-2xl font-black tracking-wider bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent">VR Galaxy</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
-              VR Galaxy is a trusted activation plan platform helping thousands grow their wealth through smart, transparent investments with daily ROI.
+              VR Galaxy is a trusted activation plan platform helping thousands grow their wealth through Smart Hybrid Digital Earnings with Daily Reward Earnings.
             </p>
             <div className="flex gap-4">
               {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (

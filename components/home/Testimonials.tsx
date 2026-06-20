@@ -7,7 +7,7 @@ const testimonials = [
   {
     name: 'Rajesh Kumar',
     role: 'Real Estate Developer',
-    text: 'VR Galaxy has completely changed how I manage my passive income. The daily ROI is consistent and the instant withdrawals are a lifesaver.',
+    text: 'VR Galaxy has completely changed how I manage my passive income. The Daily Reward Earnings are consistent and the instant withdrawals are a lifesaver.',
     avatar: 'RK',
     rating: 5
   },

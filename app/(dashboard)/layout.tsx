@@ -30,6 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       pinCode: true,
       membershipPlanExpiresAt: true,
       membershipPlanId: true,
+      membershipPlanActivatedAt: true,
     }
   })
 
@@ -37,15 +38,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
   await creditDueDepositYields(session.id)
   await checkAndExpireMembership(session.id)
 
-  const isFree = dbUser?.memberType === 'FREE'
-  const isBasic = dbUser?.memberType === 'BASIC'
+  const isMembershipActivated = Boolean(
+    dbUser?.membershipPlanId && dbUser.membershipPlanActivatedAt
+  )
 
-  const kyc = isFree || isBasic ? null : await prisma.kYC.findUnique({
-    where: { userId: session.id },
-    select: { status: true },
-  })
+  const kyc = isMembershipActivated
+    ? await prisma.kYC.findUnique({
+        where: { userId: session.id },
+        select: { status: true },
+      })
+    : null
 
-  const isKycApproved = isFree || isBasic ? true : kyc?.status === 'APPROVED'
+  const isKycApproved = !isMembershipActivated || kyc?.status === 'APPROVED'
   const isProfileComplete = Boolean(
     dbUser?.profileCompleted ||
     (
@@ -67,8 +71,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
     where: { userId: session.id, status: 'APPROVED' }
   })
   const hasApprovedDeposit = approvedDepositCount > 0
-  const isMembershipActivated = dbUser?.membershipPlanId !== null
-
   return (
     <DashboardLayoutClient
       user={{ 

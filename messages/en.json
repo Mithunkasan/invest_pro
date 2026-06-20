@@ -107,10 +107,10 @@
     "investNow": "Invest Now",
     "minAmount": "Min. Amount",
     "maxAmount": "Max. Amount",
-    "dailyROI": "Daily ROI",
+    "dailyROI": "Daily Reward Earnings",
     "duration": "Duration",
     "days": "days",
-    "totalROI": "Total ROI"
+    "totalROI": "Total Daily Reward Earnings"
   },
   "auth": {
     "login": "Login",

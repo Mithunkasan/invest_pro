@@ -29,8 +29,8 @@ export const metadata: Metadata = {
 
 function sanitizeFeatures(features: string[]): string[] {
   const prohibitedWords = [
-    { regex: /roi/gi, replacement: 'Reward' },
-    { regex: /investment/gi, replacement: 'Membership' },
+    { regex: /roi/gi, replacement: 'Daily Reward Earnings' },
+    { regex: /investment/gi, replacement: 'Smart Hybrid Digital Earning' },
     { regex: /invest/gi, replacement: 'Join' },
     { regex: /return/gi, replacement: 'Reward' },
     { regex: /profit/gi, replacement: 'Reward' },

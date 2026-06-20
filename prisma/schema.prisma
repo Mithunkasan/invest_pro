@@ -110,7 +110,7 @@ model Admin {
 }
 
 // ============================================================
-// INVESTMENT PLAN MODEL
+// SMART HYBRID DIGITAL EARNING PLAN MODEL
 // ============================================================
 model InvestmentPlan {
   id          String      @id @default(cuid())
@@ -118,7 +118,7 @@ model InvestmentPlan {
   description String
   minAmount   Float
   maxAmount   Float
-  roiPercent  Float       // Daily ROI percentage
+  roiPercent  Float       // Daily Reward Earnings percentage
   durationDays Int
   status      PlanStatus  @default(ACTIVE)
   features    String[]    // Array of feature strings
@@ -133,7 +133,7 @@ model InvestmentPlan {
 }
 
 // ============================================================
-// INVESTMENT MODEL
+// SMART HYBRID DIGITAL EARNING MODEL
 // ============================================================
 model Investment {
   id        String           @id @default(cuid())

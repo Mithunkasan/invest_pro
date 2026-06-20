@@ -4,8 +4,9 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession, setSession, UserTokenPayload } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
-import { syncWalletMainBalance, deductFromWallets } from './walletUtils'
+import { syncWalletMainBalance, deductFromWallets, refundWithdrawalToWallets } from './walletUtils'
 import { BASIC_MEMBERSHIP_AMOUNT, ensureBasicMembershipPlan, getBasicMembershipExpiry } from '@/lib/basicMembership'
+import { distributeReferralAndLevelCommissions } from './rules'
 
 // ── User Management ───────────────────────────────────────────────────────────
 export async function toggleUserStatus(userId: string): Promise<ApiResponse> {
@@ -74,6 +75,8 @@ export async function updateUserAction(
     const user = await prisma.user.findUnique({ where: { id: userId } })
     if (!user) return { success: false, message: 'User not found' }
 
+    let selectedMembershipPlan: Awaited<ReturnType<typeof prisma.membershipPlan.findUnique>> = null
+
     if (data.referredById) {
       const referrer = await prisma.user.findUnique({ where: { id: data.referredById } })
       if (!referrer) {
@@ -85,8 +88,8 @@ export async function updateUserAction(
     }
 
     if (data.membershipPlanId) {
-      const plan = await prisma.membershipPlan.findUnique({ where: { id: data.membershipPlanId } })
-      if (!plan) {
+      selectedMembershipPlan = await prisma.membershipPlan.findUnique({ where: { id: data.membershipPlanId } })
+      if (!selectedMembershipPlan) {
         return { success: false, message: `Membership plan with ID "${data.membershipPlanId}" does not exist.` }
       }
     }
@@ -111,56 +114,7 @@ export async function updateUserAction(
     if (data.membershipPlanId !== undefined) {
       updateData.membershipPlanId = data.membershipPlanId || null
       if (user.membershipPlanId !== data.membershipPlanId) {
-        await prisma.deposit.updateMany({
-          where: { userId },
-          data: {
-            yieldDaysCredited: 0,
-            lastYieldAt: null,
-          },
-        })
         if (data.membershipPlanId) {
-          const plan = await prisma.membershipPlan.findUnique({ where: { id: data.membershipPlanId } })
-          if (!plan) {
-            return { success: false, message: `Membership plan not found.` }
-          }
-
-          // Deduct from Deposit Wallet balance
-          if (plan.price > 0) {
-            const wallet = await prisma.wallet.findUnique({ where: { userId } })
-            if (!wallet) {
-              return { success: false, message: 'User wallet not found' }
-            }
-
-            if (wallet.depositBalance < plan.price) {
-              return {
-                success: false,
-                message: `Insufficient balance in Deposit Wallet (Available: ₹${wallet.depositBalance.toLocaleString('en-IN')}, Required: ₹${plan.price.toLocaleString('en-IN')})`
-              }
-            }
-
-            await prisma.wallet.update({
-              where: { userId },
-              data: {
-                depositBalance: { decrement: plan.price }
-              }
-            })
-
-            // Create a completed transaction record
-            await prisma.transaction.create({
-              data: {
-                userId,
-                type: 'INVESTMENT',
-                amount: plan.price,
-                status: 'COMPLETED',
-                description: `Activated ${plan.name} by Admin`,
-                walletType: 'MAIN',
-              }
-            })
-
-            // Sync main balance
-            await syncWalletMainBalance(prisma, userId)
-          }
-
           updateData.membershipPlanActivatedAt = new Date()
           const exp = new Date()
           exp.setDate(exp.getDate() + 1000)
@@ -209,10 +163,71 @@ export async function updateUserAction(
     }
     if (data.directorShareholder !== undefined) updateData.directorShareholder = Boolean(data.directorShareholder)
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: updateData,
+    const membershipChanged = data.membershipPlanId !== undefined && user.membershipPlanId !== data.membershipPlanId
+    let membershipActivationTransactionId: string | null = null
+
+    await prisma.$transaction(async (tx) => {
+      if (membershipChanged) {
+        const plan = selectedMembershipPlan
+
+        if (plan && plan.price > 0) {
+          const wallet = await tx.wallet.findUnique({ where: { userId } })
+          if (!wallet) throw new Error('User wallet not found')
+
+          // Check and deduct in one statement so concurrent changes cannot
+          // overdraw the Deposit Wallet.
+          const deduction = await tx.wallet.updateMany({
+            where: {
+              userId,
+              depositBalance: { gte: plan.price },
+            },
+            data: {
+              depositBalance: { decrement: plan.price },
+            },
+          })
+
+          if (deduction.count !== 1) {
+            throw new Error('Insufficient balance in Deposit Wallet.')
+          }
+
+          const activationTransaction = await tx.transaction.create({
+            data: {
+              userId,
+              type: 'INVESTMENT',
+              amount: plan.price,
+              status: 'COMPLETED',
+              description: `Activated ${plan.name} by Admin`,
+              walletType: 'MAIN',
+            },
+          })
+          membershipActivationTransactionId = activationTransaction.id
+
+          await syncWalletMainBalance(tx, userId)
+        }
+
+        await tx.deposit.updateMany({
+          where: { userId },
+          data: {
+            yieldDaysCredited: 0,
+            lastYieldAt: null,
+          },
+        })
+      }
+
+      await tx.user.update({
+        where: { id: userId },
+        data: updateData,
+      })
     })
+
+    if (membershipActivationTransactionId && selectedMembershipPlan && selectedMembershipPlan.price > 0) {
+      await distributeReferralAndLevelCommissions(
+        userId,
+        selectedMembershipPlan.price,
+        membershipActivationTransactionId,
+        'MEMBERSHIP'
+      )
+    }
 
     revalidatePath('/admin/dashboard/users')
     revalidatePath('/admin/dashboard/memberships')
@@ -220,6 +235,9 @@ export async function updateUserAction(
     return { success: true, message: 'User details updated successfully' }
   } catch (error: any) {
     console.error('Error updating user:', error)
+    if (error?.message === 'Insufficient balance in Deposit Wallet.' || error?.message === 'User wallet not found') {
+      return { success: false, message: error.message }
+    }
     if (error?.code === 'P2002') {
       return { success: false, message: 'Email, phone, or referral code already in use by another user' }
     }
@@ -252,18 +270,22 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
         bonusAmount = (depositAmount * user.membershipPlan.depositBonus) / 100
       }
 
-      const totalIncrement = depositAmount + bonusAmount
-
       const dbOps: any[] = [
         // Update deposit status
         prisma.deposit.update({
           where: { id: depositId },
           data: { status: 'APPROVED', approvedById: admin.id, remarks },
         }),
-        // Update user wallet with total increment (deposit + yield bonus) - goes to Deposit Wallet
+        // Deposit Wallet contains only money deposited by the user.
         prisma.wallet.update({
           where: { userId: deposit.userId },
-          data: { depositBalance: { increment: totalIncrement } },
+          data: {
+            depositBalance: { increment: depositAmount },
+            ...(bonusAmount > 0 ? {
+              bonusBalance: { increment: bonusAmount },
+              totalEarned: { increment: bonusAmount },
+            } : {}),
+          },
         }),
         // Create transaction record for deposit
         prisma.transaction.create({
@@ -299,7 +321,7 @@ export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJE
               status: 'COMPLETED',
               description: `${user?.membershipPlan?.name || 'Membership'} +${user?.membershipPlan?.depositBonus || 0}% Deposit Yield Bonus`,
               reference: deposit.utrNumber || depositId,
-              walletType: 'MAIN',
+              walletType: 'BONUS',
             },
           })
         )
@@ -365,31 +387,29 @@ export async function handleWithdrawal(withdrawalId: string, action: 'APPROVE' |
         })
       ])
     } else {
-      const balanceField = withdrawal.walletType === 'MAIN' ? 'rewardBalance'
-        : withdrawal.walletType === 'BONUS' ? 'bonusBalance' : 'referralBalance'
-
-      await prisma.$transaction([
+      await prisma.$transaction(async (tx) => {
         // Reject withdrawal
-        prisma.withdrawal.update({
+        await tx.withdrawal.update({
           where: { id: withdrawalId },
           data: { status: 'REJECTED', approvedById: admin.id, remarks },
-        }),
-        // Refund to wallet
-        prisma.wallet.update({
-          where: { userId: withdrawal.userId },
-          data: { [balanceField]: { increment: withdrawal.amount } },
-        }),
+        })
+        const bankDetails = withdrawal.bankDetails as Record<string, unknown>
+        await refundWithdrawalToWallets(
+          tx,
+          withdrawal.userId,
+          bankDetails?._walletDeductions,
+          withdrawal.amount
+        )
         // Notification
-        prisma.notification.create({
+        await tx.notification.create({
           data: {
             userId: withdrawal.userId,
             title: 'Withdrawal Rejected ❌',
             message: `Your withdrawal of ₹${withdrawal.amount.toLocaleString()} was rejected and refunded.`,
             type: 'ERROR',
           },
-        }),
-      ])
-      await syncWalletMainBalance(prisma, withdrawal.userId)
+        })
+      })
     }
 
     revalidatePath('/admin/dashboard/withdrawals')
@@ -447,6 +467,7 @@ export async function handleKYC(kycId: string, action: 'APPROVED' | 'REJECTED', 
     const reviewedAt = new Date()
     const shouldActivateBasic = action === 'APPROVED' && kyc.user.memberType === 'FREE'
     const basicPlan = shouldActivateBasic ? await ensureBasicMembershipPlan() : null
+    let basicActivationTransactionId: string | null = null
 
     await prisma.$transaction(async (tx) => {
       await tx.kYC.update({
@@ -469,7 +490,7 @@ export async function handleKYC(kycId: string, action: 'APPROVED' | 'REJECTED', 
           },
         })
 
-        await tx.transaction.create({
+        const activationTransaction = await tx.transaction.create({
           data: {
             userId: kyc.userId,
             type: 'INVESTMENT',
@@ -479,6 +500,7 @@ export async function handleKYC(kycId: string, action: 'APPROVED' | 'REJECTED', 
             walletType: 'MAIN',
           },
         })
+        basicActivationTransactionId = activationTransaction.id
       }
 
       await tx.notification.create({
@@ -494,6 +516,15 @@ export async function handleKYC(kycId: string, action: 'APPROVED' | 'REJECTED', 
         },
       })
     })
+
+    if (basicActivationTransactionId) {
+      await distributeReferralAndLevelCommissions(
+        kyc.userId,
+        BASIC_MEMBERSHIP_AMOUNT,
+        basicActivationTransactionId,
+        'MEMBERSHIP'
+      )
+    }
 
     revalidatePath('/admin/dashboard/kyc')
     revalidatePath('/admin/dashboard')
@@ -948,51 +979,11 @@ export async function sendAdminBonusAction(
 
     if (!user) return { success: false, message: 'User not found with email: ' + userEmail }
 
-    let field: 'bonusBalance' | 'referralBalance' | 'rewardBalance' | 'levelBalance' | 'shareBalance' | 'depositBalance'
-    let walletType: 'MAIN' | 'BONUS' | 'REFERRAL' | 'LEVEL' | 'REWARD' | 'SHARE'
-    // depositBalance is not earnings — do not increment totalEarned for it
-    let isEarnings = true
-
-    switch (walletName) {
-      case 'Main Wallet':
-      case 'Deposit Wallet':
-        field = 'depositBalance' // Deposit Wallet — not earnings income
-        walletType = 'MAIN'
-        isEarnings = false
-        break
-      case 'Referral Wallet':
-        field = 'referralBalance'
-        walletType = 'REFERRAL'
-        break
-      case 'Reward Wallet':
-        field = 'rewardBalance'
-        walletType = 'REWARD'
-        break
-      case 'Game Wallet':
-        field = 'rewardBalance'
-        walletType = 'REWARD'
-        break
-      case 'Bonus Wallet':
-        field = 'bonusBalance'
-        walletType = 'BONUS'
-        break
-      case 'Share Wallet':
-        field = 'shareBalance'
-        walletType = 'SHARE'
-        break
-      case 'Level Wallet':
-      case 'Level Income Wallet':
-        field = 'levelBalance'
-        walletType = 'LEVEL'
-        break
-      default:
-        return { success: false, message: 'Invalid wallet selection: ' + walletName }
-    }
-
     const metadata = {
       sentBy: admin.name,
       userEmail: user.email,
-      walletName: walletName,
+      walletName: 'Bonus Wallet',
+      requestedWalletName: walletName,
       remark: remark,
       freeRestricted: false
     }
@@ -1006,12 +997,12 @@ export async function sendAdminBonusAction(
         })
       }
 
-      // Increment balance (and totalEarned if this is an earnings wallet, not deposit)
+      // Admin-granted amounts are always Bonus Wallet lifetime earnings.
       await tx.wallet.update({
         where: { userId: user.id },
         data: {
-          [field]: { increment: amount },
-          ...(isEarnings ? { totalEarned: { increment: amount } } : {}),
+          bonusBalance: { increment: amount },
+          totalEarned: { increment: amount },
         }
       })
 
@@ -1022,7 +1013,7 @@ export async function sendAdminBonusAction(
           type: 'BONUS',
           amount: amount,
           status: 'COMPLETED',
-          walletType: walletType,
+          walletType: 'BONUS',
           description: remark,
           reference: 'ADMIN_BONUS:' + JSON.stringify(metadata)
         }
@@ -1033,7 +1024,7 @@ export async function sendAdminBonusAction(
         data: {
           userId: user.id,
           title: 'Bonus Received! 🎁',
-          message: `You have received a bonus of ₹${amount.toLocaleString('en-IN')} to your ${walletType === 'MAIN' ? 'Main' : walletType.toLowerCase()} wallet. Remark: ${remark}`,
+          message: `You have received a bonus of ₹${amount.toLocaleString('en-IN')} in your Bonus Wallet. Remark: ${remark}`,
           type: 'SUCCESS'
         }
       })
@@ -1041,16 +1032,6 @@ export async function sendAdminBonusAction(
       // Sync Main balance
       await syncWalletMainBalance(tx, user.id)
     })
-
-    if (walletType === 'REFERRAL') {
-      try {
-        const { checkAndApplyPerformanceBadges, checkAndApplyTLRank } = require('./rules')
-        await checkAndApplyPerformanceBadges(user.id)
-        await checkAndApplyTLRank(user.id)
-      } catch (err) {
-        console.error('Error applying rules for referral bonus:', err)
-      }
-    }
 
     revalidatePath('/admin/dashboard/bonus')
     revalidatePath('/dashboard/wallet')
@@ -1192,11 +1173,14 @@ export async function processMembershipUpgradeAction(
       expiresAt.setDate(expiresAt.getDate() + 1000)
 
       await prisma.$transaction(async (tx) => {
-        // Update request status
-        await tx.membershipUpgradeRequest.update({
-          where: { id: requestId },
+        // Claim the pending request atomically so concurrent approvals cannot pay twice.
+        const approval = await tx.membershipUpgradeRequest.updateMany({
+          where: { id: requestId, status: 'PENDING' },
           data: { status: 'APPROVED', approvedById: admin.id, remarks },
         })
+        if (approval.count !== 1) {
+          throw new Error('Membership request already processed')
+        }
 
         // Determine memberType based on plan name
         let targetMemberType: 'FREE' | 'BASIC' | 'PREMIUM' = 'PREMIUM'
@@ -1271,8 +1255,12 @@ export async function processMembershipUpgradeAction(
 
       // Trigger referral commission if membership is a paid upgrade
       if (request.plan.price > 0) {
-        const { distributeReferralAndLevelCommissions } = require('./rules')
-        await distributeReferralAndLevelCommissions(request.userId, request.plan.price, request.plan.id)
+        await distributeReferralAndLevelCommissions(
+          request.userId,
+          request.plan.price,
+          request.id,
+          'MEMBERSHIP'
+        )
       }
 
       revalidatePath('/admin/dashboard/memberships')

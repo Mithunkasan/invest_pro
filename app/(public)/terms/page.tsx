@@ -18,7 +18,7 @@ export default function TermsPage() {
           </section>
           <section>
             <h2 className="text-foreground font-bold text-lg mb-2">2. Activation Plan Risk</h2>
-            <p>All investments carry risk. Past performance does not guarantee future results. Invest only what you can afford to lose. VR Galaxy Network is not responsible for investment losses.</p>
+            <p>All Smart Hybrid Digital Earnings carry risk. Past performance does not guarantee future results. Invest only what you can afford to lose. VR Galaxy Network is not responsible for Smart Hybrid Digital Earning losses.</p>
           </section>
           <section>
             <h2 className="text-foreground font-bold text-lg mb-2">3. KYC Requirements</h2>
@@ -30,7 +30,7 @@ export default function TermsPage() {
           </section>
           <section>
             <h2 className="text-foreground font-bold text-lg mb-2">5. Referral Program</h2>
-            <p>Referral commissions are awarded only when the referred user makes a valid investment. Commission rates are subject to change without notice.</p>
+            <p>Referral commissions are awarded only when the referred user makes a valid Smart Hybrid Digital Earning. Commission rates are subject to change without notice.</p>
           </section>
           <section>
             <h2 className="text-foreground font-bold text-lg mb-2">6. Account Suspension</h2>

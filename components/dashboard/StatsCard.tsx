@@ -45,29 +45,49 @@ export function StatsCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
       className={cn(
-        "premium-card group p-4 sm:p-5 hover:shadow-[0_8px_30px_rgb(var(--primary-rgb),0.12)] hover:-translate-y-1.5 transition-all duration-300 hover:border-primary/30 h-full flex flex-col justify-between",
+        "premium-card group min-w-0 min-h-[132px] sm:min-h-[144px] p-4 sm:p-5 hover:shadow-[0_8px_30px_rgb(var(--primary-rgb),0.12)] hover:-translate-y-1.5 transition-all duration-300 hover:border-primary/30 h-full flex flex-col",
         onClick && "cursor-pointer select-none hover:border-primary/60",
         className
       )}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between gap-2 w-full">
-        <div className="space-y-1 min-w-0 flex-1">
-          <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate">{title}</p>
-          <AnimatePresence>
-            <motion.p
-              key={String(value)}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-lg sm:text-xl xl:text-lg 2xl:text-2xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent group-hover:from-primary group-hover:to-blue-400 transition-all duration-300 break-words"
-            >
-              {displayValue}
-            </motion.p>
-          </AnimatePresence>
-          {change !== undefined && (
+      <div className="flex items-center justify-between gap-3 w-full">
+        <p className="min-w-0 truncate text-xs sm:text-sm text-muted-foreground font-semibold" title={title}>
+          {title}
+        </p>
+        <motion.div
+          className={cn('p-2.5 sm:p-3 rounded-xl transition-all duration-300 relative overflow-hidden shrink-0', iconBg)}
+          whileHover={{ scale: 1.15, rotate: [0, -12, 12, 0] }}
+          transition={{
+            scale: { type: "spring", stiffness: 300, damping: 15 },
+            rotate: { duration: 0.4, ease: "easeInOut" }
+          }}
+        >
+          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
+          <motion.div
+            animate={{ y: [0, -2, 0] }}
+            transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+          >
+            {icon}
+          </motion.div>
+        </motion.div>
+      </div>
+
+      <div className="mt-3 min-w-0">
+        <AnimatePresence>
+          <motion.p
+            key={String(value)}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="whitespace-nowrap tabular-nums text-[clamp(1rem,1.55vw,1.5rem)] font-bold leading-none tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent group-hover:from-primary group-hover:to-blue-400 transition-all duration-300"
+          >
+            {displayValue}
+          </motion.p>
+        </AnimatePresence>
+        {change !== undefined && (
             <div
               className={cn(
-                'flex items-center gap-1 text-xs font-medium',
+                'mt-2 flex items-center gap-1 text-xs font-medium',
                 changeIsPositive && 'text-green-500',
                 changeIsNegative && 'text-red-500',
                 !changeIsPositive && !changeIsNegative && 'text-muted-foreground'
@@ -85,31 +105,7 @@ export function StatsCard({
                 {change}% {changeLabel || 'this month'}
               </span>
             </div>
-          )}
-        </div>
-        <motion.div 
-          className={cn('p-2.5 sm:p-3 rounded-xl transition-all duration-300 relative overflow-hidden shrink-0', iconBg)}
-          whileHover={{ scale: 1.15, rotate: [0, -12, 12, 0] }}
-          transition={{
-            scale: { type: "spring", stiffness: 300, damping: 15 },
-            rotate: { duration: 0.4, ease: "easeInOut" }
-          }}
-        >
-          {/* Glowing pulse aura on icon hover */}
-          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
-          <motion.div
-            animate={{
-              y: [0, -2, 0],
-            }}
-            transition={{
-              repeat: Infinity,
-              duration: 2.5,
-              ease: "easeInOut"
-            }}
-          >
-            {icon}
-          </motion.div>
-        </motion.div>
+        )}
       </div>
     </motion.div>
 

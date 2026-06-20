@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { syncWalletMainBalance } from '@/actions/walletUtils'
 
+const MAX_MEMBERSHIP_YIELD_DAYS = 1000
+
 function get10AMIST(d: Date): Date {
   const istOffset = 5.5 * 60 * 60 * 1000 // 5.5 hours in ms
   const istTime = new Date(d.getTime() + istOffset)
@@ -43,9 +45,8 @@ export async function creditDueDepositYields(userId: string) {
 
   // Filter the daily dates for those that are <= now and >= activationDate.getTime()
   // and <= expiresAt (if it is set) and > user.lastDailyYieldAt (or if lastDailyYieldAt is null)
-  let eligibleTimestamps: Date[] = []
-  let k = 1
-  while (true) {
+  const eligibleTimestamps: Date[] = []
+  for (let k = 1; k <= MAX_MEMBERSHIP_YIELD_DAYS; k++) {
     const D_k = new Date(firstCreditDate.getTime() + (k - 1) * 24 * 60 * 60 * 1000)
     
     // Stop generating if D_k is in the future
@@ -63,10 +64,6 @@ export async function creditDueDepositYields(userId: string) {
         eligibleTimestamps.push(D_k)
       }
     }
-    k++
-    
-    // Safety break to prevent infinite loop
-    if (k > 5000) break
   }
 
   const dueDays = eligibleTimestamps.length
@@ -82,6 +79,21 @@ export async function creditDueDepositYields(userId: string) {
   const lastYieldTimestamp = eligibleTimestamps[dueDays - 1]
 
   await prisma.$transaction(async (tx) => {
+    // Claim this range before crediting it. Concurrent dashboard/cron requests
+    // cannot both advance the same membership from the same last-yield value.
+    const claim = await tx.user.updateMany({
+      where: {
+        id: user.id,
+        membershipPlanId: user.membershipPlanId,
+        membershipPlanActivatedAt: activationDate,
+        ...(user.lastDailyYieldAt
+          ? { lastDailyYieldAt: user.lastDailyYieldAt }
+          : { lastDailyYieldAt: null }),
+      },
+      data: { lastDailyYieldAt: lastYieldTimestamp },
+    })
+    if (claim.count !== 1) return
+
     // Increment Reward Wallet and totalEarned (daily yield is income)
     await tx.wallet.upsert({
       where: { userId: user.id },
@@ -109,15 +121,32 @@ export async function creditDueDepositYields(userId: string) {
       },
     })
 
-    // Update User record with new lastDailyYieldAt
-    await tx.user.update({
-      where: { id: user.id },
-      data: {
-        lastDailyYieldAt: lastYieldTimestamp,
-      },
-    })
-
     // Sync user's main wallet balance
     await syncWalletMainBalance(tx, user.id)
   })
+}
+
+export async function creditAllDueMembershipYields() {
+  const users = await prisma.user.findMany({
+    where: {
+      status: 'ACTIVE',
+      membershipPlanId: { not: null },
+      membershipPlanActivatedAt: { not: null },
+    },
+    select: { id: true },
+  })
+
+  let succeeded = 0
+  let failed = 0
+  for (const user of users) {
+    try {
+      await creditDueDepositYields(user.id)
+      succeeded++
+    } catch (error) {
+      failed++
+      console.error(`Failed to process membership yield for user ${user.id}:`, error)
+    }
+  }
+
+  return { processed: users.length, succeeded, failed }
 }

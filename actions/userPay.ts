@@ -4,63 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getSession, getAdminSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
-
-// Helper to deduct from main wallet sub-wallets (excluding depositBalance)
-async function deductFromMainWallets(tx: any, userId: string, amountToDeduct: number) {
-  const wallet = await tx.wallet.findUnique({
-    where: { userId },
-  })
-  if (!wallet) throw new Error('Wallet not found')
-
-  let remaining = amountToDeduct
-  const updates: any = {}
-
-  // Priority order of main wallet sub-wallets:
-  const subWallets: ('rewardBalance' | 'referralBalance' | 'levelBalance' | 'shareBalance' | 'bonusBalance')[] = [
-    'rewardBalance',
-    'referralBalance',
-    'levelBalance',
-    'shareBalance',
-    'bonusBalance'
-  ]
-
-  for (const key of subWallets) {
-    if (remaining > 0 && (wallet[key] || 0) > 0) {
-      const deduct = Math.min(remaining, wallet[key] || 0)
-      updates[key] = { decrement: deduct }
-      remaining -= deduct
-    }
-  }
-
-  if (remaining > 0) {
-    throw new Error('Insufficient Main Wallet balance across sub-wallets')
-  }
-
-  if (Object.keys(updates).length > 0) {
-    await tx.wallet.update({
-      where: { userId },
-      data: updates,
-    })
-  }
-
-  // Recalculate mainBalance
-  const updatedWallet = await tx.wallet.findUnique({
-    where: { userId }
-  })
-  if (updatedWallet) {
-    const newMainBalance = 
-      (updatedWallet.rewardBalance || 0) +
-      (updatedWallet.referralBalance || 0) +
-      (updatedWallet.levelBalance || 0) +
-      (updatedWallet.shareBalance || 0) +
-      (updatedWallet.bonusBalance || 0)
-
-    await tx.wallet.update({
-      where: { userId },
-      data: { mainBalance: newMainBalance },
-    })
-  }
-}
+import { deductFromWallets, syncWalletMainBalance } from './walletUtils'
 
 // Helper to credit receiver's Bonus Wallet (user-pay received goes to bonusBalance)
 async function creditToMainWallet(tx: any, userId: string, amountToCredit: number) {
@@ -73,23 +17,7 @@ async function creditToMainWallet(tx: any, userId: string, amountToCredit: numbe
     }
   })
 
-  // Recalculate mainBalance
-  const updatedWallet = await tx.wallet.findUnique({
-    where: { userId }
-  })
-  if (updatedWallet) {
-    const newMainBalance =
-      (updatedWallet.rewardBalance || 0) +
-      (updatedWallet.referralBalance || 0) +
-      (updatedWallet.levelBalance || 0) +
-      (updatedWallet.shareBalance || 0) +
-      (updatedWallet.bonusBalance || 0)
-
-    await tx.wallet.update({
-      where: { userId },
-      data: { mainBalance: newMainBalance },
-    })
-  }
+  await syncWalletMainBalance(tx, userId)
 }
 
 export async function validateRecipientEmailAction(email: string): Promise<ApiResponse & { userId?: string, userName?: string }> {
@@ -170,7 +98,7 @@ export async function submitUserPayRequestAction(data: { recipientEmail: string,
       })
 
       // Deduct from sender
-      await deductFromMainWallets(tx, session.id, amount)
+      await deductFromWallets(tx, session.id, amount)
 
       // Credit to receiver
       await creditToMainWallet(tx, recipient.id, finalAmount)
