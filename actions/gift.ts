@@ -39,25 +39,10 @@ export async function submitGiftAction(
 
 
     // 1c. Check if user has activated a membership plan
-    const hasMembership = (dbUser.membershipPlanId && dbUser.membershipPlan && dbUser.membershipPlan.price > 0) ||
-                          (dbUser.basicMembershipActivatedAt && dbUser.basicMembershipAmount > 0)
+    const hasMembership = Boolean(dbUser.membershipPlanId && dbUser.membershipPlanActivatedAt) ||
+                          Boolean(dbUser.basicMembershipActivatedAt && dbUser.basicMembershipAmount > 0)
     if (!hasMembership) {
       return { success: false, message: 'You must activate a membership plan before applying for a welcome gift.' }
-    }
-
-    // 1d. Check if a gift deposit is required and has been approved
-    const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
-    const requiredGiftDeposit = settings?.giftDepositAmount ?? 0
-    if (requiredGiftDeposit > 0) {
-      const approvedGiftDeposit = await prisma.giftDeposit.findFirst({
-        where: { userId: session.id, status: 'APPROVED' }
-      })
-      if (!approvedGiftDeposit) {
-        return {
-          success: false,
-          message: `A gift deposit of ₹${requiredGiftDeposit.toLocaleString('en-IN')} is required and must be approved by admin before you can submit a shipping address.`
-        }
-      }
     }
 
     // 2. Validate details with Zod
@@ -131,18 +116,38 @@ export async function submitGiftAction(
       })
 
       if (giftCount >= 1) {
-        // Subsequent gift request -> Pay ₹2,500
+        const latestGift = await prisma.gift.findFirst({
+          where: { userId: session.id },
+          orderBy: { createdAt: 'desc' },
+          select: { deliveryStatus: true },
+        })
+        if (latestGift?.deliveryStatus !== 'DELIVERED') {
+          return {
+            success: false,
+            message: 'You can apply for the next gift only after your previous gift has been delivered.',
+          }
+        }
+
+        // Subsequent gift request -> Pay ₹2,500 from Deposit Wallet.
         const wallet = await prisma.wallet.findUnique({
           where: { userId: session.id }
         })
-        if (!wallet || wallet.mainBalance < 2500) {
-          return { success: false, message: 'Insufficient balance in wallet. A payment of ₹2,500 is required for subsequent gift requests.' }
+        if (!wallet || wallet.depositBalance < 2500) {
+          return { success: false, message: 'Insufficient Deposit Wallet balance. A payment of ₹2,500 is required for subsequent gift requests.' }
         }
 
         // Deduct payment and create new gift
         await prisma.$transaction(async (tx) => {
-          const { deductFromWallets } = await import('./walletUtils')
-          await deductFromWallets(tx, session.id, 2500)
+          const deduction = await tx.wallet.updateMany({
+            where: {
+              userId: session.id,
+              depositBalance: { gte: 2500 },
+            },
+            data: { depositBalance: { decrement: 2500 } },
+          })
+          if (deduction.count !== 1) {
+            throw new Error('Insufficient Deposit Wallet balance.')
+          }
 
           await tx.transaction.create({
             data: {
@@ -150,7 +155,7 @@ export async function submitGiftAction(
               type: 'INVESTMENT',
               amount: 2500,
               status: 'COMPLETED',
-              description: `Gift Request Payment (Request #${giftCount + 1})`,
+              description: `Gift Request Payment from Deposit Wallet (Request #${giftCount + 1})`,
               walletType: 'MAIN'
             }
           })
@@ -193,25 +198,23 @@ export async function submitGiftAction(
       }
     }
 
-    // 4. Get current pending welcome gifts and gift deposits count
-    const [pendingGifts, pendingGiftDeps] = await Promise.all([
-      prisma.gift.count({ where: { deliveryStatus: 'PENDING' } }),
-      prisma.giftDeposit.count({ where: { status: 'PENDING' } }),
-    ])
-    const totalGiftsPending = pendingGifts + pendingGiftDeps
+    // 4. Get current pending welcome gift requests for admin processing.
+    const pendingGifts = await prisma.gift.count({
+      where: { deliveryStatus: 'PENDING' },
+    })
 
     // Create an in-app notification
     await prisma.notification.create({
       data: {
         userId: session.id,
-        title: `Gift Address Received! 🎁 (Pending: ${totalGiftsPending})`,
-        message: `Your address details for the Premium Welcome Gift have been saved. Total pending gifts/deposits: ${totalGiftsPending}.`,
+        title: `Gift Request Received! 🎁 (Pending: ${pendingGifts})`,
+        message: `Your Premium Welcome Gift request has been sent to the admin for approval. Total pending gift requests: ${pendingGifts}.`,
         type: 'SUCCESS'
       }
     })
 
     revalidatePath('/dashboard/gift')
-    return { success: true, message: 'Gift shipping details submitted successfully!' }
+    return { success: true, message: 'Gift request submitted to the admin successfully!' }
   } catch (error: any) {
     console.error('Error submitting gift address:', error)
     return { success: false, message: error.message || 'An error occurred during submission' }

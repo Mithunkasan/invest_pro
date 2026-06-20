@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
+import { distributeReferralAndLevelCommissions } from './rules'
 
 export async function approveGiftDepositAction(giftDepositId: string): Promise<ApiResponse> {
   try {
@@ -24,11 +25,14 @@ export async function approveGiftDepositAction(giftDepositId: string): Promise<A
       return { success: false, message: 'This request has already been processed.' }
     }
 
-    // Update status to APPROVED
-    await prisma.giftDeposit.update({
-      where: { id: giftDepositId },
+    // Claim the pending request atomically so concurrent approvals cannot pay twice.
+    const approval = await prisma.giftDeposit.updateMany({
+      where: { id: giftDepositId, status: 'PENDING' },
       data: { status: 'APPROVED', approvedById: admin.id }
     })
+    if (approval.count !== 1) {
+      return { success: false, message: 'This request has already been processed.' }
+    }
 
     // Notify user
     await prisma.notification.create({
@@ -40,10 +44,14 @@ export async function approveGiftDepositAction(giftDepositId: string): Promise<A
       }
     })
 
-    // Distribute referral commissions to referring users — same logic as deposit/membership approval
+    // Gift purchases use the same qualification-based upline structure as memberships.
     if (giftDeposit.amount > 0 && giftDeposit.user.referredById) {
-      const { distributeReferralAndLevelCommissions } = require('./rules')
-      await distributeReferralAndLevelCommissions(giftDeposit.userId, giftDeposit.amount, giftDepositId)
+      await distributeReferralAndLevelCommissions(
+        giftDeposit.userId,
+        giftDeposit.amount,
+        giftDepositId,
+        'GIFT'
+      )
     }
 
     revalidatePath('/admin/dashboard/gifts')

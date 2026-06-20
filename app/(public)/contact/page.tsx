@@ -4,7 +4,7 @@ import ContactClient from './ContactClient'
 
 export const metadata: Metadata = {
   title: 'Contact Us',
-  description: 'Get in touch with the VR Galaxy support team. We are available 24/7 online to assist with your investment, deposit, withdrawal, and wallet queries in India.',
+  description: 'Get in touch with the VR Galaxy support team. We are available 24/7 online to assist with your Smart Hybrid Digital Earning, deposit, withdrawal, and wallet queries in India.',
   alternates: { canonical: '/contact' },
 }
 

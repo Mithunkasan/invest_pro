@@ -30,16 +30,7 @@ interface BonusClientProps {
   initialBonuses: BonusLog[]
 }
 
-const walletOptions = [
-  'Main Wallet',
-  'Deposit Wallet',
-  'Referral Wallet',
-  'Reward Wallet',
-  'Game Wallet',
-  'Bonus Wallet',
-  'Share Wallet',
-  'Level Wallet'
-]
+const walletOptions = ['Bonus Wallet']
 
 const remarkSuggestions = [
   'Performance Bonus',
@@ -60,7 +51,7 @@ export function BonusClient({ users, initialBonuses }: BonusClientProps) {
   const [emailInput, setEmailInput] = useState('')
   const [amount, setAmount] = useState('')
   const [remark, setRemark] = useState('')
-  const [selectedWallet, setSelectedWallet] = useState('Main Wallet')
+  const [selectedWallet, setSelectedWallet] = useState('Bonus Wallet')
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserItem | null>(null)
   

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-membership-rewards",
+      "schedule": "30 4 * * *"
+    }
+  ]
+}

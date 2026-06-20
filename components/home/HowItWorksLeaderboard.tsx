@@ -69,7 +69,7 @@ export function HowItWorksLeaderboard({ leaderboard = [] }: HowItWorksLeaderboar
             transition={{ duration: 0.5 }}
             className="text-xs sm:text-sm font-black tracking-[0.22em] uppercase mb-3 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
           >
-            DECENTRALIZED COMMUNITY & HIGH-YIELD ROI
+            DECENTRALIZED COMMUNITY & HIGH-YIELD DAILY REWARD EARNINGS
           </motion.p>
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
@@ -157,7 +157,7 @@ export function HowItWorksLeaderboard({ leaderboard = [] }: HowItWorksLeaderboar
                   </div>
                   <h4 className="text-base font-extrabold text-white mt-4">Earn</h4>
                   <p className="text-xs text-slate-400 mt-1 max-w-[150px] leading-relaxed">
-                    Collect daily ROI payouts & task rewards.
+                    Collect Daily Reward Earnings payouts & task rewards.
                   </p>
                 </div>
 
@@ -312,7 +312,7 @@ export function HowItWorksLeaderboard({ leaderboard = [] }: HowItWorksLeaderboar
                 Ready to Start Your Passive Yield Journey?
               </h4>
               <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-xl">
-                Deposit funds securely, invite your peer network, and track your consistent daily ROI payouts. Secure your slot today!
+                Deposit funds securely, invite your peer network, and track your consistent Daily Reward Earnings payouts. Secure your slot today!
               </p>
             </div>
           </div>

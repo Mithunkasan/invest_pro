@@ -6,6 +6,7 @@ import { hashPassword, comparePassword, setSession, clearSession } from '@/lib/a
 import { sendWelcomeEmail } from '@/lib/mail'
 import { loginSchema, registerSchema, adminLoginSchema } from '@/utils/validators'
 import type { ApiResponse } from '@/types'
+import { ensureFreeMembershipPlan } from '@/lib/freeMembership'
 
 // ── User Login ────────────────────────────────────────────────────────────────
 export async function loginAction(
@@ -21,7 +22,10 @@ export async function loginAction(
     return { success: false, message: 'Validation failed', errors: parsed.error.flatten().fieldErrors as Record<string, string> }
   }
 
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } })
+  const user = await prisma.user.findUnique({
+    where: { email: parsed.data.email },
+    include: { kyc: { select: { status: true } } },
+  })
   if (!user) {
     return { success: false, message: 'Invalid email or password' }
   }
@@ -36,6 +40,9 @@ export async function loginAction(
   }
 
   await setSession({ id: user.id, email: user.email, name: user.name, role: 'USER', type: 'user', memberType: user.memberType as 'FREE' | 'BASIC' | 'PREMIUM' })
+  if (user.membershipPlanId && user.membershipPlanActivatedAt && user.kyc?.status !== 'APPROVED') {
+    redirect('/dashboard/kyc')
+  }
   redirect('/dashboard')
 }
 
@@ -49,9 +56,11 @@ export async function registerAction(
     phone: formData.get('phone') as string,
     password: formData.get('password') as string,
     confirmPassword: formData.get('confirmPassword') as string,
-    referralCode: formData.get('referralCode') as string || undefined,
+    referralCode: String(formData.get('referralCode') || '').trim() || undefined,
     terms: formData.get('terms') === 'on' ? true : undefined,
-    memberType: formData.get('memberType') as string || 'FREE',
+    // Membership selection is not accepted during registration. Every new
+    // account starts on the Free Membership plan.
+    memberType: 'FREE' as const,
   }
 
   const parsed = registerSchema.safeParse(raw)
@@ -80,11 +89,7 @@ export async function registerAction(
 
   const passwordHash = await hashPassword(parsed.data.password)
 
-  let membershipPlanId: string | undefined
-  if (parsed.data.memberType === 'FREE') {
-    const freePlan = await prisma.membershipPlan.findFirst({ where: { name: 'Free Membership' } })
-    if (freePlan) membershipPlanId = freePlan.id
-  }
+  const freePlan = await ensureFreeMembershipPlan()
 
   const user = await prisma.user.create({
     data: {
@@ -93,8 +98,8 @@ export async function registerAction(
       phone: parsed.data.phone,
       passwordHash,
       referredById,
-      memberType: parsed.data.memberType as any || 'FREE',
-      membershipPlanId,
+      memberType: 'FREE',
+      membershipPlanId: freePlan.id,
     },
   })
 

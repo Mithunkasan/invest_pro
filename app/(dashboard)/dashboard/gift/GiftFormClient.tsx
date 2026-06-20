@@ -34,7 +34,7 @@ interface GiftFormClientProps {
     updatedAt: string
   } | null
   giftCount: number
-  walletBalance: number
+  depositWalletBalance: number
   requiredGiftDepositAmount: number
   giftDeposit: {
     id: string
@@ -47,7 +47,7 @@ interface GiftFormClientProps {
   } | null
 }
 
-export function GiftFormClient({ gift: initialGift, giftCount, walletBalance, requiredGiftDepositAmount, giftDeposit: initialGiftDeposit }: GiftFormClientProps) {
+export function GiftFormClient({ gift: initialGift, giftCount, depositWalletBalance, requiredGiftDepositAmount, giftDeposit: initialGiftDeposit }: GiftFormClientProps) {
   const [gift, setGift] = useState(initialGift)
   const [giftDeposit, setGiftDeposit] = useState(initialGiftDeposit)
   const [showForm, setShowForm] = useState(false)
@@ -686,21 +686,21 @@ export function GiftFormClient({ gift: initialGift, giftCount, walletBalance, re
             <span className="font-extrabold text-white">Your previous gift has been delivered!</span>
           </div>
           <p className="text-white/70 leading-relaxed">
-            You are eligible to apply for your next welcome gift. Note that subsequent requests require a payment of <strong className="text-emerald-300 font-extrabold">₹2,500</strong> which will be deducted from your wallet main balance upon submission.
+            You are eligible to apply for your next welcome gift. Subsequent requests require <strong className="text-emerald-300 font-extrabold">₹2,500</strong>, deducted from your Deposit Wallet upon submission.
           </p>
           <div className="text-[10px] text-white/50">
-            Wallet Balance: <strong className={walletBalance >= 2500 ? "text-emerald-400 font-extrabold" : "text-rose-400 font-extrabold"}>₹{walletBalance.toLocaleString('en-IN')}</strong>
+            Deposit Wallet Balance: <strong className={depositWalletBalance >= 2500 ? "text-emerald-400 font-extrabold" : "text-rose-400 font-extrabold"}>₹{depositWalletBalance.toLocaleString('en-IN')}</strong>
           </div>
         </div>
       )}
 
-      {giftCount >= 1 && walletBalance < 2500 && (
+      {giftCount >= 1 && depositWalletBalance < 2500 && (
         <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold flex items-start gap-3">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <span className="block text-white font-extrabold">Insufficient Wallet Balance</span>
             <span className="block text-white/70 font-medium leading-relaxed">
-              You need a wallet balance of at least ₹2,500 to submit subsequent gift requests. Your current balance is ₹{walletBalance.toLocaleString('en-IN')}. Please add funds to your wallet to proceed.
+              You need at least ₹2,500 in your Deposit Wallet to submit subsequent gift requests. Your current Deposit Wallet balance is ₹{depositWalletBalance.toLocaleString('en-IN')}.
             </span>
           </div>
         </div>
@@ -874,7 +874,7 @@ export function GiftFormClient({ gift: initialGift, giftCount, walletBalance, re
         <div className="pt-4 flex justify-end">
           <button
             type="submit"
-            disabled={loading || (giftCount >= 1 && walletBalance < 2500)}
+            disabled={loading || (giftCount >= 1 && depositWalletBalance < 2500)}
             className="py-3 px-6 rounded-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/20 transition-all text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Submitting Details...' : (giftCount === 0 ? 'Submit Shipping Details' : 'Pay ₹2,500 & Submit Gift Request')}

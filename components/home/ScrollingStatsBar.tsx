@@ -73,7 +73,7 @@ const CosmicNebula = () => (
 
 // Ticker Items data list
 const tickerItems = [
-  { text: "HIGH-YIELD DAILY ROI STARTING FROM 1.5% TO 3.0%", Icon: Rocket, color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
+  { text: "HIGH-YIELD DAILY REWARD EARNINGS STARTING FROM 1.5% TO 3.0%", Icon: Rocket, color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
   { text: "100% SECURE & TRANSPARENT LEDGER SYSTEM", Icon: ShieldCheck, color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
   { text: "DECENTRALIZED SPACE REWARDS & COMMUNITY", Icon: Coins, color: "text-purple-400 bg-purple-500/10 border-purple-500/20" },
   { text: "UNLOCK LEVEL-INCOME COMMISSIONS UP TO 3 LEVELS", Icon: Users, color: "text-pink-400 bg-pink-500/10 border-pink-500/20" },

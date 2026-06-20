@@ -371,7 +371,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                 onChange={handleChange}
                 disabled={loading}
               />
-              <p className="text-[11px] text-muted-foreground">Number of referred members with active investments needed (Standard: 5).</p>
+              <p className="text-[11px] text-muted-foreground">Number of referred members with active Smart Hybrid Digital Earnings needed (Standard: 5).</p>
             </div>
 
             <div className="space-y-2">

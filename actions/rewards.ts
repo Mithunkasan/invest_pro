@@ -58,7 +58,9 @@ export async function claimRewardAction(
         data: {
           rewardBalance: {
             increment: amount
-          }
+          },
+          // Spending rewards never reduces lifetime earnings.
+          ...(amount > 0 ? { totalEarned: { increment: amount } } : {}),
         }
       })
 

@@ -198,7 +198,7 @@ async function main() {
   }
   console.log(`✅ Membership plans seeded: ${seededMembershipsCount} new added`)
 
-  // ── Investment Plans (Create if not exists) ──────────────────
+  // ── Smart Hybrid Digital Earning Plans (Create if not exists) ──────────────────
   const investmentPlansData = [
     {
       name: 'Bronze Plan',
@@ -208,7 +208,7 @@ async function main() {
       roiPercent: 1.5,
       durationDays: 30,
       color: '#CD7F32',
-      features: ['1.5% Daily ROI', '30 Days Duration', 'Min ₹1,000', 'UPI Deposit', '24/7 Support'],
+      features: ['1.5% Daily Reward Earnings', '30 Days Duration', 'Min ₹1,000', 'UPI Deposit', '24/7 Support'],
     },
     {
       name: 'Silver Plan',
@@ -218,7 +218,7 @@ async function main() {
       roiPercent: 2.0,
       durationDays: 45,
       color: '#C0C0C0',
-      features: ['2.0% Daily ROI', '45 Days Duration', 'Min ₹10,000', 'Priority Support', 'Referral Bonus'],
+      features: ['2.0% Daily Reward Earnings', '45 Days Duration', 'Min ₹10,000', 'Priority Support', 'Referral Bonus'],
     },
     {
       name: 'Gold Plan',
@@ -228,7 +228,7 @@ async function main() {
       roiPercent: 2.5,
       durationDays: 60,
       color: '#FFD700',
-      features: ['2.5% Daily ROI', '60 Days Duration', 'Min ₹50,000', 'Dedicated Manager', '5% Referral Bonus'],
+      features: ['2.5% Daily Reward Earnings', '60 Days Duration', 'Min ₹50,000', 'Dedicated Manager', '5% Referral Bonus'],
     },
     {
       name: 'Platinum Plan',
@@ -238,7 +238,7 @@ async function main() {
       roiPercent: 3.0,
       durationDays: 90,
       color: '#E5E4E2',
-      features: ['3.0% Daily ROI', '90 Days Duration', 'Min ₹2,00,000', 'VIP Support', '10% Referral Bonus'],
+      features: ['3.0% Daily Reward Earnings', '90 Days Duration', 'Min ₹2,00,000', 'VIP Support', '10% Referral Bonus'],
     },
   ]
 
@@ -252,7 +252,7 @@ async function main() {
       seededInvestmentPlansCount++
     }
   }
-  console.log(`✅ Investment plans seeded: ${seededInvestmentPlansCount} new added`)
+  console.log(`✅ Smart Hybrid Digital Earning plans seeded: ${seededInvestmentPlansCount} new added`)
   console.log('─────────────────────────────────────')
   console.log('📧 Admin Login: admin@vrgalaxy.com / Vrgalaxy@4321admin')
   console.log('─────────────────────────────────────')

@@ -20,7 +20,7 @@ export default async function GiftPage() {
       membershipPlan: true,
       wallet: {
         select: {
-          mainBalance: true
+          depositBalance: true
         }
       }
     }
@@ -37,8 +37,8 @@ export default async function GiftPage() {
 
 
   // Check if user has activated a membership plan
-  const hasMembership = (dbUser.membershipPlanId && dbUser.membershipPlan && dbUser.membershipPlan.price > 0) ||
-                        (dbUser.basicMembershipActivatedAt && dbUser.basicMembershipAmount > 0)
+  const hasMembership = Boolean(dbUser.membershipPlanId && dbUser.membershipPlanActivatedAt) ||
+                        Boolean(dbUser.basicMembershipActivatedAt && dbUser.basicMembershipAmount > 0)
 
   if (!hasMembership) {
     return (
@@ -52,18 +52,6 @@ export default async function GiftPage() {
     )
   }
 
-  // Fetch system settings to get the required gift deposit amount
-  const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
-  const requiredGiftDepositAmount = settings?.giftDepositAmount ?? 0
-
-  // Fetch user's latest gift deposit (if any)
-  const latestGiftDeposit = requiredGiftDepositAmount > 0
-    ? await prisma.giftDeposit.findFirst({
-        where: { userId: session.id },
-        orderBy: { createdAt: 'desc' }
-      })
-    : null
-
   // Fetch the latest submitted gift details (to display status)
   const latestGift = await prisma.gift.findFirst({
     where: { userId: session.id },
@@ -75,7 +63,7 @@ export default async function GiftPage() {
     where: { userId: session.id }
   })
 
-  const walletBalance = dbUser.wallet?.mainBalance ?? 0
+  const depositWalletBalance = dbUser.wallet?.depositBalance ?? 0
 
   return (
     <div className="space-y-6">
@@ -93,9 +81,9 @@ export default async function GiftPage() {
       <GiftFormClient 
         gift={latestGift ? JSON.parse(JSON.stringify(latestGift)) : null} 
         giftCount={giftCount}
-        walletBalance={walletBalance}
-        requiredGiftDepositAmount={requiredGiftDepositAmount}
-        giftDeposit={latestGiftDeposit ? JSON.parse(JSON.stringify(latestGiftDeposit)) : null}
+        depositWalletBalance={depositWalletBalance}
+        requiredGiftDepositAmount={0}
+        giftDeposit={null}
       />
     </div>
   )

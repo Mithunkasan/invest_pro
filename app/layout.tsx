@@ -26,8 +26,8 @@ export const metadata: Metadata = {
     template: '%s | VR Galaxy',
   },
   description:
-    'VR Galaxy is a trusted activation plan platform helping thousands grow their wealth through smart, transparent investments with daily ROI.',
-  keywords: ['investment', 'mutual funds', 'ROI', 'wealth management', 'fintech', 'India'],
+    'VR Galaxy is a trusted activation plan platform helping thousands grow their wealth through Smart Hybrid Digital Earnings with Daily Reward Earnings.',
+  keywords: ['Smart Hybrid Digital Earning', 'mutual funds', 'Daily Reward Earnings', 'wealth management', 'fintech', 'India'],
   authors: [{ name: 'VR Galaxy Team' }],
   creator: 'VR Galaxy',
   openGraph: {
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     locale: 'en_IN',
     url: process.env.NEXT_PUBLIC_APP_URL,
     title: 'VR Galaxy — Smart activation plan platform',
-    description: 'Grow your wealth with daily ROI. Join 10,000+ investors.',
+    description: 'Grow your wealth with Daily Reward Earnings. Join 10,000+ investors.',
     siteName: 'VR Galaxy',
     images: [
       {
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'VR Galaxy — Smart activation plan platform',
-    description: 'Grow your wealth with daily ROI. Join 10,000+ investors.',
+    description: 'Grow your wealth with Daily Reward Earnings. Join 10,000+ investors.',
     images: ['/og-image.png'],
   },
   robots: {

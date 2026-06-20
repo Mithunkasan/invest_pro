@@ -36,8 +36,8 @@ export const faqs: FAQItem[] = [
   {
     id: 'faq-4',
     category: 'general',
-    question: 'Is this an ROI (Return on Activation Plan) Company?',
-    answer: 'No. We do not provide fixed ROI or guaranteed returns on activation plans. Earnings are based on platform activities, tasks, referrals, rewards, and participation.'
+    question: 'Is this a Daily Reward Earnings (Return on Activation Plan) Company?',
+    answer: 'No. We do not provide fixed Daily Reward Earnings or guaranteed returns on activation plans. Earnings are based on platform activities, tasks, referrals, rewards, and participation.'
   },
   {
     id: 'faq-5',

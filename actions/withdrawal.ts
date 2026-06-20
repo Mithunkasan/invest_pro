@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
-import { deductFromWallets, syncWalletMainBalance } from './walletUtils'
+import { deductFromWallets, refundWithdrawalToWallets } from './walletUtils'
 
 // ── Request Withdrawal ────────────────────────────────────────────────────────
 export async function requestWithdrawalAction(
@@ -42,7 +42,7 @@ export async function requestWithdrawalAction(
 
   await prisma.$transaction(async (tx) => {
     // Deduct from wallets in priority order
-    await deductFromWallets(tx, session.id, amount)
+    const walletDeductions = await deductFromWallets(tx, session.id, amount)
     
     // Create withdrawal request
     await tx.withdrawal.create({
@@ -52,7 +52,7 @@ export async function requestWithdrawalAction(
         deduction: deductionAmount,
         netAmount,
         walletType,
-        bankDetails: { bankName, accountNo, ifsc, accountName },
+        bankDetails: { bankName, accountNo, ifsc, accountName, _walletDeductions: walletDeductions },
         upiId: upiId || undefined,
         status: 'PENDING',
       },
@@ -95,6 +95,9 @@ export async function updateWithdrawalStatusAction(
 ): Promise<ApiResponse> {
   const withdrawal = await prisma.withdrawal.findUnique({ where: { id: withdrawalId } })
   if (!withdrawal) return { success: false, message: 'Withdrawal not found' }
+  if (withdrawal.status !== 'PENDING') {
+    return { success: false, message: 'Withdrawal has already been processed' }
+  }
 
   if (status === 'APPROVED') {
     await prisma.$transaction([
@@ -116,24 +119,23 @@ export async function updateWithdrawalStatusAction(
       })
     ])
   } else if (status === 'REJECTED') {
-    // Refund if rejected
-    const balanceKey = withdrawal.walletType === 'MAIN' ? 'rewardBalance'
-      : withdrawal.walletType === 'BONUS' ? 'bonusBalance' : 'referralBalance'
-
-    await prisma.$transaction([
-      prisma.withdrawal.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.withdrawal.update({
         where: { id: withdrawalId },
         data: {
           status,
           remarks,
           processedAt: new Date(),
         },
-      }),
-      prisma.wallet.update({
-        where: { userId: withdrawal.userId },
-        data: { [balanceKey]: { increment: withdrawal.amount } },
-      }),
-      prisma.notification.create({
+      })
+      const bankDetails = withdrawal.bankDetails as Record<string, unknown>
+      await refundWithdrawalToWallets(
+        tx,
+        withdrawal.userId,
+        bankDetails?._walletDeductions,
+        withdrawal.amount
+      )
+      await tx.notification.create({
         data: {
           userId: withdrawal.userId,
           title: 'Withdrawal Rejected',
@@ -141,8 +143,7 @@ export async function updateWithdrawalStatusAction(
           type: 'ERROR',
         },
       })
-    ])
-    await syncWalletMainBalance(prisma, withdrawal.userId)
+    })
   }
 
   revalidatePath('/admin/dashboard/withdrawals')

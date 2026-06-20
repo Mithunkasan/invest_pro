@@ -3,7 +3,7 @@ import { getInvestmentPlans } from '@/actions/investment'
 
 export const metadata: Metadata = {
   title: 'Activation Plans',
-  description: 'Explore our high-yield daily ROI activation plan options starting at ₹1,00,000 or less. Choose from Bronze, Silver, Gold, or Platinum plans with daily yields up to 3.0%.',
+  description: 'Explore our high-yield Daily Reward Earnings activation plan options starting at ₹1,00,000 or less. Choose from Bronze, Silver, Gold, or Platinum plans with daily yields up to 3.0%.',
   alternates: { canonical: '/plans' },
 }
 
@@ -15,7 +15,7 @@ export default async function PlansPage() {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     'name': 'VR Galaxy Activation Plans',
-    'description': 'A list of high-yield activation plans offering daily ROI with clear entry limits.',
+    'description': 'A list of high-yield activation plans offering Daily Reward Earnings with clear entry limits.',
     'url': `${baseUrl}/plans`,
     'numberOfItems': plans.length,
     'itemListElement': plans.map((plan: any, index: number) => ({
@@ -24,7 +24,7 @@ export default async function PlansPage() {
       'item': {
         '@type': 'FinancialProduct',
         'name': plan.name,
-        'description': plan.description,
+        'description': plan.description.replace(/\bROI\b/g, 'Daily Reward Earnings').replace(/\bInvestment\b/gi, 'Smart Hybrid Digital Earning'),
         'offers': {
           '@type': 'Offer',
           'priceCurrency': 'INR',
@@ -56,17 +56,17 @@ export default async function PlansPage() {
                 <div className="text-center py-5">
                   <h2 className="text-xl font-bold">{plan.name}</h2>
                   <div className="text-4xl font-black mt-2" style={{ color: plan.color }}>{plan.roiPercent}%</div>
-                  <p className="text-sm text-muted-foreground">Daily ROI</p>
+                  <p className="text-sm text-muted-foreground">Daily Reward Earnings</p>
                 </div>
               </div>
               <div className="p-5 space-y-3">
-                <p className="text-sm text-muted-foreground">{plan.description}</p>
+                <p className="text-sm text-muted-foreground">{plan.description.replace(/\bROI\b/g, 'Daily Reward Earnings').replace(/\bInvestment\b/gi, 'Smart Hybrid Digital Earning')}</p>
                 <div className="space-y-2 text-sm">
                   {[
                     ['Duration', `${plan.durationDays} Days`],
                     ['Min Activation Plan', `₹${plan.minAmount.toLocaleString('en-IN')}`],
                     ['Max Activation Plan', `₹${plan.maxAmount.toLocaleString('en-IN')}`],
-                    ['Total ROI', `${(plan.roiPercent * plan.durationDays).toFixed(0)}%`],
+                    ['Total Daily Reward Earnings', `${(plan.roiPercent * plan.durationDays).toFixed(0)}%`],
                   ].map(([k, v]: any) => (
                     <div key={k} className="flex justify-between border-b border-border pb-1">
                       <span className="text-muted-foreground">{k}</span>
@@ -77,7 +77,7 @@ export default async function PlansPage() {
                 <ul className="space-y-1.5">
                   {plan.features.map((f: string) => (
                     <li key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="text-green-500">✓</span> {f}
+                      <span className="text-green-500">✓</span> {f.replace(/\bROI\b/g, 'Daily Reward Earnings').replace(/\bInvestment\b/gi, 'Smart Hybrid Digital Earning')}
                     </li>
                   ))}
                 </ul>
@@ -89,9 +89,9 @@ export default async function PlansPage() {
           ))}
         </div>
 
-        {/* ROI Calculator */}
+        {/* Daily Reward Earnings Calculator */}
         <div className="mt-16 premium-card p-8 text-center">
-          <h2 className="text-2xl font-bold mb-4">Quick ROI Calculator</h2>
+          <h2 className="text-2xl font-bold mb-4">Quick Daily Reward Earnings Calculator</h2>
           <p className="text-muted-foreground mb-6">See how much you can earn with VR Galaxy Network</p>
           <div className="bg-muted/30 rounded-xl p-6 max-w-lg mx-auto">
             <div className="grid grid-cols-3 gap-4 text-center">

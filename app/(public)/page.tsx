@@ -13,7 +13,7 @@ import { prisma } from '@/lib/prisma'
 
 export const metadata: Metadata = {
   title: 'VR Galaxy Network — Smart activation plan platform',
-  description: 'Grow your wealth with daily ROI starting from 1.5%. Join 10,000+ investors. Min investment ₹1,000.',
+  description: 'Grow your wealth with Daily Reward Earnings starting from 1.5%. Join 10,000+ investors. Minimum Smart Hybrid Digital Earning ₹1,000.',
   alternates: { canonical: '/' },
 }
 
@@ -112,8 +112,8 @@ export default async function HomePage() {
   const financeJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FinancialProduct',
-    'name': 'VR Galaxy Daily ROI Activation Plan',
-    'description': 'High-yield smart activation plans starting from ₹1,000 with a daily ROI ranging from 1.5% to 3.0%.',
+    'name': 'VR Galaxy Daily Reward Earnings Activation Plan',
+    'description': 'High-yield smart activation plans starting from ₹1,000 with Daily Reward Earnings ranging from 1.5% to 3.0%.',
     'url': `${baseUrl}/plans`,
     'offers': {
       '@type': 'Offer',

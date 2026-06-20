@@ -37,9 +37,17 @@ export function DashboardLayoutClient({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
-  const showProfilePopup = !user.profileCompleted && !pathname.startsWith('/dashboard/profile')
+  const requiresKyc = isMembershipActivated && !isKycApproved
+  const showProfilePopup = !requiresKyc && !user.profileCompleted && !pathname.startsWith('/dashboard/profile')
 
   useEffect(() => {
+    if (requiresKyc) {
+      if (!pathname.startsWith('/dashboard/kyc')) {
+        router.replace('/dashboard/kyc')
+      }
+      return
+    }
+
     if (user.isMembershipExpired) {
       const allowedRoutes = ['/dashboard/membership', '/dashboard/withdraw']
       const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
@@ -128,7 +136,8 @@ export function DashboardLayoutClient({
     user.profileCompleted,
     hasApprovedDeposit,
     isMembershipActivated,
-    user.memberType
+    user.memberType,
+    requiresKyc,
   ])
 
   const openProfileForm = () => {

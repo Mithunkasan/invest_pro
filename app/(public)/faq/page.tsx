@@ -50,10 +50,10 @@ export default function FAQPage() {
       },
       {
         '@type': 'Question',
-        'name': 'Is this an ROI (Return on Activation Plan) Company?',
+        'name': 'Is this a Daily Reward Earnings (Return on Activation Plan) Company?',
         'acceptedAnswer': {
           '@type': 'Answer',
-          'text': 'No. We do not provide fixed ROI or guaranteed returns on activation plans. Earnings are based on platform activities, tasks, referrals, rewards, and participation.'
+          'text': 'No. We do not provide fixed Daily Reward Earnings or guaranteed returns on activation plans. Earnings are based on platform activities, tasks, referrals, rewards, and participation.'
         }
       },
       {

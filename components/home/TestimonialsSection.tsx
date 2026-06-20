@@ -31,7 +31,7 @@ const testimonials = [
     profit: '₹1,62,000',
     invested: '₹2,00,000',
     rating: 5,
-    text: 'The ROI on the Platinum Plan is exceptional. I have referred 15 friends and the referral income is an added bonus. Great platform!',
+    text: 'The Daily Reward Earnings on the Platinum Plan are exceptional. I have referred 15 friends and the referral income is an added bonus. Great platform!',
     initials: 'VP',
   },
   {

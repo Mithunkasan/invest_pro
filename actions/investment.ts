@@ -18,7 +18,7 @@ export const getInvestmentPlans = unstable_cache(
   { revalidate: 3600, tags: ['investment-plans'] }
 )
 
-// ── Create Investment ─────────────────────────────────────────────────────────
+// ── Create Smart Hybrid Digital Earning ───────────────────────────────────────
 export async function createInvestmentAction(
   planId: string,
   amount: number
@@ -34,7 +34,7 @@ export async function createInvestmentAction(
   if (amount < plan.minAmount || amount > plan.maxAmount) {
     return {
       success: false,
-      message: `Investment amount must be between ₹${plan.minAmount.toLocaleString('en-IN')} and ₹${plan.maxAmount.toLocaleString('en-IN')}`,
+      message: `Smart Hybrid Digital Earning amount must be between ₹${plan.minAmount.toLocaleString('en-IN')} and ₹${plan.maxAmount.toLocaleString('en-IN')}`,
     }
   }
 
@@ -50,7 +50,7 @@ export async function createInvestmentAction(
     // Deduct from wallet sub-wallets
     await deductFromWallets(tx, session.id, amount)
 
-    // Create investment
+    // Create Smart Hybrid Digital Earning
     const inv = await tx.investment.create({
       data: {
         userId: session.id,
@@ -69,7 +69,7 @@ export async function createInvestmentAction(
         amount,
         status: 'COMPLETED',
         reference: inv.id,
-        description: `${plan.name} Investment`,
+        description: `${plan.name} Smart Hybrid Digital Earning`,
         walletType: 'MAIN',
       },
     })
@@ -93,7 +93,7 @@ export async function createInvestmentAction(
   return { success: true, message: 'Activation Plan created successfully!' }
 }
 
-// ── Get User Investments ──────────────────────────────────────────────────────
+// ── Get User Smart Hybrid Digital Earnings ────────────────────────────────────
 export async function getUserInvestments() {
   const session = await getSession()
   if (!session) return []
@@ -105,7 +105,7 @@ export async function getUserInvestments() {
   })
 }
 
-// ── Admin: Get All Investments ────────────────────────────────────────────────
+// ── Admin: Get All Smart Hybrid Digital Earnings ──────────────────────────────
 export async function getAllInvestments() {
   return prisma.investment.findMany({
     include: {

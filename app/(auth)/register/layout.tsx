@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Create Account',
-  description: 'Sign up for a VR Galaxy account to start earning daily ROI and leverage our multi-level referral commissions.',
+  description: 'Sign up for a VR Galaxy account to start earning Daily Reward Earnings and leverage our multi-level referral commissions.',
   alternates: {
     canonical: '/register',
   },

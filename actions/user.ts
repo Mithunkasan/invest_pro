@@ -86,14 +86,14 @@ export async function submitWithdrawal(formData: FormData): Promise<ApiResponse>
 
     await prisma.$transaction(async (tx) => {
       // Deduct from wallet immediately
-      await deductFromWallets(tx, session.id, amount)
+      const walletDeductions = await deductFromWallets(tx, session.id, amount)
       
       // Create withdrawal request
       await tx.withdrawal.create({
         data: {
           userId: session.id,
           amount,
-          bankDetails,
+          bankDetails: { ...bankDetails, _walletDeductions: walletDeductions },
           status: 'PENDING',
         },
       })
@@ -118,7 +118,7 @@ export async function submitWithdrawal(formData: FormData): Promise<ApiResponse>
   }
 }
 
-// ── Start Investment ──────────────────────────────────────────────────────────
+// ── Start Smart Hybrid Digital Earning ────────────────────────────────────────
 export async function startInvestment(planId: string, amount: number): Promise<ApiResponse> {
   const session = await getSession()
   if (!session) return { success: false, message: 'Unauthorized' }
@@ -144,7 +144,7 @@ export async function startInvestment(planId: string, amount: number): Promise<A
     await prisma.$transaction(async (tx) => {
       // Deduct from wallet
       await deductFromWallets(tx, session.id, amount)
-      // Create investment
+      // Create Smart Hybrid Digital Earning
       await tx.investment.create({
         data: {
           userId: session.id,
@@ -174,7 +174,7 @@ export async function startInvestment(planId: string, amount: number): Promise<A
     revalidatePath('/dashboard/wallet')
     return { success: true, message: `Successfully invested in ${plan.name}!` }
   } catch (error) {
-    return { success: false, message: 'Failed to start investment' }
+    return { success: false, message: 'Failed to start Smart Hybrid Digital Earning' }
   }
 }
 

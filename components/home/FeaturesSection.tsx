@@ -26,7 +26,7 @@ const features = [
     color: 'bg-green-500/10 text-green-500'
   },
   {
-    title: 'Daily ROI Tracking',
+    title: 'Daily Reward Earnings Tracking',
     desc: 'Watch your wealth grow in real-time with our transparent dashboard and daily return updates.',
     icon: BarChart3,
     color: 'bg-primary/10 text-primary'
@@ -45,7 +45,7 @@ const features = [
   },
   {
     title: 'Global Accessibility',
-    desc: 'Access your account and manage your investments from anywhere in the world, any time.',
+    desc: 'Access your account and manage your Smart Hybrid Digital Earnings from anywhere in the world, any time.',
     icon: Globe,
     color: 'bg-cyan-500/10 text-cyan-500'
   },
@@ -63,7 +63,7 @@ export function FeaturesSection() {
       <div className="text-center mb-16">
         <h2 className="section-heading">Why Choose VR Galaxy?</h2>
         <p className="section-subheading">
-          We combine cutting-edge technology with smart investment strategies to provide the best platform for our users.
+          We combine cutting-edge technology with Smart Hybrid Digital Earning strategies to provide the best platform for our users.
         </p>
       </div>
 
