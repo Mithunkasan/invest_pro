@@ -27,7 +27,7 @@ export function WhatsAppButton() {
 
   // Support phone number matching Footer contact credentials
   const phoneNumber = '918695890443'
-  const supportText = encodeURIComponent("Hi VR Galaxy, I'd like to know more about your investment plans.")
+  const supportText = encodeURIComponent("Hi VR Galaxy, I'd like to know more about your activation plans.")
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${supportText}`
 
   return (

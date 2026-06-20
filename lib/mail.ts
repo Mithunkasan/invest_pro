@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
   },
 })
 
-const defaultFrom = `"${process.env.MAIL_FROM_NAME || 'InvestPro'}" <${process.env.MAIL_FROM_ADDRESS || process.env.SMTP_USER}>`
+const defaultFrom = `"${process.env.MAIL_FROM_NAME || 'VR Galaxy Network'}" <${process.env.MAIL_FROM_ADDRESS || process.env.SMTP_USER}>`
 
 export async function sendOtpEmail(to: string, otp: string) {
   const expiryMinutes = process.env.OTP_EXPIRY_MINUTES || '10'
@@ -29,7 +29,7 @@ export async function sendOtpEmail(to: string, otp: string) {
         <p style="color: #ef4444; font-size: 14px;">This OTP is valid for ${expiryMinutes} minutes. Do not share it with anyone.</p>
         <p>If you didn't request this, you can safely ignore this email.</p>
         <br />
-        <p>Best regards,<br/>The ${process.env.MAIL_FROM_NAME || 'InvestPro'} Team</p>
+        <p>Best regards,<br/>The ${process.env.MAIL_FROM_NAME || 'VR Galaxy Network'} Team</p>
       </div>
     `,
   }
@@ -43,19 +43,19 @@ export async function sendWelcomeEmail(to: string, name: string) {
   const mailOptions = {
     from: defaultFrom,
     to,
-    subject: 'Welcome to InvestPro! 🎉',
+    subject: 'Welcome to VR Galaxy Network! 🎉',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <h2 style="color: #3b82f6;">Welcome to InvestPro!</h2>
+        <h2 style="color: #3b82f6;">Welcome to VR Galaxy Network!</h2>
         <p>Hi ${name},</p>
         <p>Your registration was successful. We are thrilled to have you on board!</p>
-        <p>You can now log in to your account and start your investment journey.</p>
+        <p>You can now log in to your account and Start your activation plan journey.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${appUrl}/login" style="background-color: #3b82f6; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login Now</a>
         </div>
         <p>If you have any questions, feel free to reply to this email.</p>
         <br />
-        <p>Best regards,<br/>The ${process.env.MAIL_FROM_NAME || 'InvestPro'} Team</p>
+        <p>Best regards,<br/>The ${process.env.MAIL_FROM_NAME || 'VR Galaxy Network'} Team</p>
       </div>
     `,
   }
@@ -83,7 +83,7 @@ export async function sendPasswordResetAdminEmail(to: string, newPasswordRaw: st
         </div>
         <p>For your security, you can change this password after you log in.</p>
         <br />
-        <p>Best regards,<br/>The ${process.env.MAIL_FROM_NAME || 'InvestPro'} Team</p>
+        <p>Best regards,<br/>The ${process.env.MAIL_FROM_NAME || 'VR Galaxy Network'} Team</p>
       </div>
     `,
   }

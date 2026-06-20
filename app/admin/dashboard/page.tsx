@@ -66,7 +66,7 @@ export default async function AdminDashboard() {
     { title: 'Pending Deposits', value: pendingDeposits, icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-500/10', suffix: '' },
     { title: 'Pending Withdrawals', value: pendingWithdrawals, icon: Clock, color: 'text-orange-500', bg: 'bg-orange-500/10', suffix: '' },
     { title: 'Pending KYC', value: pendingKYC, icon: Shield, color: 'text-red-500', bg: 'bg-red-500/10', suffix: '' },
-    { title: 'Active Investments', value: await prisma.investment.count({ where: { status: 'ACTIVE' } }), icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10', suffix: '' },
+    { title: 'Active Activation Plans', value: await prisma.investment.count({ where: { status: 'ACTIVE' } }), icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10', suffix: '' },
   ]
 
   return (

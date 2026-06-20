@@ -18,7 +18,7 @@ export default function PrivacyPage() {
           </section>
           <section>
             <h2 className="text-foreground font-bold text-lg mb-2">How We Use Your Data</h2>
-            <p>Your data is used to provide investment services, process transactions, verify identity, and send important account notifications.</p>
+            <p>Your data is used to provide activation plan services, process transactions, verify identity, and send important account notifications.</p>
           </section>
           <section>
             <h2 className="text-foreground font-bold text-lg mb-2">Data Security</h2>

@@ -74,7 +74,7 @@ async function main() {
       support: 'Standard Email',
       features: [
         'Standard 1x Referral Commission (10%)',
-        'Access to Standard Investment Plans',
+        'Access to Standard Activation Plans',
         'Full Wallet Overview & Reports',
         'Daily Dividend Accrual & Payouts',
         'Basic Account Support (2-3 business days)',
@@ -136,7 +136,7 @@ async function main() {
         'Level 1 referral rate increased to 15%',
         'Receive a +8.0% yield bonus on all deposit approvals',
         'VIP 6-hour withdrawal processing queue',
-        'Access to high-yield VIP investment plans',
+        'Access to high-yield VIP activation plans',
         'Dedicated support manager availability',
       ],
       color: '#FFD700',
@@ -202,7 +202,7 @@ async function main() {
   const investmentPlansData = [
     {
       name: 'Bronze Plan',
-      description: 'Perfect for beginners entering the investment world',
+      description: 'Perfect for beginners entering the activation plan world',
       minAmount: 1000,
       maxAmount: 9999,
       roiPercent: 1.5,

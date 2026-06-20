@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { BonusClient } from './BonusClient'
 
 export const metadata = {
-  title: 'Admin Bonus — InvestPro',
+  title: 'Admin Bonus — VR Galaxy Network',
   description: 'Manage manually sent admin bonuses.'
 }
 

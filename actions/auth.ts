@@ -51,7 +51,7 @@ export async function registerAction(
     confirmPassword: formData.get('confirmPassword') as string,
     referralCode: formData.get('referralCode') as string || undefined,
     terms: formData.get('terms') === 'on' ? true : undefined,
-    memberType: formData.get('memberType') as string || 'PREMIUM',
+    memberType: formData.get('memberType') as string || 'FREE',
   }
 
   const parsed = registerSchema.safeParse(raw)
@@ -93,7 +93,7 @@ export async function registerAction(
       phone: parsed.data.phone,
       passwordHash,
       referredById,
-      memberType: parsed.data.memberType as any || 'PREMIUM',
+      memberType: parsed.data.memberType as any || 'FREE',
       membershipPlanId,
     },
   })
@@ -119,7 +119,7 @@ export async function registerAction(
   await prisma.notification.create({
     data: {
       userId: user.id,
-      title: 'Welcome to InvestPro! 🎉',
+      title: 'Welcome to VR Galaxy Network! 🎉',
       message: 'Your account has been created. Complete your KYC to start investing.',
       type: 'SUCCESS',
     },

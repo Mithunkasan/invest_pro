@@ -55,7 +55,7 @@ export function InvestmentsClient({ plans, investments }: InvestmentsClientProps
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Investment Plans</h1>
+      <h1 className="text-2xl font-bold">Activation Plans</h1>
 
       {msg && (
         <div className={`p-4 rounded-xl border flex items-center gap-2 text-sm ${msg.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
@@ -97,7 +97,7 @@ export function InvestmentsClient({ plans, investments }: InvestmentsClientProps
           <div className="flex flex-col sm:flex-row gap-4 items-end">
             <div className="flex-1">
               <label className="text-sm text-muted-foreground block mb-1.5">
-                Investment Amount (Min: {formatCurrency(selectedPlan.minAmount)} — Max: {formatCurrency(selectedPlan.maxAmount)})
+                Activation Plan Amount (Min: {formatCurrency(selectedPlan.minAmount)} — Max: {formatCurrency(selectedPlan.maxAmount)})
               </label>
               <input
                 type="number"
@@ -116,15 +116,15 @@ export function InvestmentsClient({ plans, investments }: InvestmentsClientProps
               )}
             </div>
             <Button onClick={handleInvest} loading={loading} className="shrink-0">
-              Confirm Investment
+              Confirm Activation Plan
             </Button>
           </div>
         </motion.div>
       )}
 
-      {/* My Investments Table */}
+      {/* My Activation Plans Table */}
       <div className="premium-card p-6">
-        <h2 className="font-semibold mb-4">My Investment History</h2>
+        <h2 className="font-semibold mb-4">My Activation Plan History</h2>
         <DataTable
           data={investments as Record<string, unknown>[]}
           columns={cols as Parameters<typeof DataTable>[0]['columns']}

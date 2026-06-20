@@ -42,18 +42,18 @@ export default function FAQPage() {
       },
       {
         '@type': 'Question',
-        'name': 'Is this an Investment Company?',
+        'name': 'Is this an Activation Plan Company?',
         'acceptedAnswer': {
           '@type': 'Answer',
-          'text': 'No. VR GALAXY NETWORKS is not an investment company. Members are not required to invest money to earn returns.'
+          'text': 'No. VR GALAXY NETWORKS is not an Activation Plan Company. Members are not required to activate plans to earn returns.'
         }
       },
       {
         '@type': 'Question',
-        'name': 'Is this an ROI (Return on Investment) Company?',
+        'name': 'Is this an ROI (Return on Activation Plan) Company?',
         'acceptedAnswer': {
           '@type': 'Answer',
-          'text': 'No. We do not provide fixed ROI or guaranteed returns on investments. Earnings are based on platform activities, tasks, referrals, rewards, and participation.'
+          'text': 'No. We do not provide fixed ROI or guaranteed returns on activation plans. Earnings are based on platform activities, tasks, referrals, rewards, and participation.'
         }
       },
       {

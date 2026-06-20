@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { GiftFormClient } from './GiftFormClient'
 
 export const metadata: Metadata = {
-  title: 'Premium Gift Section — InvestPro',
+  title: 'Premium Gift Section — VR Galaxy Network',
   description: 'Manage and track your welcome gift shipment.',
 }
 
@@ -38,22 +38,6 @@ export default async function GiftPage() {
     )
   }
 
-  // Check if user has made at least one approved deposit
-  const approvedDeposit = await prisma.deposit.findFirst({
-    where: { userId: session.id, status: 'APPROVED' }
-  })
-
-  if (!approvedDeposit) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl">
-        <span className="text-5xl mb-4">💳</span>
-        <h1 className="text-2xl font-black text-white">Deposit Required</h1>
-        <p className="text-muted-foreground text-sm max-w-md mt-2">
-          A user can apply for a gift only after making a deposit. Please complete and obtain approval for a deposit to unlock this section.
-        </p>
-      </div>
-    )
-  }
 
   // Check if user has activated a membership plan
   const hasMembership = (dbUser.membershipPlanId && dbUser.membershipPlan && dbUser.membershipPlan.price > 0) ||
@@ -104,7 +88,7 @@ export default async function GiftPage() {
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
           {giftCount === 0 
-            ? 'Complete your details to claim your free exclusive InvestPro premium welcome kit.'
+            ? 'Complete your details to claim your free exclusive VR Galaxy Network premium welcome kit.'
             : `Apply for your next premium gift. Subsequent requests require a payment of ₹2,500.`}
         </p>
       </div>

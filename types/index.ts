@@ -1,5 +1,5 @@
 /**
- * Global TypeScript types for the InvestPro platform
+ * Global TypeScript types for the VR Galaxy Network platform
  */
 
 // ── Enums ─────────────────────────────────────────────────────────────────────

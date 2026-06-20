@@ -1,0 +1,232 @@
+\actions\admin.ts:152: type: 'INVESTMENT',
+\actions\admin.ts:475: type: 'INVESTMENT',
+\actions\admin.ts:1233: type: 'INVESTMENT',
+\actions\admin.ts:1251: type: 'INVESTMENT',
+\actions\admin.ts:1301: type: 'INVESTMENT',
+\actions\admin.ts:1376: await setSession(payload) // Sets the 'investpro_token' cookie
+\actions\auth.ts:122: title: 'Welcome to InvestPro! 🎉',
+\actions\gift.ts:157: type: 'INVESTMENT',
+\actions\investment.ts:9: // ── Get Investment Plans ───────────────────────────────────────────────────────
+\actions\investment.ts:10: export const getInvestmentPlans = unstable_cache(
+\actions\investment.ts:12: return prisma.investmentPlan.findMany({
+\actions\investment.ts:17: ['investment-plans'],
+\actions\investment.ts:18: { revalidate: 3600, tags: ['investment-plans'] }
+\actions\investment.ts:21: // ── Create Investment ─────────────────────────────────────────────────────────
+\actions\investment.ts:22: export async function createInvestmentAction(
+\actions\investment.ts:29: const plan = await prisma.investmentPlan.findUnique({ where: { id: planId } })
+\actions\investment.ts:31: return { success: false, message: 'Investment plan not available' }
+\actions\investment.ts:37: message: `Investment amount must be between ₹${plan.minAmount.toLocaleString('en-IN')} and ₹${plan.maxAmount.toLocaleString('en-IN')}`,
+\actions\investment.ts:49: const investment = await prisma.$transaction(async (tx) => {
+\actions\investment.ts:53: // Create investment
+\actions\investment.ts:54: const inv = await tx.investment.create({
+\actions\investment.ts:68: type: 'INVESTMENT',
+\actions\investment.ts:72: description: `${plan.name} Investment`,
+\actions\investment.ts:84: title: 'Investment Active 🚀',
+\actions\investment.ts:85: message: `Your ₹${amount.toLocaleString('en-IN')} investment in ${plan.name} is now active. Expected return: ₹${(amount * (plan.roiPercent / 100) * plan.durationDays).toLocaleString('en-IN')}`,
+\actions\investment.ts:92: revalidatePath('/dashboard/investments')
+\actions\investment.ts:93: return { success: true, message: 'Investment created successfully!' }
+\actions\investment.ts:96: // ── Get User Investments ──────────────────────────────────────────────────────
+\actions\investment.ts:97: export async function getUserInvestments() {
+\actions\investment.ts:101: return prisma.investment.findMany({
+\actions\investment.ts:108: // ── Admin: Get All Investments ────────────────────────────────────────────────
+\actions\investment.ts:109: export async function getAllInvestments() {
+\actions\investment.ts:110: return prisma.investment.findMany({
+\actions\rules.ts:84: // Count referred users who have at least one active investment
+\actions\rules.ts:88: investments: {
+\actions\rules.ts:188: investmentAmount: number,
+\actions\rules.ts:189: investmentId: string
+\actions\rules.ts:236: const commissionAmount = (investmentAmount * percentage) / 100
+\actions\rules.ts:259: reference: investmentId,
+\actions\rules.ts:261: ? `Level ${level} referral commission from ${investor.name}'s investment`
+\actions\rules.ts:262: : `Level ${level} level income from ${investor.name}'s investment`,
+\actions\rules.ts:271: message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} Level ${level} ${level === 1 ? 'referral commission' : 'level income'} from ${investor.name}'s investment.`,
+\actions\user.ts:121: // ── Start Investment ──────────────────────────────────────────────────────────
+\actions\user.ts:122: export async function startInvestment(planId: string, amount: number): Promise<ApiResponse> {
+\actions\user.ts:128: prisma.investmentPlan.findUnique({ where: { id: planId } }),
+\actions\user.ts:134: return { success: false, message: `Investment must be between ₹${plan.minAmount} and ₹${plan.maxAmount}` }
+\actions\user.ts:147: // Create investment
+\actions\user.ts:148: await tx.investment.create({
+\actions\user.ts:161: type: 'INVESTMENT',
+\actions\user.ts:164: description: `Investment in ${plan.name}`,
+\actions\user.ts:173: revalidatePath('/dashboard/investments')
+\actions\user.ts:177: return { success: false, message: 'Failed to start investment' }
+\actions\user.ts:383: type: 'INVESTMENT',
+\app\(auth)\login\layout.tsx:5: description: 'Log in to your VR Galaxy account to access your investment dashboard, manage wallet balances, and track daily returns.',
+\app\(auth)\register\page.tsx:58: <p className="text-white/60 text-sm mt-1">Start your investment journey today</p>
+\app\(dashboard)\dashboard\deposit\page.tsx:7: export const metadata: Metadata = { title: 'Deposit Funds — InvestPro' }
+\app\(dashboard)\dashboard\gift\page.tsx:8: title: 'Premium Gift Section — InvestPro',
+\app\(dashboard)\dashboard\gift\page.tsx:107: ? 'Complete your details to claim your free exclusive InvestPro premium welcome kit.'
+\app\(dashboard)\dashboard\investments\page.tsx:5: import { getInvestmentPlans, getUserInvestments } from '@/actions/investment'
+\app\(dashboard)\dashboard\investments\page.tsx:6: import { InvestmentsClient } from '@/components/dashboard/InvestmentsClient'
+\app\(dashboard)\dashboard\investments\page.tsx:8: export const metadata: Metadata = { title: 'My Investments — InvestPro' }
+\app\(dashboard)\dashboard\investments\page.tsx:10: export default async function InvestmentsPage() {
+\app\(dashboard)\dashboard\investments\page.tsx:20: const [plans, investments] = await Promise.all([
+\app\(dashboard)\dashboard\investments\page.tsx:21: getInvestmentPlans(),
+\app\(dashboard)\dashboard\investments\page.tsx:22: getUserInvestments(),
+\app\(dashboard)\dashboard\investments\page.tsx:26: <InvestmentsClient
+\app\(dashboard)\dashboard\investments\page.tsx:28: investments={JSON.parse(JSON.stringify(investments))}
+\app\(dashboard)\dashboard\membership\page.tsx:10: title: 'Membership Club — InvestPro',
+\app\(dashboard)\dashboard\membership\page.tsx:73: 'Access to standard investment plans',
+\app\(dashboard)\dashboard\membership\page.tsx:86: InvestPro VIP Club
+\app\(dashboard)\dashboard\page.tsx:9: title: 'Dashboard — InvestPro',
+\app\(dashboard)\dashboard\page.tsx:10: description: 'View your investment portfolio, wallet balance, and recent transactions.',
+\app\(dashboard)\dashboard\page.tsx:18: const [wallet, investments, transactions, notifications, chartTxns, dbAdminBonuses, completedTxns] = await Promise.all([
+\app\(dashboard)\dashboard\page.tsx:20: prisma.investment.findMany({
+\app\(dashboard)\dashboard\page.tsx:100: // Calculate monthly profit/investment for chart
+\app\(dashboard)\dashboard\page.tsx:111: investment: monthTxns.filter(t => t.type === 'INVESTMENT').reduce((acc, t) => acc + t.amount, 0),
+\app\(dashboard)\dashboard\page.tsx:115: const totalInvestment = await prisma.investment.aggregate({
+\app\(dashboard)\dashboard\page.tsx:120: const totalProfit = await prisma.investment.aggregate({
+\app\(dashboard)\dashboard\page.tsx:176: totalInvestment: totalInvestment._sum.amount || 0,
+\app\(dashboard)\dashboard\page.tsx:180: activePlans: investments.length,
+\app\(dashboard)\dashboard\page.tsx:215: investments={JSON.parse(JSON.stringify(investments))}
+\app\(dashboard)\dashboard\wallet\page.tsx:10: export const metadata: Metadata = { title: 'Wallet — InvestPro' }
+\app\(dashboard)\dashboard\wallet\page.tsx:125: <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' || txn.type === 'USER_PAY_SENT' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
+\app\(dashboard)\dashboard\wallet\page.tsx:126: {txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' || txn.type === 'USER_PAY_SENT' ? '↑' : '↓'}
+\app\(dashboard)\dashboard\wallet\page.tsx:133: <span className={`text-sm font-bold ${txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' || txn.type === 'USER_PAY_SENT' ? 'text-red-500' : 'text-green-500'}`}>
+\app\(dashboard)\dashboard\wallet\page.tsx:134: {txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' || txn.type === 'USER_PAY_SENT' ? '-' : '+'}{formatCurrency(txn.amount)}
+\app\(public)\contact\page.tsx:7: description: 'Get in touch with the VR Galaxy support team. We are available 24/7 online to assist with your investment, deposit, withdrawal, and wallet queries in India.',
+\app\(public)\contact\page.tsx:23: 'email': 'support@investpro.com',
+\app\(public)\contact\page.tsx:44: { icon: Mail, label: 'Email', value: 'support@investpro.com', desc: 'We reply within 24 hours' },
+\app\(public)\faq\page.tsx:45: 'name': 'Is this an Investment Company?',
+\app\(public)\faq\page.tsx:48: 'text': 'No. VR GALAXY NETWORKS is not an investment company. Members are not required to invest money to earn returns.'
+\app\(public)\faq\page.tsx:53: 'name': 'Is this an ROI (Return on Investment) Company?',
+\app\(public)\faq\page.tsx:56: 'text': 'No. We do not provide fixed ROI or guaranteed returns on investments. Earnings are based on platform activities, tasks, referrals, rewards, and participation.'
+\app\(public)\membership-plans\page.tsx:33: { regex: /investment/gi, replacement: 'Membership' },
+\app\(public)\page.tsx:15: title: 'InvestPro — Smart Investment Platform',
+\app\(public)\page.tsx:16: description: 'Grow your wealth with daily ROI starting from 1.5%. Join 10,000+ investors. Min investment ₹1,000.',
+\app\(public)\page.tsx:25: prisma.investment.aggregate({ _sum: { amount: true } }),
+\app\(public)\page.tsx:115: 'name': 'VR Galaxy Daily ROI Investment Plan',
+\app\(public)\page.tsx:116: 'description': 'High-yield smart investment plans starting from ₹1,000 with a daily ROI ranging from 1.5% to 3.0%.',
+\app\(public)\plans\page.tsx:2: import { getInvestmentPlans } from '@/actions/investment'
+\app\(public)\plans\page.tsx:5: title: 'Investment Plans',
+\app\(public)\plans\page.tsx:6: description: 'Explore our high-yield daily ROI investment options starting at ₹1,00,000 or less. Choose from Bronze, Silver, Gold, or Platinum plans with daily yields up to 3.0%.',
+\app\(public)\plans\page.tsx:11: const plans = await getInvestmentPlans()
+\app\(public)\plans\page.tsx:17: 'name': 'VR Galaxy Investment Plans',
+\app\(public)\plans\page.tsx:18: 'description': 'A list of high-yield investment plans offering daily ROI with clear entry limits.',
+\app\(public)\plans\page.tsx:45: <h1 className="text-4xl sm:text-5xl font-black mb-4">Investment Plans</h1>
+\app\(public)\plans\page.tsx:47: Choose a plan that matches your investment goals. All plans offer daily returns with transparent pricing.
+\app\(public)\plans\page.tsx:67: ['Min Investment', `₹${plan.minAmount.toLocaleString('en-IN')}`],
+\app\(public)\plans\page.tsx:68: ['Max Investment', `₹${plan.maxAmount.toLocaleString('en-IN')}`],
+\app\(public)\plans\page.tsx:95: <p className="text-muted-foreground mb-6">See how much you can earn with InvestPro</p>
+\app\(public)\plans\page.tsx:99: { investment: '₹10,000', plan: 'Bronze', roi: '₹4,500', days: '30d' },
+\app\(public)\plans\page.tsx:100: { investment: '₹50,000', plan: 'Gold', roi: '₹75,000', days: '60d' },
+\app\(public)\plans\page.tsx:101: { investment: '₹2,00,000', plan: 'Platinum', roi: '₹5,40,000', days: '90d' },
+\app\(public)\plans\page.tsx:105: <p className="font-bold text-sm">{calc.investment}</p>
+\app\(public)\privacy\page.tsx:21: <p>Your data is used to provide investment services, process transactions, verify identity, and send important account notifications.</p>
+\app\(public)\terms\page.tsx:5: description: 'Terms and Conditions for using VR Galaxy. Read about investment risks, KYC requirements, withdrawal policies, and referral program terms.',
+\app\(public)\terms\page.tsx:17: <p>By accessing and using InvestPro, you agree to these terms. Please read them carefully before investing.</p>
+\app\(public)\terms\page.tsx:20: <h2 className="text-foreground font-bold text-lg mb-2">2. Investment Risk</h2>
+\app\(public)\terms\page.tsx:21: <p>All investments carry risk. Past performance does not guarantee future results. Invest only what you can afford to lose. InvestPro is not responsible for investment losses.</p>
+\app\(public)\terms\page.tsx:33: <p>Referral commissions are awarded only when the referred user makes a valid investment. Commission rates are subject to change without notice.</p>
+\app\admin\dashboard\bonus\page.tsx:7: title: 'Admin Bonus — InvestPro',
+\app\admin\dashboard\page.tsx:9: totalInvestments,
+\app\admin\dashboard\page.tsx:18: prisma.investment.aggregate({ _sum: { amount: true } }),
+\app\admin\dashboard\page.tsx:47: investments: monthTxns.filter(t => t.type === 'INVESTMENT').reduce((acc, t) => acc + t.amount, 0),
+\app\admin\dashboard\page.tsx:65: { title: 'Total AUM', value: totalInvestments._sum.amount || 0, icon: DollarSign, color: 'text-gold-500', bg: 'bg-gold-500/10', isCurrency: true },
+\app\admin\dashboard\page.tsx:69: { title: 'Active Investments', value: await prisma.investment.count({ where: { status: 'ACTIVE' } }), icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10', suffix: '' },
+\app\admin\dashboard\reports\page.tsx:26: investments: monthTxns.filter(t => t.type === 'INVESTMENT').reduce((acc, t) => acc + t.amount, 0),
+\app\admin\dashboard\settings\page.tsx:6: title: 'System Settings — InvestPro Admin',
+\app\admin\page.tsx:97: Back to InvestPro
+\app\layout.tsx:25: default: 'VR Galaxy — Smart Investment Platform',
+\app\layout.tsx:29: 'VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.',
+\app\layout.tsx:30: keywords: ['investment', 'mutual funds', 'ROI', 'wealth management', 'fintech', 'India'],
+\app\layout.tsx:37: title: 'VR Galaxy — Smart Investment Platform',
+\app\layout.tsx:45: alt: 'VR Galaxy Investment Platform',
+\app\layout.tsx:51: title: 'VR Galaxy — Smart Investment Platform',
+\app\layout.tsx:94: 'email': 'support@investpro.com',
+\components\admin\AdminCharts.tsx:33: <Bar dataKey="investments" fill="#10b981" radius={[4, 4, 0, 0]} name="Investments" />
+\components\admin\SettingsForm.tsx:374: <p className="text-[11px] text-muted-foreground">Number of referred members with active investments needed (Standard: 5).</p>
+\components\common\Footer.tsx:20: VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.
+\components\common\Footer.tsx:55: {['Terms of Service', 'Privacy Policy', 'Cookie Policy', 'Disclaimer', 'Investment Risks'].map((link) => (
+\components\common\PublicFooter.tsx:41: VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.
+\components\common\WhatsAppButton.tsx:30: const supportText = encodeURIComponent("Hi VR Galaxy, I'd like to know more about your investment plans.")
+\components\dashboard\DashboardOverview.tsx:35: totalInvestment: number
+\components\dashboard\DashboardOverview.tsx:54: investments: Array<{ id: string; amount: number; profit: number; status: string; startDate: string; endDate: string; plan: { name: string; roiPercent: number } }>
+\components\dashboard\DashboardOverview.tsx:56: chartData: Array<{ name: string; profit: number; investment: number }>
+\components\dashboard\DashboardOverview.tsx:76: <span className={`font-semibold text-sm ${row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' || row.type === 'USER_PAY_SENT' ? 'text-red-500' : 'text-green-500'}`}>
+\components\dashboard\DashboardOverview.tsx:77: {row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' || row.type === 'USER_PAY_SENT' ? '-' : '+'}{formatCurrency(Number(v))}
+\components\dashboard\DashboardOverview.tsx:88: export function DashboardOverview({ user, stats, investments, transactions, chartData, adminBonuses }: DashboardOverviewProps) {
+\components\dashboard\DashboardOverview.tsx:118: <p className="text-muted-foreground text-sm mt-0.5">Here&apos;s your investment summary</p>
+\components\dashboard\DepositClient.tsx:12: const UPI_ID = 'investpro@upi'
+\components\dashboard\InvestmentsClient.tsx:9: import { createInvestmentAction } from '@/actions/investment'
+\components\dashboard\InvestmentsClient.tsx:10: import type { InvestmentPlan } from '@/types'
+\components\dashboard\InvestmentsClient.tsx:12: interface InvestmentsClientProps {
+\components\dashboard\InvestmentsClient.tsx:13: plans: InvestmentPlan[]
+\components\dashboard\InvestmentsClient.tsx:14: investments: Array<{
+\components\dashboard\InvestmentsClient.tsx:20: export function InvestmentsClient({ plans, investments }: InvestmentsClientProps) {
+\components\dashboard\InvestmentsClient.tsx:21: const [selectedPlan, setSelectedPlan] = useState<InvestmentPlan | null>(null)
+\components\dashboard\InvestmentsClient.tsx:30: const result = await createInvestmentAction(selectedPlan.id, parseFloat(amount))
+\components\dashboard\InvestmentsClient.tsx:58: <h1 className="text-2xl font-bold">Investment Plans</h1>
+\components\dashboard\InvestmentsClient.tsx:100: Investment Amount (Min: {formatCurrency(selectedPlan.minAmount)} — Max: {formatCurrency(selectedPlan.maxAmount)})
+\components\dashboard\InvestmentsClient.tsx:119: Confirm Investment
+\components\dashboard\InvestmentsClient.tsx:125: {/* My Investments Table */}
+\components\dashboard\InvestmentsClient.tsx:127: <h2 className="font-semibold mb-4">My Investment History</h2>
+\components\dashboard\InvestmentsClient.tsx:129: data={investments as Record<string, unknown>[]}
+\components\dashboard\InvestmentsClient.tsx:132: emptyMessage="No investments yet. Choose a plan above to get started!"
+\components\dashboard\ReferralClient.tsx:140: <a href={`https://wa.me/?text=${encodeURIComponent('Join InvestPro and earn daily returns! ' + referralLink)}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl bg-green-500/10 text-green-500 border border-green-500/20 text-sm hover:bg-green-500/20 transition-colors">
+\components\dashboard\TransactionsTable.tsx:39: <span className={`font-semibold text-sm ${row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' || row.type === 'USER_PAY_SENT' ? 'text-red-500' : 'text-green-500'}`}>
+\components\dashboard\TransactionsTable.tsx:40: {row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' || row.type === 'USER_PAY_SENT' ? '-' : '+'}{formatCurrency(Number(v))}
+\components\home\CTASection.tsx:35: Investment Journey?
+\components\home\FeaturesSection.tsx:48: desc: 'Access your account and manage your investments from anywhere in the world, any time.',
+\components\home\FeaturesSection.tsx:66: We combine cutting-edge technology with smart investment strategies to provide the best platform for our users.
+\components\home\HowItWorks.tsx:21: desc: 'Pick the investment plan that suits your goals and watch your earnings grow daily.',
+\components\home\Testimonials.tsx:24: text: 'The referral program is incredible. I have built a team and now my referral income is more than my direct investment returns.',
+\components\home\TestimonialsSection.tsx:54: text: 'Best investment platform I have used. Transparent, reliable, and the returns are exactly as promised. Will continue investing.',
+\components\home\TestimonialsSection.tsx:64: text: 'The referral program is amazing! I earn commission from my team and the main investment returns too. Double income!',
+\components\home\WhyUsSection.tsx:435: <span><strong>Task-Based Earnings</strong>: Earn daily rewards by participating in simple digital tasks on our online earning platform. No investment-based returns required.</span>
+\lib\auth.ts:62: const token = cookieStore.get('investpro_token')?.value
+\lib\auth.ts:78: const token = cookieStore.get('investpro_admin_token')?.value
+\lib\auth.ts:88: const cookieName = payload.type === 'admin' ? 'investpro_admin_token' : 'investpro_token'
+\lib\auth.ts:100: const cookieName = type === 'admin' ? 'investpro_admin_token' : 'investpro_token'
+\lib\cloudinary.ts:19: const folder = 'investpro_kyc'
+\lib\faq-data.ts:33: question: 'Is this an Investment Company?',
+\lib\faq-data.ts:34: answer: 'No. VR GALAXY NETWORKS is not an investment company. Members are not required to invest money to earn returns.'
+\lib\faq-data.ts:39: question: 'Is this an ROI (Return on Investment) Company?',
+\lib\faq-data.ts:40: answer: 'No. We do not provide fixed ROI or guaranteed returns on investments. Earnings are based on platform activities, tasks, referrals, rewards, and participation.'
+\lib\mail.ts:13: const defaultFrom = `"${process.env.MAIL_FROM_NAME || 'InvestPro'}" <${process.env.MAIL_FROM_ADDRESS || process.env.SMTP_USER}>`
+\lib\mail.ts:32: <p>Best regards,<br/>The ${process.env.MAIL_FROM_NAME || 'InvestPro'} Team</p>
+\lib\mail.ts:46: subject: 'Welcome to InvestPro! 🎉',
+\lib\mail.ts:49: <h2 style="color: #3b82f6;">Welcome to InvestPro!</h2>
+\lib\mail.ts:52: <p>You can now log in to your account and start your investment journey.</p>
+\lib\mail.ts:58: <p>Best regards,<br/>The ${process.env.MAIL_FROM_NAME || 'InvestPro'} Team</p>
+\lib\mail.ts:86: <p>Best regards,<br/>The ${process.env.MAIL_FROM_NAME || 'InvestPro'} Team</p>
+\messages\en.json:4: "tagline": "Grow Your Wealth with Smart Investments",
+\messages\en.json:46: "subtitle": "VR GALAXY NETWORKS offers innovative online earning opportunities for students, employees, entrepreneurs, and investors through task-based income, referral rewards, memberships, and investment programs.",
+\messages\en.json:68: "description": "Our platform focuses on network growth, task participation, membership benefits, referral rewards, leadership recognition, and business development opportunities rather than investment-based returns. Join VR GALAXY NETWORKS today and explore smart digital earning opportunities, community networking, leadership growth, skill development, and long-term business success.",
+\messages\en.json:105: "title": "Investment Plans",
+\messages\en.json:106: "subtitle": "Choose the plan that fits your investment goals",
+\messages\en.json:121: "registerSubtitle": "Start your investment journey today",
+\messages\en.json:139: "totalInvestment": "Total Investment",
+\messages\en.json:146: "investments": "My Investments",
+\messages\en.json:228: "description": "VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments.",
+\messages\ta.json:139: "totalInvestment": "மொத்த முதலீடு",
+\messages\ta.json:146: "investments": "என் முதலீடுகள்",
+\package-lock.json:2: "name": "investpro",
+\package-lock.json:8: "name": "investpro",
+\package.json:2: "name": "investpro",
+\prisma\seed.ts:77: 'Access to Standard Investment Plans',
+\prisma\seed.ts:139: 'Access to high-yield VIP investment plans',
+\prisma\seed.ts:201: // ── Investment Plans (Create if not exists) ──────────────────
+\prisma\seed.ts:202: const investmentPlansData = [
+\prisma\seed.ts:205: description: 'Perfect for beginners entering the investment world',
+\prisma\seed.ts:245: let seededInvestmentPlansCount = 0
+\prisma\seed.ts:246: for (const item of investmentPlansData) {
+\prisma\seed.ts:247: const existing = await prisma.investmentPlan.findFirst({
+\prisma\seed.ts:251: await prisma.investmentPlan.create({ data: item })
+\prisma\seed.ts:252: seededInvestmentPlansCount++
+\prisma\seed.ts:255: console.log(`✅ Investment plans seeded: ${seededInvestmentPlansCount} new added`)
+\proxy.ts:18: const adminToken = request.cookies.get('investpro_admin_token')?.value
+\proxy.ts:27: response.cookies.set('investpro_admin_token', '', { maxAge: 0 })
+\proxy.ts:36: const userToken = request.cookies.get('investpro_token')?.value
+\proxy.ts:45: response.cookies.set('investpro_token', '', { maxAge: 0 })
+\proxy.ts:54: const userToken = request.cookies.get('investpro_token')?.value
+\scratch_search.js:32: if (/(Invest\s*Pro|Investment)/i.test(line)) {
+\types\index.ts:2: * Global TypeScript types for the InvestPro platform
+\types\index.ts:9: export type InvestmentStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED'
+\types\index.ts:10: export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL' | 'INVESTMENT' | 'PROFIT' | 'REFERRAL_BONUS' | 'BONUS' | 'LEVEL_INCOME' | 'REWARD' | 'SHARE_BONUS'
+\types\index.ts:45: export interface InvestmentPlan {
+\types\index.ts:60: export interface Investment {
+\types\index.ts:65: status: InvestmentStatus
+\types\index.ts:70: plan?: InvestmentPlan
+\types\index.ts:231: totalInvestment: number
+\types\index.ts:242: totalInvestments: number

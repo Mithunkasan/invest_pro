@@ -37,13 +37,6 @@ export async function submitGiftAction(
       return { success: false, message: 'This feature is only available for Premium Members.' }
     }
 
-    // 1b. Check if user has made at least one approved deposit
-    const approvedDeposit = await prisma.deposit.findFirst({
-      where: { userId: session.id, status: 'APPROVED' }
-    })
-    if (!approvedDeposit) {
-      return { success: false, message: 'You must make a deposit before applying for a welcome gift.' }
-    }
 
     // 1c. Check if user has activated a membership plan
     const hasMembership = (dbUser.membershipPlanId && dbUser.membershipPlan && dbUser.membershipPlan.price > 0) ||

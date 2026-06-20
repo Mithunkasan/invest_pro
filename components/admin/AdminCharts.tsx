@@ -30,7 +30,7 @@ export function AdminCharts({ monthlyData, planDistribution }: AdminChartsProps)
             />
             <Bar dataKey="deposits" fill="#1a56db" radius={[4, 4, 0, 0]} name="Deposits" />
             <Bar dataKey="withdrawals" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Withdrawals" />
-            <Bar dataKey="investments" fill="#10b981" radius={[4, 4, 0, 0]} name="Investments" />
+            <Bar dataKey="investments" fill="#10b981" radius={[4, 4, 0, 0]} name="Activation Plans" />
           </BarChart>
         </ResponsiveContainer>
       </div>

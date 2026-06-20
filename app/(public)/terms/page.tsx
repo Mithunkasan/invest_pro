@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Terms & Conditions',
-  description: 'Terms and Conditions for using VR Galaxy. Read about investment risks, KYC requirements, withdrawal policies, and referral program terms.',
+  description: 'Terms and Conditions for using VR Galaxy. Read about activation plan risks, KYC requirements, withdrawal policies, and referral program terms.',
   alternates: { canonical: '/terms' },
 }
 
@@ -14,11 +14,11 @@ export default function TermsPage() {
         <div className="prose prose-sm max-w-none space-y-6 text-muted-foreground leading-relaxed">
           <section>
             <h2 className="text-foreground font-bold text-lg mb-2">1. Acceptance of Terms</h2>
-            <p>By accessing and using InvestPro, you agree to these terms. Please read them carefully before investing.</p>
+            <p>By accessing and using VR Galaxy Network, you agree to these terms. Please read them carefully before investing.</p>
           </section>
           <section>
-            <h2 className="text-foreground font-bold text-lg mb-2">2. Investment Risk</h2>
-            <p>All investments carry risk. Past performance does not guarantee future results. Invest only what you can afford to lose. InvestPro is not responsible for investment losses.</p>
+            <h2 className="text-foreground font-bold text-lg mb-2">2. Activation Plan Risk</h2>
+            <p>All investments carry risk. Past performance does not guarantee future results. Invest only what you can afford to lose. VR Galaxy Network is not responsible for investment losses.</p>
           </section>
           <section>
             <h2 className="text-foreground font-bold text-lg mb-2">3. KYC Requirements</h2>

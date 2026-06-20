@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { DepositClient } from '@/components/dashboard/DepositClient'
 
-export const metadata: Metadata = { title: 'Deposit Funds — InvestPro' }
+export const metadata: Metadata = { title: 'Deposit Funds — VR Galaxy Network' }
 
 export default async function DepositPage() {
   const session = await getSession()

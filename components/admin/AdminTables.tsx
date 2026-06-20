@@ -839,13 +839,9 @@ export function AdminNotificationsTable({
   // Helper function to resolve user's membership display name
   const getMembershipLabel = (row: any): string => {
     if (row.user?.membershipPlan?.name) {
-      return row.user.membershipPlan.name.replace(' Membership', '')
+      return row.user.membershipPlan.name
     }
-    const memberType = row.user?.memberType || 'FREE'
-    if (memberType === 'FREE') return 'Free'
-    if (memberType === 'BASIC') return 'Basic'
-    if (memberType === 'PREMIUM') return 'Premium'
-    return 'Free'
+    return 'Free Membership'
   }
 
   const filteredData = useMemo(() => {
@@ -932,7 +928,8 @@ export function AdminNotificationsTable({
   }
 
   const membershipOptions = useMemo(() => {
-    const dbOptions = plans.map((plan: any) => plan.name.replace(' Membership', ''))
+    const dbOptions = plans.map((plan: any) => plan.name)
+    dbOptions.push('Free Membership')
     return Array.from(new Set(dbOptions)).filter(Boolean) as string[]
   }, [plans])
 

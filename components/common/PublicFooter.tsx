@@ -38,7 +38,7 @@ export function PublicFooter() {
               </span>
             </Link>
             <p className="text-sm text-white/60 leading-relaxed">
-              VR Galaxy is a trusted investment platform helping thousands grow their wealth through smart, transparent investments with daily ROI.
+              VR Galaxy is a trusted activation plan platform helping thousands grow their wealth through smart, transparent investments with daily ROI.
             </p>
             <div className="flex gap-3">
               {socialLinks.map(({ icon: Icon, href, label }) => (
