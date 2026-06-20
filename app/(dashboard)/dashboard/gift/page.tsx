@@ -26,14 +26,11 @@ export default async function GiftPage() {
     }
   })
 
-  if (!dbUser || dbUser.memberType !== 'PREMIUM') {
+  if (!dbUser) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl">
-        <span className="text-5xl mb-4">💎</span>
-        <h1 className="text-2xl font-black text-white">Premium Feature Only</h1>
-        <p className="text-muted-foreground text-sm max-w-md mt-2">
-          The Welcome Gift Section is exclusive to our Premium Members. Register or upgrade to a Premium plan to unlock this reward!
-        </p>
+        <span className="text-5xl mb-4">⚠️</span>
+        <h1 className="text-2xl font-black text-white">User Not Found</h1>
       </div>
     )
   }

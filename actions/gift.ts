@@ -33,8 +33,8 @@ export async function submitGiftAction(
       include: { membershipPlan: true }
     })
 
-    if (!dbUser || dbUser.memberType !== 'PREMIUM') {
-      return { success: false, message: 'This feature is only available for Premium Members.' }
+    if (!dbUser) {
+      return { success: false, message: 'User not found.' }
     }
 
 

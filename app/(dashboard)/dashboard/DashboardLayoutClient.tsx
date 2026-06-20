@@ -71,7 +71,9 @@ export function DashboardLayoutClient({
         ? (hasApprovedDeposit
             ? ['/dashboard', '/dashboard/profile', '/dashboard/deposit', '/dashboard/membership']
             : ['/dashboard', '/dashboard/profile', '/dashboard/deposit'])
-        : ['/dashboard', '/dashboard/deposit', '/dashboard/gift', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile']
+        : isMembershipActivated
+          ? ['/dashboard', '/dashboard/deposit', '/dashboard/gift', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile']
+          : ['/dashboard', '/dashboard/deposit', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile']
 
       const isAllowed = allowedRoutes.some((route) => {
         if (route === '/dashboard') return pathname === '/dashboard'
