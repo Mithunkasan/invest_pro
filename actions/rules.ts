@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { isUplineEligibleForLevel } from '@/lib/referralEligibility'
 import { syncWalletMainBalance } from './walletUtils'
 
 type ReferralCommissionSource = 'MEMBERSHIP' | 'GIFT'
@@ -223,21 +224,24 @@ export async function distributeReferralAndLevelCommissions(
       currentReferrerId = referrer.referredById
       if (percentage <= 0) continue
 
-      // Level N is unlocked by N direct referrals whose memberships are active.
-      // The just-activated purchaser therefore qualifies their direct referrer for L1.
-      const qualifiedDirectReferrals = await tx.user.count({
-        where: {
-          referredById: referrer.id,
-          status: 'ACTIVE',
-          membershipPlanId: { not: null },
-          membershipPlanActivatedAt: { not: null },
-          OR: [
-            { membershipPlanExpiresAt: null },
-            { membershipPlanExpiresAt: { gt: now } },
-          ],
-        },
-      })
-      if (qualifiedDirectReferrals < level) continue
+      // L1 always belongs to the purchaser's direct referrer. Higher levels
+      // require at least N directly referred users with active memberships.
+      let activeDirectReferralCount = 0
+      if (level > 1) {
+        activeDirectReferralCount = await tx.user.count({
+          where: {
+            referredById: referrer.id,
+            status: 'ACTIVE',
+            membershipPlanId: { not: null },
+            membershipPlanActivatedAt: { not: null },
+            OR: [
+              { membershipPlanExpiresAt: null },
+              { membershipPlanExpiresAt: { gt: now } },
+            ],
+          },
+        })
+      }
+      if (!isUplineEligibleForLevel(level, activeDirectReferralCount)) continue
 
       const commissionAmount = Number(((baseAmount * percentage) / 100).toFixed(2))
       if (commissionAmount <= 0) continue
@@ -318,4 +322,6 @@ export async function distributeReferralAndLevelCommissions(
     await checkAndApplyPerformanceBadges(referrerId)
     await checkAndApplyTLRank(referrerId)
   }
+
+  return creditedReferrerIds
 }
