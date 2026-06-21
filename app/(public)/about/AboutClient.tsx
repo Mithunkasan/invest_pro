@@ -39,9 +39,8 @@ export function AboutClient() {
         
         {/* Galaxy themed background with pan/zoom animation */}
         <motion.div 
-          className="absolute inset-0 bg-cover bg-center mix-blend-screen" 
+          className="absolute inset-0 bg-cover bg-center mix-blend-screen bg-[url('/about1.jpeg')] md:bg-[url('/about.jpeg')]" 
           style={{ 
-            backgroundImage: "url('/membership_hero1.jpeg')",
             scale: bgScale,
             opacity: bgOpacity
           }}
