@@ -16,7 +16,7 @@ export default async function ReferralPage() {
     if (u.elitePerformer) return 'Elite Performer'
     if (u.doubleStarPerformer) return 'Double Star Performer'
     if (u.starPerformer) return 'Star Performer'
-    return 'Standard Member'
+    return 'No Rank'
   }
 
   // 1. Fetch Direct Referrals (Level 1)

@@ -4,11 +4,13 @@ import { useTransition, useState, useMemo, useEffect } from 'react'
 import { DataTable } from '@/components/dashboard/DataTable'
 import { formatDate, formatCurrency, getStatusColor } from '@/utils/formatters'
 import { Button } from '@/components/ui/button'
-import { toggleUserStatus, toggleUserRankAction, upgradeUserToPremiumAction, updateUserAction, impersonateUserAction } from '@/actions/admin'
+import { toggleUserStatus, toggleUserRankAction, updateUserAction, impersonateUserAction } from '@/actions/admin'
 import { toast } from '@/hooks/use-toast'
 import { Search, X, Pencil, Crown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ModalPortal } from '@/components/common/ModalPortal'
+import { getMembershipEndDate } from '@/utils/membershipDates'
+import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 
 interface UsersTableProps {
   users: any[]
@@ -717,7 +719,7 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
   const processedUsers = useMemo(() => {
     return users.map((user) => ({
       ...user,
-      membershipPlanName: user.membershipPlan?.name || 'Free Membership',
+      membershipPlanName: getMembershipDisplayName(user.membershipPlan?.name),
     }))
   }, [users])
 
@@ -725,11 +727,11 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
   const availablePlans = useMemo(() => {
     const plansSet = new Set<string>()
     users.forEach((u) => {
-      const name = u.membershipPlan?.name
+      const name = getMembershipDisplayName(u.membershipPlan?.name)
       if (name) plansSet.add(name)
     })
     if (plansSet.size === 0) {
-      return ['Free Membership', 'Bronze Membership', 'Silver Membership', 'Gold Membership', 'Diamond Membership', 'Platinum Membership']
+      return ['Standard Membership', 'Bronze Membership', 'Silver Membership', 'Gold Membership', 'Diamond Membership', 'Platinum Membership']
     }
     return Array.from(plansSet)
   }, [users])
@@ -780,17 +782,6 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
   const handleToggleRank = (userId: string, rankType: 'starPerformer' | 'doubleStarPerformer' | 'elitePerformer' | 'tlRank' | 'tlShareholder' | 'directorRank' | 'directorShareholder', currentValue: boolean) => {
     startTransition(async () => {
       const res = await toggleUserRankAction(userId, rankType, !currentValue)
-      if (res.success) {
-        toast({ title: 'Success', description: res.message })
-      } else {
-        toast({ title: 'Error', description: res.message, variant: 'destructive' })
-      }
-    })
-  }
-
-  const handleUpgradeToPremium = (userId: string) => {
-    startTransition(async () => {
-      const res = await upgradeUserToPremiumAction(userId)
       if (res.success) {
         toast({ title: 'Success', description: res.message })
       } else {
@@ -914,17 +905,6 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
         >
           Manage Ranks
         </Button>
-        {row.memberType === 'BASIC' && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 px-2 text-[10px] border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
-            onClick={() => handleUpgradeToPremium(id)}
-            disabled={isPending}
-          >
-            Upgrade Premium
-          </Button>
-        )}
         <Button 
           size="sm" 
           variant={row.status === 'ACTIVE' ? 'destructive' : 'default'} 
@@ -1241,6 +1221,18 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
     })
   }
 
+  const handleActivatedAtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const activatedAt = e.target.value
+    const endDate = getMembershipEndDate(activatedAt)
+
+    setForm((prev) => ({
+      ...prev,
+      basicMembershipActivatedAt: activatedAt,
+      basicMembershipExpiresAt: endDate,
+      lastDailyYieldAt: endDate,
+    }))
+  }
+
   function handleSave(e: React.FormEvent) {
     e.preventDefault()
     startTransition(async () => {
@@ -1363,7 +1355,7 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
                     type="date"
                     name="basicMembershipActivatedAt"
                     value={form.basicMembershipActivatedAt}
-                    onChange={(e) => setForm((prev) => ({ ...prev, basicMembershipActivatedAt: e.target.value }))}
+                    onChange={handleActivatedAtChange}
                     disabled={isPending}
                     className="w-full h-8 px-2 rounded-lg bg-background border border-brand-800/60 text-xs text-foreground outline-none"
                   />

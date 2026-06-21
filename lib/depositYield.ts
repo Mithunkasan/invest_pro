@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { syncWalletMainBalance } from '@/actions/walletUtils'
 
 const MAX_MEMBERSHIP_YIELD_DAYS = 1000
+const ONE_DAY_MS = 24 * 60 * 60 * 1000
 
 function get10AMIST(d: Date): Date {
   const istOffset = 5.5 * 60 * 60 * 1000 // 5.5 hours in ms
@@ -25,29 +26,33 @@ export async function creditDueDepositYields(userId: string) {
 
   if (!user || !user.membershipPlan || !user.membershipPlanActivatedAt) return
 
-  // Verify that the membership plan is valid and has a price > 0
-  if (user.membershipPlan.price <= 0) return
-
-  // Fetch yield percentage configured by the admin from system settings
-  const settings = await prisma.systemSettings.findUnique({
-    where: { id: 'default' },
-  })
-  const yieldPercent = settings?.basicDailyYieldPercent ?? 0.2
+  // The reward is based only on the user's current membership plan.
+  const membershipAmount = user.membershipPlan.price
+  const yieldPercent = user.membershipPlan.depositBonus
+  if (membershipAmount <= 0) return
   if (yieldPercent <= 0) return
 
   const now = new Date()
   const activationDate = user.membershipPlanActivatedAt
   const expiresAt = user.membershipPlanExpiresAt
 
+  // Only an active membership can generate or receive rewards. A missing
+  // expiry is tolerated for legacy memberships; the 1,000-day cap below is
+  // still always enforced.
+  if (activationDate.getTime() > now.getTime()) return
+  if (expiresAt && expiresAt.getTime() < now.getTime()) return
+
   // Generate daily 10:00 AM IST timestamps starting from activationDate
   const T_0 = get10AMIST(activationDate)
-  const firstCreditDate = activationDate.getTime() < T_0.getTime() ? T_0 : new Date(T_0.getTime() + 24 * 60 * 60 * 1000)
+  const firstCreditDate = activationDate.getTime() <= T_0.getTime()
+    ? T_0
+    : new Date(T_0.getTime() + ONE_DAY_MS)
 
   // Filter the daily dates for those that are <= now and >= activationDate.getTime()
   // and <= expiresAt (if it is set) and > user.lastDailyYieldAt (or if lastDailyYieldAt is null)
   const eligibleTimestamps: Date[] = []
   for (let k = 1; k <= MAX_MEMBERSHIP_YIELD_DAYS; k++) {
-    const D_k = new Date(firstCreditDate.getTime() + (k - 1) * 24 * 60 * 60 * 1000)
+    const D_k = new Date(firstCreditDate.getTime() + (k - 1) * ONE_DAY_MS)
     
     // Stop generating if D_k is in the future
     if (D_k.getTime() > now.getTime()) {
@@ -70,7 +75,7 @@ export async function creditDueDepositYields(userId: string) {
   if (dueDays <= 0) return
 
   // Calculate daily return: (plan.price * yieldPercent) / 100
-  const dailyReturn = (user.membershipPlan.price * yieldPercent) / 100
+  const dailyReturn = (membershipAmount * yieldPercent) / 100
   const totalCreditAmount = Number((dailyReturn * dueDays).toFixed(2))
 
   if (totalCreditAmount <= 0) return
@@ -126,12 +131,17 @@ export async function creditDueDepositYields(userId: string) {
   })
 }
 
-export async function creditAllDueMembershipYields() {
+export async function creditAllDueMembershipYields(membershipPlanId?: string) {
+  const now = new Date()
   const users = await prisma.user.findMany({
     where: {
       status: 'ACTIVE',
-      membershipPlanId: { not: null },
-      membershipPlanActivatedAt: { not: null },
+      membershipPlanId: membershipPlanId || { not: null },
+      membershipPlanActivatedAt: { not: null, lte: now },
+      OR: [
+        { membershipPlanExpiresAt: null },
+        { membershipPlanExpiresAt: { gte: now } },
+      ],
     },
     select: { id: true },
   })

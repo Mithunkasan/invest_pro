@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { User, Lock, Shield, Calendar, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDate, formatCurrency } from '@/utils/formatters'
+import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 import { logoutAction } from '@/actions/auth'
 import { updateProfileAction, uploadProfilePictureAction } from '@/actions/user'
 import { getStatesAction, getDistrictsAction, getCitiesAction, getDistrictForCityAction } from '@/actions/locations'
@@ -318,7 +319,7 @@ export function ProfileClient({ user }: ProfileClientProps) {
         <div className="grid sm:grid-cols-2 gap-4 text-sm text-brand-200">
           <div>
             <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Active Plan Name</p>
-            <p className="text-base font-bold text-white mt-1">{user.membershipPlan?.name || 'Free Membership'}</p>
+            <p className="text-base font-bold text-white mt-1">{getMembershipDisplayName(user.membershipPlan?.name)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Plan Amount</p>
