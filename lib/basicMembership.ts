@@ -9,32 +9,10 @@ export function getBasicMembershipExpiry(from: Date) {
   return expiresAt
 }
 
-export async function ensureBasicMembershipPlan() {
-  return prisma.membershipPlan.upsert({
+export async function findBasicMembershipPlan() {
+  // Do not recreate a plan removed by an administrator.
+  return prisma.membershipPlan.findUnique({
     where: { name: 'Basic Membership' },
-    update: {
-      price: BASIC_MEMBERSHIP_AMOUNT,
-      durationDays: BASIC_MEMBERSHIP_DAYS,
-      isActive: true,
-    },
-    create: {
-      name: 'Basic Membership',
-      price: BASIC_MEMBERSHIP_AMOUNT,
-      durationDays: BASIC_MEMBERSHIP_DAYS,
-      depositBonus: 0,
-      referralLevel1: 10,
-      referralLevel2: 0,
-      referralLevel3: 0,
-      withdrawalTime: '24-48 Hours',
-      support: 'Basic Support',
-      features: [
-        'Deposit Amount: Rs. 2,500',
-        'Validity: 1,000 Days',
-        'Daily yield credited to wallet',
-      ],
-      color: '#10B981',
-      isActive: true,
-    },
   })
 }
 

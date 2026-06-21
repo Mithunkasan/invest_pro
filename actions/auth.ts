@@ -6,7 +6,7 @@ import { hashPassword, comparePassword, setSession, clearSession } from '@/lib/a
 import { sendWelcomeEmail } from '@/lib/mail'
 import { loginSchema, registerSchema, adminLoginSchema } from '@/utils/validators'
 import type { ApiResponse } from '@/types'
-import { ensureFreeMembershipPlan } from '@/lib/freeMembership'
+import { findFreeMembershipPlan } from '@/lib/freeMembership'
 
 // ── User Login ────────────────────────────────────────────────────────────────
 export async function loginAction(
@@ -89,7 +89,7 @@ export async function registerAction(
 
   const passwordHash = await hashPassword(parsed.data.password)
 
-  const freePlan = await ensureFreeMembershipPlan()
+  const freePlan = await findFreeMembershipPlan()
 
   const user = await prisma.user.create({
     data: {
@@ -99,7 +99,7 @@ export async function registerAction(
       passwordHash,
       referredById,
       memberType: 'FREE',
-      membershipPlanId: freePlan.id,
+      membershipPlanId: freePlan?.id,
     },
   })
 
