@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { getAdminSession, setSession, UserTokenPayload } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
 import { syncWalletMainBalance, deductFromWallets, refundWithdrawalToWallets } from './walletUtils'
-import { BASIC_MEMBERSHIP_AMOUNT, ensureBasicMembershipPlan, getBasicMembershipExpiry } from '@/lib/basicMembership'
+import { BASIC_MEMBERSHIP_AMOUNT, findBasicMembershipPlan, getBasicMembershipExpiry } from '@/lib/basicMembership'
 import { creditAllDueMembershipYields } from '@/lib/depositYield'
 import { distributeReferralAndLevelCommissions } from './rules'
 
@@ -468,7 +468,7 @@ export async function handleKYC(kycId: string, action: 'APPROVED' | 'REJECTED', 
 
     const reviewedAt = new Date()
     const shouldActivateBasic = action === 'APPROVED' && kyc.user.memberType === 'FREE'
-    const basicPlan = shouldActivateBasic ? await ensureBasicMembershipPlan() : null
+    const basicPlan = shouldActivateBasic ? await findBasicMembershipPlan() : null
     let basicActivationTransactionId: string | null = null
 
     await prisma.$transaction(async (tx) => {
@@ -510,7 +510,7 @@ export async function handleKYC(kycId: string, action: 'APPROVED' | 'REJECTED', 
           userId: kyc.userId,
           title: action === 'APPROVED' ? 'KYC Verified' : 'KYC Rejected',
           message: action === 'APPROVED'
-            ? shouldActivateBasic
+            ? shouldActivateBasic && basicPlan
               ? 'Your KYC is approved. Basic Membership is now active with a Rs. 2,500 deposit amount.'
               : 'Your identity verification is complete.'
             : `Your KYC was rejected. ${remarks || ''}`,
@@ -581,13 +581,10 @@ export async function getSystemSettings(): Promise<any> {
       })
     }
 
-    // Fetch and sync Basic Membership plan's depositBonus
-    let basicPlan = await prisma.membershipPlan.findUnique({
+    // Read the optional Basic Membership plan without recreating a deleted plan.
+    const basicPlan = await prisma.membershipPlan.findUnique({
       where: { name: 'Basic Membership' }
     })
-    if (!basicPlan) {
-      basicPlan = await ensureBasicMembershipPlan()
-    }
     if (basicPlan) {
       settings.basicDailyYieldPercent = basicPlan.depositBonus
     }
@@ -671,16 +668,15 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
     })
 
     // Sync corresponding membership plan configuration's depositBonus
-    let basicPlan = await prisma.membershipPlan.findUnique({
+    const basicPlan = await prisma.membershipPlan.findUnique({
       where: { name: 'Basic Membership' }
     })
-    if (!basicPlan) {
-      basicPlan = await ensureBasicMembershipPlan()
+    if (basicPlan) {
+      await prisma.membershipPlan.update({
+        where: { id: basicPlan.id },
+        data: { depositBonus: newBasicYield }
+      })
     }
-    await prisma.membershipPlan.update({
-      where: { id: basicPlan.id },
-      data: { depositBonus: newBasicYield }
-    })
 
     revalidatePath('/admin/dashboard/settings')
     revalidatePath('/')
@@ -955,12 +951,23 @@ export async function deleteMembershipPlanAction(id: string): Promise<ApiRespons
   if (!admin) return { success: false, message: 'Unauthorized' }
 
   try {
-    await prisma.membershipPlan.delete({
-      where: { id },
+    await prisma.$transaction(async (tx) => {
+      // A plan may be assigned to users. Disconnect those assignments first
+      // so the foreign key cannot prevent an administrator-requested deletion.
+      await tx.user.updateMany({
+        where: { membershipPlanId: id },
+        data: { membershipPlanId: null },
+      })
+      await tx.membershipPlan.delete({
+        where: { id },
+      })
     })
 
     revalidatePath('/admin/dashboard/memberships')
+    revalidatePath('/admin/dashboard/users')
     revalidatePath('/dashboard/membership')
+    revalidatePath('/membership-plans')
+    revalidatePath('/plans')
     return { success: true, message: 'Membership plan deleted successfully' }
   } catch (error) {
     console.error('Error deleting membership plan:', error)

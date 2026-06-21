@@ -100,6 +100,9 @@ function RegisterForm() {
         {/* Password */}
         <div>
           <label className="text-xs text-white/70 font-medium block mb-1">Password</label>
+          <p className="text-[11px] text-white/50 mb-1.5 leading-relaxed">
+            Use at least 8 characters, including one uppercase letter (A–Z), one lowercase letter (a–z), and one special character (e.g., @, #, $, %).
+          </p>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
             <input name="password" type={showPassword ? 'text' : 'password'} required placeholder="Min 8 chars, 1 uppercase, 1 number" className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400 text-sm transition-all" />
