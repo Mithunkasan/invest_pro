@@ -1,7 +1,7 @@
 export function isUplineEligibleForLevel(
   level: number,
-  activeDirectReferralCount: number
+  activatedDirectReferralCount: number
 ): boolean {
   if (!Number.isInteger(level) || level < 1) return false
-  return level === 1 || activeDirectReferralCount >= level
+  return level === 1 || activatedDirectReferralCount >= level
 }
