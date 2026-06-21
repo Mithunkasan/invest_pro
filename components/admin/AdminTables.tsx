@@ -18,6 +18,7 @@ import {
 } from '@/actions/admin'
 import { toast } from '@/hooks/use-toast'
 import { Plus, Edit2, Trash2, X, PlusCircle, Search, Calendar } from 'lucide-react'
+import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 
 interface TableProps {
   data: any[]
@@ -33,7 +34,7 @@ export function UsersTable({ users }: { users: any[] }) {
   const processedUsers = useMemo(() => {
     return users.map((user) => ({
       ...user,
-      membershipPlanName: user.membershipPlan?.name || 'Free Membership',
+      membershipPlanName: getMembershipDisplayName(user.membershipPlan?.name),
     }))
   }, [users])
 
@@ -41,11 +42,11 @@ export function UsersTable({ users }: { users: any[] }) {
   const availablePlans = useMemo(() => {
     const plansSet = new Set<string>()
     users.forEach((u) => {
-      const name = u.membershipPlan?.name
+      const name = getMembershipDisplayName(u.membershipPlan?.name)
       if (name) plansSet.add(name)
     })
     if (plansSet.size === 0) {
-      return ['Free Membership', 'Bronze Membership', 'Silver Membership', 'Gold Membership', 'Diamond Membership', 'Platinum Membership']
+      return ['Standard Membership', 'Bronze Membership', 'Silver Membership', 'Gold Membership', 'Diamond Membership', 'Platinum Membership']
     }
     return Array.from(plansSet)
   }, [users])
@@ -838,10 +839,7 @@ export function AdminNotificationsTable({
 
   // Helper function to resolve user's membership display name
   const getMembershipLabel = (row: any): string => {
-    if (row.user?.membershipPlan?.name) {
-      return row.user.membershipPlan.name
-    }
-    return 'Free Membership'
+    return getMembershipDisplayName(row.user?.membershipPlan?.name)
   }
 
   const filteredData = useMemo(() => {
@@ -928,8 +926,8 @@ export function AdminNotificationsTable({
   }
 
   const membershipOptions = useMemo(() => {
-    const dbOptions = plans.map((plan: any) => plan.name)
-    dbOptions.push('Free Membership')
+    const dbOptions = plans.map((plan: any) => getMembershipDisplayName(plan.name))
+    dbOptions.push('Standard Membership')
     return Array.from(new Set(dbOptions)).filter(Boolean) as string[]
   }, [plans])
 

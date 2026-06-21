@@ -9,6 +9,8 @@ import { toast } from '@/hooks/use-toast'
 import { Search, X, Pencil, Sparkles, Crown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ModalPortal } from '@/components/common/ModalPortal'
+import { getMembershipEndDate } from '@/utils/membershipDates'
+import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 
 interface UserMembershipsTableProps {
   users: any[]
@@ -59,6 +61,18 @@ function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps)
       }
       return next
     })
+  }
+
+  const handleActivatedAtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const activatedAt = e.target.value
+    const endDate = getMembershipEndDate(activatedAt)
+
+    setForm(prev => ({
+      ...prev,
+      basicMembershipActivatedAt: activatedAt,
+      basicMembershipExpiresAt: endDate,
+      lastDailyYieldAt: endDate,
+    }))
   }
 
   function handleSave(e: React.FormEvent) {
@@ -177,7 +191,7 @@ function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps)
                     type="date"
                     name="basicMembershipActivatedAt"
                     value={form.basicMembershipActivatedAt}
-                    onChange={(e) => setForm(prev => ({ ...prev, basicMembershipActivatedAt: e.target.value }))}
+                    onChange={handleActivatedAtChange}
                     disabled={isPending}
                     className="w-full h-8 px-2 rounded-lg bg-background border border-brand-800/60 text-xs text-foreground outline-none"
                   />
@@ -254,7 +268,7 @@ export function UserMembershipsTable({ users, plans }: UserMembershipsTableProps
   const processedUsers = useMemo(() => {
     return users.map((u) => ({
       ...u,
-      planName: u.membershipPlan?.name || 'Free Membership',
+      planName: getMembershipDisplayName(u.membershipPlan?.name),
     }))
   }, [users])
 

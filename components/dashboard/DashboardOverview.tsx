@@ -11,6 +11,7 @@ import {
 import { StatsCard } from './StatsCard'
 import { DataTable } from './DataTable'
 import { formatCurrency, formatDate, getStatusColor } from '@/utils/formatters'
+import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 import type { UserTokenPayload } from '@/lib/auth'
 import { ModalPortal } from '@/components/common/ModalPortal'
 
@@ -173,7 +174,7 @@ export function DashboardOverview({ user, stats, transactions, chartData, adminB
             </div>
             <div className="min-w-0">
               <h3 className="font-bold text-base sm:text-lg text-white flex flex-wrap items-center gap-2">
-                {user.membershipPlan?.name || 'Free Membership'}
+                {getMembershipDisplayName(user.membershipPlan?.name)}
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                   isExpired
                     ? 'bg-red-500/10 text-red-500 border border-red-500/20'

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { formatCurrency } from '@/utils/formatters'
 import { Crown, Sparkles, Zap, Shield, Gift, HelpCircle } from 'lucide-react'
 import { MembershipUpgradeButton } from '@/components/dashboard/MembershipUpgradeButton'
+import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 
 export const metadata: Metadata = {
   title: 'Membership Club — VR Galaxy Network',
@@ -56,9 +57,12 @@ export default async function UserMembershipPage() {
   }
 
   // Determine current active plan
-  const currentPlan = user.membershipPlan || {
+  const currentPlan = user.membershipPlan ? {
+    ...user.membershipPlan,
+    name: getMembershipDisplayName(user.membershipPlan.name),
+  } : {
     id: 'free-fallback',
-    name: 'Free Membership',
+    name: 'Standard Membership',
     price: 0,
     durationDays: -1,
     depositBonus: 0,

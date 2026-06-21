@@ -6,6 +6,7 @@ import { getAdminSession, setSession, UserTokenPayload } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
 import { syncWalletMainBalance, deductFromWallets, refundWithdrawalToWallets } from './walletUtils'
 import { BASIC_MEMBERSHIP_AMOUNT, ensureBasicMembershipPlan, getBasicMembershipExpiry } from '@/lib/basicMembership'
+import { creditAllDueMembershipYields } from '@/lib/depositYield'
 import { distributeReferralAndLevelCommissions } from './rules'
 
 // ── User Management ───────────────────────────────────────────────────────────
@@ -114,6 +115,7 @@ export async function updateUserAction(
     if (data.membershipPlanId !== undefined) {
       updateData.membershipPlanId = data.membershipPlanId || null
       if (user.membershipPlanId !== data.membershipPlanId) {
+        updateData.lastDailyYieldAt = null
         if (data.membershipPlanId) {
           updateData.membershipPlanActivatedAt = new Date()
           const exp = new Date()
@@ -920,15 +922,23 @@ export async function upsertMembershipPlanAction(data: any): Promise<ApiResponse
       isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : true,
     }
 
-    if (id) {
-      await prisma.membershipPlan.update({
+    const savedPlan = id
+      ? await prisma.membershipPlan.update({
         where: { id },
         data: planData,
       })
-    } else {
-      await prisma.membershipPlan.create({
+      : await prisma.membershipPlan.create({
         data: planData,
       })
+
+    // Applying a Yield % to a plan must also settle rewards already due to
+    // existing active members of that plan. Future rewards continue through
+    // the normal 10:00 AM IST cron.
+    if (savedPlan.price > 0 && savedPlan.depositBonus > 0) {
+      const catchUp = await creditAllDueMembershipYields(savedPlan.id)
+      if (catchUp.failed > 0) {
+        console.error(`Failed to catch up membership yield for ${catchUp.failed} user(s) on plan ${savedPlan.id}`)
+      }
     }
 
     revalidatePath('/admin/dashboard/memberships')
@@ -1112,6 +1122,7 @@ export async function upgradeUserToPremiumAction(userId: string): Promise<ApiRes
           membershipPlanId: premiumPlan?.id || user.membershipPlanId,
           membershipPlanActivatedAt: activatedAt,
           membershipPlanExpiresAt: expiresAt,
+          lastDailyYieldAt: null,
         },
       })
       await tx.notification.create({
@@ -1198,6 +1209,7 @@ export async function processMembershipUpgradeAction(
             memberType: targetMemberType,
             membershipPlanActivatedAt: activatedAt,
             membershipPlanExpiresAt: expiresAt,
+            lastDailyYieldAt: null,
           },
         })
 

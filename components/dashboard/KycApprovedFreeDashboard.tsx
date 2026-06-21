@@ -47,7 +47,7 @@ export function KycApprovedFreeDashboard({ userName, mainBalance, depositBalance
           {/* Status text */}
           <div>
             <h3 className="font-bold text-lg text-white flex items-center gap-2 flex-wrap">
-              Free Membership
+              Standard Membership
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/15 text-slate-300 border border-slate-500/30">
                 Active
               </span>
