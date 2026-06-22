@@ -263,9 +263,10 @@ export async function distributeReferralAndLevelCommissions(
     const levelPercentages = (settings.referralCommissionStructure || '10,5,3')
       .split(',')
       .map((percentage) => Number(percentage.trim()))
-      .map((percentage) => Number.isFinite(percentage) ? percentage : 0)
+      .map((percentage) => Number.isFinite(percentage) && percentage > 0 ? percentage : 0)
 
     const credited = new Set<string>()
+    const visitedUserIds = new Set<string>([purchaserId])
     let currentReferrerId: string | null = purchaser.referredById
 
     for (let index = 0; index < levelPercentages.length && currentReferrerId; index++) {
@@ -275,10 +276,11 @@ export async function distributeReferralAndLevelCommissions(
         where: { id: currentReferrerId },
         select: { id: true, referredById: true },
       })
-      if (!referrer) break
+      if (!referrer || visitedUserIds.has(referrer.id)) break
 
+      visitedUserIds.add(referrer.id)
       currentReferrerId = referrer.referredById
-      if (percentage <= 0) continue
+      if (percentage === 0) continue
 
       // L1 always belongs to the purchaser's direct referrer. Higher levels
       // require at least N personally referred users who activated membership.
@@ -288,7 +290,10 @@ export async function distributeReferralAndLevelCommissions(
           where: {
             referredById: referrer.id,
             OR: [
-              { membershipPlanActivatedAt: { not: null } },
+              {
+                membershipPlanActivatedAt: { not: null },
+                membershipPlan: { price: { gt: 0 } },
+              },
               {
                 basicMembershipActivatedAt: { not: null },
                 basicMembershipAmount: { gt: 0 },
