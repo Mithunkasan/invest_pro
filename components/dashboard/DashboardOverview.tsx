@@ -10,7 +10,7 @@ import {
 } from 'recharts'
 import { StatsCard } from './StatsCard'
 import { DataTable } from './DataTable'
-import { formatCurrency, formatDate, getStatusColor } from '@/utils/formatters'
+import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/utils/formatters'
 import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 import type { UserTokenPayload } from '@/lib/auth'
 import { ModalPortal } from '@/components/common/ModalPortal'
@@ -193,7 +193,7 @@ export function DashboardOverview({ user, stats, transactions, chartData, adminB
             <div>
               <span className="text-xs text-slate-400 block">Activation Date</span>
               <span className="font-semibold text-white mt-0.5 block whitespace-nowrap">
-                {user.membershipPlanActivatedAt ? formatDate(user.membershipPlanActivatedAt) : 'N/A'}
+                {user.membershipPlanActivatedAt ? formatDateTime(user.membershipPlanActivatedAt) : 'N/A'}
               </span>
             </div>
             <div>

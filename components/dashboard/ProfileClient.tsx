@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { User, Lock, Shield, Calendar, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { formatDate, formatCurrency } from '@/utils/formatters'
+import { formatDate, formatDateTime, formatCurrency } from '@/utils/formatters'
 import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 import { logoutAction } from '@/actions/auth'
 import { updateProfileAction, uploadProfilePictureAction } from '@/actions/user'
@@ -327,8 +327,8 @@ export function ProfileClient({ user }: ProfileClientProps) {
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Plan Activation Date</p>
-            <p className="text-base font-bold text-white mt-1">
-              {user.membershipPlanActivatedAt ? formatDate(user.membershipPlanActivatedAt) : 'N/A'}
+            <p className="text-sm font-semibold text-white">
+              {user.membershipPlanActivatedAt ? formatDateTime(user.membershipPlanActivatedAt) : 'N/A'}
             </p>
           </div>
           <div>
