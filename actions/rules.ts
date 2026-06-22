@@ -202,205 +202,206 @@ export async function distributeReferralAndLevelCommissions(
 ) {
   if (!Number.isFinite(baseAmount) || baseAmount <= 0) return
 
-  let creditedReferrerIds: string[] = []
+  const [settings, purchaser] = await Promise.all([
+    prisma.systemSettings.findUnique({ where: { id: 'default' } }),
+    prisma.user.findUnique({
+      where: { id: purchaserId },
+      select: { name: true, referredById: true },
+    }),
+  ])
+  if (!settings || !purchaser?.referredById) return []
 
-  // Serializable isolation plus retry makes the reference check and wallet
-  // increment atomic even if the same approval is submitted concurrently.
-  for (let attempt = 1; attempt <= COMMISSION_TRANSACTION_ATTEMPTS; attempt++) {
-    try {
-      creditedReferrerIds = await prisma.$transaction(async (tx) => {
-    const settings = await tx.systemSettings.findUnique({ where: { id: 'default' } })
-    if (!settings) return []
-
-    // Never trust values supplied to a Server Function. Resolve the approved
-    // business event from the database and use its authoritative amount.
-    let commissionBaseAmount: number | null = null
-    if (source === 'MEMBERSHIP') {
-      const [upgrade, activation] = await Promise.all([
-        tx.membershipUpgradeRequest.findFirst({
-          where: {
-            id: sourceId,
-            userId: purchaserId,
-            status: 'APPROVED',
-            plan: { price: { gt: 0 } },
-          },
-          select: { plan: { select: { price: true } } },
-        }),
-        tx.transaction.findFirst({
-          where: {
-            id: sourceId,
-            userId: purchaserId,
-            type: 'INVESTMENT',
-            status: 'COMPLETED',
-            amount: { gt: 0 },
-            OR: [
-              { description: { startsWith: 'Activated ' } },
-              { description: 'Basic Membership activated after KYC approval' },
-            ],
-          },
-          select: { amount: true },
-        }),
-      ])
-      commissionBaseAmount = upgrade?.plan.price ?? activation?.amount ?? null
-    } else {
-      const giftDeposit = await tx.giftDeposit.findFirst({
+  // Never trust values supplied to a Server Function. Resolve the approved
+  // business event from the database and use its authoritative amount.
+  let commissionBaseAmount: number | null = null
+  if (source === 'MEMBERSHIP') {
+    const [upgrade, activation] = await Promise.all([
+      prisma.membershipUpgradeRequest.findFirst({
         where: {
           id: sourceId,
           userId: purchaserId,
           status: 'APPROVED',
+          plan: { price: { gt: 0 } },
+        },
+        select: { plan: { select: { price: true } } },
+      }),
+      prisma.transaction.findFirst({
+        where: {
+          id: sourceId,
+          userId: purchaserId,
+          type: 'INVESTMENT',
+          status: 'COMPLETED',
           amount: { gt: 0 },
+          OR: [
+            { description: { startsWith: 'Activated ' } },
+            { description: 'Basic Membership activated after KYC approval' },
+          ],
         },
         select: { amount: true },
-      })
-      commissionBaseAmount = giftDeposit?.amount ?? null
-    }
-
-    if (commissionBaseAmount === null) {
-      throw new Error('Invalid or unapproved referral commission source')
-    }
-    if (Math.abs(commissionBaseAmount - baseAmount) > 0.005) {
-      throw new Error('Referral commission amount does not match its approved source')
-    }
-
-    const purchaser = await tx.user.findUnique({
-      where: { id: purchaserId },
-      select: { name: true, referredById: true },
+      }),
+    ])
+    commissionBaseAmount = upgrade?.plan.price ?? activation?.amount ?? null
+  } else {
+    const giftDeposit = await prisma.giftDeposit.findFirst({
+      where: {
+        id: sourceId,
+        userId: purchaserId,
+        status: 'APPROVED',
+        amount: { gt: 0 },
+      },
+      select: { amount: true },
     })
-    if (!purchaser?.referredById) return []
-
-    const levelPercentages = (settings.referralCommissionStructure || '10,5,3')
-      .split(',')
-      .map((percentage) => Number(percentage.trim()))
-      .map((percentage) => Number.isFinite(percentage) && percentage > 0 ? percentage : 0)
-
-    const credited = new Set<string>()
-    const visitedUserIds = new Set<string>([purchaserId])
-    let currentReferrerId: string | null = purchaser.referredById
-
-    for (let index = 0; index < levelPercentages.length && currentReferrerId; index++) {
-      const level = index + 1
-      const percentage = levelPercentages[index]
-      const referrer: { id: string; referredById: string | null } | null = await tx.user.findUnique({
-        where: { id: currentReferrerId },
-        select: { id: true, referredById: true },
-      })
-      if (!referrer || visitedUserIds.has(referrer.id)) break
-
-      visitedUserIds.add(referrer.id)
-      currentReferrerId = referrer.referredById
-      if (percentage === 0) continue
-
-      // L1 always belongs to the purchaser's direct referrer. Higher levels
-      // require at least N personally referred users who activated membership.
-      let activatedDirectReferralCount = 0
-      if (level > 1) {
-        activatedDirectReferralCount = await tx.user.count({
-          where: {
-            referredById: referrer.id,
-            OR: [
-              {
-                membershipPlanActivatedAt: { not: null },
-                membershipPlan: { price: { gt: 0 } },
-              },
-              {
-                basicMembershipActivatedAt: { not: null },
-                basicMembershipAmount: { gt: 0 },
-              },
-            ],
-          },
-        })
-      }
-      if (!isUplineEligibleForLevel(level, activatedDirectReferralCount)) continue
-
-      const commissionAmount = Number(((commissionBaseAmount * percentage) / 100).toFixed(2))
-      if (commissionAmount <= 0) continue
-
-      const reference = `REFERRAL_COMMISSION:${source}:${sourceId}:L${level}`
-      const alreadyCredited = await tx.transaction.findFirst({
-        where: {
-          userId: referrer.id,
-          type: 'REFERRAL_BONUS',
-          walletType: 'REFERRAL',
-          reference,
-        },
-        select: { id: true },
-      })
-      if (alreadyCredited) continue
-
-      await tx.wallet.upsert({
-        where: { userId: referrer.id },
-        update: {
-          mainBalance: { increment: commissionAmount },
-          referralBalance: { increment: commissionAmount },
-          totalEarned: { increment: commissionAmount },
-        },
-        create: {
-          userId: referrer.id,
-          mainBalance: commissionAmount,
-          referralBalance: commissionAmount,
-          totalEarned: commissionAmount,
-        },
-      })
-
-      const sourceLabel = source === 'GIFT' ? 'gift purchase' : 'membership activation'
-      await tx.transaction.create({
-        data: {
-          userId: referrer.id,
-          type: 'REFERRAL_BONUS',
-          amount: commissionAmount,
-          status: 'COMPLETED',
-          reference,
-          description: `Upline Level ${level} (${percentage}%) commission from ${purchaser.name}'s ${sourceLabel}`,
-          walletType: 'REFERRAL',
-        },
-      })
-      await tx.notification.create({
-        data: {
-          userId: referrer.id,
-          title: `Upline Level ${level} Commission Received`,
-          message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} (${percentage}%) from ${purchaser.name}'s ${sourceLabel}. It was credited to your Referral Wallet.`,
-          type: 'SUCCESS',
-        },
-      })
-
-      const referralRecord = await tx.referral.findFirst({
-        where: { referrerId: referrer.id, referredId: purchaserId },
-      })
-      if (referralRecord) {
-        await tx.referral.update({
-          where: { id: referralRecord.id },
-          data: { commission: { increment: commissionAmount }, level },
-        })
-      } else {
-        await tx.referral.create({
-          data: {
-            referrerId: referrer.id,
-            referredId: purchaserId,
-            commission: commissionAmount,
-            level,
-          },
-        })
-      }
-
-      credited.add(referrer.id)
-    }
-
-        return [...credited]
-      }, {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        maxWait: COMMISSION_TRANSACTION_MAX_WAIT_MS,
-        timeout: COMMISSION_TRANSACTION_TIMEOUT_MS,
-      })
-      break
-    } catch (error) {
-      if (
-        !isRetryableCommissionTransactionError(error)
-        || attempt === COMMISSION_TRANSACTION_ATTEMPTS
-      ) {
-        throw error
-      }
-    }
+    commissionBaseAmount = giftDeposit?.amount ?? null
   }
+
+  if (commissionBaseAmount === null) {
+    throw new Error('Invalid or unapproved referral commission source')
+  }
+  if (Math.abs(commissionBaseAmount - baseAmount) > 0.005) {
+    throw new Error('Referral commission amount does not match its approved source')
+  }
+
+  const levelPercentages = (settings.referralCommissionStructure || '10,5,3')
+    .split(',')
+    .map((percentage) => Number(percentage.trim()))
+    .map((percentage) => Number.isFinite(percentage) && percentage > 0 ? percentage : 0)
+
+  const credited = new Set<string>()
+  const visitedUserIds = new Set<string>([purchaserId])
+  let currentReferrerId: string | null = purchaser.referredById
+
+  for (let index = 0; index < levelPercentages.length && currentReferrerId; index++) {
+    const level = index + 1
+    const percentage = levelPercentages[index]
+    const referrer: { id: string; referredById: string | null } | null = await prisma.user.findUnique({
+      where: { id: currentReferrerId },
+      select: { id: true, referredById: true },
+    })
+    if (!referrer || visitedUserIds.has(referrer.id)) break
+
+    visitedUserIds.add(referrer.id)
+    currentReferrerId = referrer.referredById
+    if (percentage === 0) continue
+
+    let activatedDirectReferralCount = 0
+    if (level > 1) {
+      activatedDirectReferralCount = await prisma.user.count({
+        where: {
+          referredById: referrer.id,
+          OR: [
+            {
+              membershipPlanActivatedAt: { not: null },
+              membershipPlan: { price: { gt: 0 } },
+            },
+            {
+              basicMembershipActivatedAt: { not: null },
+              basicMembershipAmount: { gt: 0 },
+            },
+          ],
+        },
+      })
+    }
+    if (!isUplineEligibleForLevel(level, activatedDirectReferralCount)) continue
+
+    const commissionAmount = Number(((commissionBaseAmount * percentage) / 100).toFixed(2))
+    if (commissionAmount <= 0) continue
+
+    const reference = `REFERRAL_COMMISSION:${source}:${sourceId}:L${level}`
+    const sourceLabel = source === 'GIFT' ? 'gift purchase' : 'membership activation'
+    let wasCredited = false
+
+    // Keep each upline credit in its own short transaction. A long referral
+    // chain can no longer expire one transaction while later levels are paid.
+    for (let attempt = 1; attempt <= COMMISSION_TRANSACTION_ATTEMPTS; attempt++) {
+      try {
+        wasCredited = await prisma.$transaction(async (tx) => {
+          const alreadyCredited = await tx.transaction.findFirst({
+            where: {
+              userId: referrer.id,
+              type: 'REFERRAL_BONUS',
+              walletType: 'REFERRAL',
+              reference,
+            },
+            select: { id: true },
+          })
+          if (alreadyCredited) return false
+
+          await tx.wallet.upsert({
+            where: { userId: referrer.id },
+            update: {
+              mainBalance: { increment: commissionAmount },
+              referralBalance: { increment: commissionAmount },
+              totalEarned: { increment: commissionAmount },
+            },
+            create: {
+              userId: referrer.id,
+              mainBalance: commissionAmount,
+              referralBalance: commissionAmount,
+              totalEarned: commissionAmount,
+            },
+          })
+
+          await tx.transaction.create({
+            data: {
+              userId: referrer.id,
+              type: 'REFERRAL_BONUS',
+              amount: commissionAmount,
+              status: 'COMPLETED',
+              reference,
+              description: `Upline Level ${level} (${percentage}%) commission from ${purchaser.name}'s ${sourceLabel}`,
+              walletType: 'REFERRAL',
+            },
+          })
+          await tx.notification.create({
+            data: {
+              userId: referrer.id,
+              title: `Upline Level ${level} Commission Received`,
+              message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} (${percentage}%) from ${purchaser.name}'s ${sourceLabel}. It was credited to your Referral Wallet.`,
+              type: 'SUCCESS',
+            },
+          })
+
+          const referralRecord = await tx.referral.findFirst({
+            where: { referrerId: referrer.id, referredId: purchaserId },
+            select: { id: true },
+          })
+          if (referralRecord) {
+            await tx.referral.update({
+              where: { id: referralRecord.id },
+              data: { commission: { increment: commissionAmount }, level },
+            })
+          } else {
+            await tx.referral.create({
+              data: {
+                referrerId: referrer.id,
+                referredId: purchaserId,
+                commission: commissionAmount,
+                level,
+              },
+            })
+          }
+
+          return true
+        }, {
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+          maxWait: COMMISSION_TRANSACTION_MAX_WAIT_MS,
+          timeout: COMMISSION_TRANSACTION_TIMEOUT_MS,
+        })
+        break
+      } catch (error) {
+        if (
+          !isRetryableCommissionTransactionError(error)
+          || attempt === COMMISSION_TRANSACTION_ATTEMPTS
+        ) {
+          throw error
+        }
+      }
+    }
+
+    if (wasCredited) credited.add(referrer.id)
+  }
+
+  const creditedReferrerIds = [...credited]
 
   for (const referrerId of creditedReferrerIds) {
     await checkAndApplyPerformanceBadges(referrerId)
