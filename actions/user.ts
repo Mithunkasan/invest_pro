@@ -200,6 +200,10 @@ export async function submitKYC(formData: FormData): Promise<ApiResponse> {
     return { success: false, message: 'PAN card image is required.' }
   }
 
+  if (aadhaarFile.size > 500 * 1024 || panFile.size > 500 * 1024) {
+    return { success: false, message: 'File size is too large. Please upload an image smaller than 500 KB.' }
+  }
+
   try {
     let aadhaarUrl = ''
     let panUrl = ''

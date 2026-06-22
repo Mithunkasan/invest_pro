@@ -135,7 +135,7 @@ export function KYCClient({ kyc }: { kyc: KYC | null }) {
             <span className="text-2xl">🪪</span>
             <div>
               <h3 className="font-semibold">Aadhaar Card</h3>
-              <p className="text-xs text-muted-foreground">Upload front side of Aadhaar</p>
+              <p className="text-xs text-muted-foreground">Upload front side of Aadhaar (Max 500 KB)</p>
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -163,11 +163,19 @@ export function KYCClient({ kyc }: { kyc: KYC | null }) {
                   className="hidden" 
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
-                      setAadhaarFile(e.target.files[0])
+                      const file = e.target.files[0]
+                      if (file.size > 500 * 1024) {
+                        setMsg({ type: 'error', text: 'File size is too large. Please upload an image smaller than 500 KB.' })
+                        e.target.value = ''
+                        return
+                      }
+                      setAadhaarFile(file)
+                      setMsg(null)
                     }
                   }}
                 />
               </label>
+              <p className="text-[10px] text-muted-foreground mt-1.5">Image size must be less than 500 KB.</p>
             </div>
           </div>
         </div>
@@ -178,7 +186,7 @@ export function KYCClient({ kyc }: { kyc: KYC | null }) {
             <span className="text-2xl">💳</span>
             <div>
               <h3 className="font-semibold">PAN Card</h3>
-              <p className="text-xs text-muted-foreground">Upload your PAN card</p>
+              <p className="text-xs text-muted-foreground">Upload your PAN card (Max 500 KB)</p>
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -206,11 +214,19 @@ export function KYCClient({ kyc }: { kyc: KYC | null }) {
                   className="hidden" 
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
-                      setPanFile(e.target.files[0])
+                      const file = e.target.files[0]
+                      if (file.size > 500 * 1024) {
+                        setMsg({ type: 'error', text: 'File size is too large. Please upload an image smaller than 500 KB.' })
+                        e.target.value = ''
+                        return
+                      }
+                      setPanFile(file)
+                      setMsg(null)
                     }
                   }}
                 />
               </label>
+              <p className="text-[10px] text-muted-foreground mt-1.5">Image size must be less than 500 KB.</p>
             </div>
           </div>
         </div>
