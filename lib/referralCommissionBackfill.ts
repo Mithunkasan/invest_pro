@@ -36,7 +36,7 @@ export async function backfillMembershipReferralCommissions() {
     }),
   ])
 
-  const events: MembershipCommissionEvent[] = [
+  const discoveredEvents: MembershipCommissionEvent[] = [
     ...approvedUpgrades.map((request) => ({
       purchaserId: request.userId,
       baseAmount: request.plan.price,
@@ -48,6 +48,9 @@ export async function backfillMembershipReferralCommissions() {
       sourceId: transaction.id,
     })),
   ]
+  const events = [...new Map(
+    discoveredEvents.map((event) => [event.sourceId, event])
+  ).values()]
 
   let creditedCommissions = 0
   let failedEvents = 0
