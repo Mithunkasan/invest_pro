@@ -3,9 +3,17 @@
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { isUplineEligibleForLevel } from '@/lib/referralEligibility'
-import { syncWalletMainBalance } from './walletUtils'
 
 type ReferralCommissionSource = 'MEMBERSHIP' | 'GIFT'
+
+const COMMISSION_TRANSACTION_ATTEMPTS = 3
+const COMMISSION_TRANSACTION_MAX_WAIT_MS = 10_000
+const COMMISSION_TRANSACTION_TIMEOUT_MS = 30_000
+
+function isRetryableCommissionTransactionError(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError
+    && (error.code === 'P2028' || error.code === 'P2034')
+}
 
 // ── Check and Apply Performance Badges ─────────────────────────────────────────
 export async function checkAndApplyPerformanceBadges(userId: string) {
@@ -198,7 +206,7 @@ export async function distributeReferralAndLevelCommissions(
 
   // Serializable isolation plus retry makes the reference check and wallet
   // increment atomic even if the same approval is submitted concurrently.
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= COMMISSION_TRANSACTION_ATTEMPTS; attempt++) {
     try {
       creditedReferrerIds = await prisma.$transaction(async (tx) => {
     const settings = await tx.systemSettings.findUnique({ where: { id: 'default' } })
@@ -322,11 +330,13 @@ export async function distributeReferralAndLevelCommissions(
       await tx.wallet.upsert({
         where: { userId: referrer.id },
         update: {
+          mainBalance: { increment: commissionAmount },
           referralBalance: { increment: commissionAmount },
           totalEarned: { increment: commissionAmount },
         },
         create: {
           userId: referrer.id,
+          mainBalance: commissionAmount,
           referralBalance: commissionAmount,
           totalEarned: commissionAmount,
         },
@@ -372,17 +382,23 @@ export async function distributeReferralAndLevelCommissions(
         })
       }
 
-      await syncWalletMainBalance(tx, referrer.id)
       credited.add(referrer.id)
     }
 
         return [...credited]
-      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
+      }, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        maxWait: COMMISSION_TRANSACTION_MAX_WAIT_MS,
+        timeout: COMMISSION_TRANSACTION_TIMEOUT_MS,
+      })
       break
     } catch (error) {
-      const isSerializationConflict =
-        error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034'
-      if (!isSerializationConflict || attempt === 3) throw error
+      if (
+        !isRetryableCommissionTransactionError(error)
+        || attempt === COMMISSION_TRANSACTION_ATTEMPTS
+      ) {
+        throw error
+      }
     }
   }
 
