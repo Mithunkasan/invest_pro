@@ -33,7 +33,7 @@ function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps)
     memberType: initialPlan ? (initialPlan.name === 'Free Membership' ? 'FREE' : initialPlan.name === 'Basic Membership' ? 'BASIC' : 'PREMIUM') : 'FREE',
     membershipPlanId: initialPlan ? initialPlan.id : '',
     basicMembershipAmount: initialPlan ? initialPlan.price : 0,
-    basicMembershipActivatedAt: user.basicMembershipActivatedAt ? new Date(user.basicMembershipActivatedAt).toISOString().split('T')[0] : '',
+    basicMembershipActivatedAt: user.basicMembershipActivatedAt ? new Date(user.basicMembershipActivatedAt).toISOString().slice(0, 16) : '',
     basicMembershipExpiresAt: user.basicMembershipExpiresAt ? new Date(user.basicMembershipExpiresAt).toISOString().split('T')[0] : '',
     lastDailyYieldAt: user.lastDailyYieldAt ? new Date(user.lastDailyYieldAt).toISOString().split('T')[0] : '',
   })
@@ -188,7 +188,7 @@ function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps)
                 <div>
                   <label className="block text-[11px] text-brand-200 mb-1">Activated At</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     name="basicMembershipActivatedAt"
                     value={form.basicMembershipActivatedAt}
                     onChange={handleActivatedAtChange}

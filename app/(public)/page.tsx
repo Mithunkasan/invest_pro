@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { HeroSection } from '@/components/home/HeroSection'
 import { ScrollingStatsBar } from '@/components/home/ScrollingStatsBar'
 import { WhyUsSection } from '@/components/home/WhyUsSection'
-import { StatsSection } from '@/components/home/StatsSection'
 import { PlansSection } from '@/components/home/PlansSection'
 import { FeaturesSection } from '@/components/home/FeaturesSection'
 import { HowItWorksLeaderboard } from '@/components/home/HowItWorksLeaderboard'
@@ -10,6 +9,7 @@ import { Testimonials } from '@/components/home/Testimonials'
 import { FAQSection } from '@/components/home/FAQSection'
 import { AnimatedGalaxyBackground } from '@/components/common/AnimatedGalaxyBackground'
 import { prisma } from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
 
 export const metadata: Metadata = {
   title: 'VR Galaxy Network — Smart activation plan platform',
@@ -20,40 +20,63 @@ export const metadata: Metadata = {
 export const revalidate = 60
 
 export default async function HomePage() {
-  const [userCount, totalAum, settings, membershipPlans, usersRaw] = await Promise.all([
-    prisma.user.count(),
-    prisma.investment.aggregate({ _sum: { amount: true } }),
-    prisma.systemSettings.findUnique({ where: { id: 'default' } }),
-    prisma.membershipPlan.findMany({ where: { isActive: true }, orderBy: { price: 'asc' } }),
-    prisma.user.findMany({
-      where: { role: 'USER' },
-      select: {
-        id: true,
-        name: true,
-        profilePictureUrl: true,
-        createdAt: true,
-        transactions: {
-          where: {
-            status: 'COMPLETED',
-            walletType: {
-              in: ['REWARD', 'REFERRAL', 'LEVEL', 'SHARE', 'BONUS']
-            },
-            amount: { gt: 0 }
-          },
-          select: {
-            amount: true,
-            createdAt: true
-          }
-        }
-      }
-    })
-  ])
+  let settings: Prisma.SystemSettingsGetPayload<object> | null = null
+  let membershipPlans: Prisma.MembershipPlanGetPayload<object>[] = []
+  let leaderboardData: Array<{
+    rank: number
+    name: string
+    amount: string
+    avatar: string
+  }> = []
 
-  const stats = {
-    users: userCount + 500, // Real + Initial base
-    aum: (totalAum._sum.amount || 0) + 1500000,
-    returns: '1.5% - 3.0%',
-    experience: '5+'
+  try {
+    const [currentSettings, plans, topEarnings] = await Promise.all([
+      prisma.systemSettings.findUnique({ where: { id: 'default' } }),
+      prisma.membershipPlan.findMany({ where: { isActive: true }, orderBy: { price: 'asc' } }),
+      // Aggregate in PostgreSQL and return only three rows. Previously this page
+      // downloaded every matching transaction on every revalidation.
+      prisma.transaction.groupBy({
+        by: ['userId'],
+        where: {
+          user: { is: { role: 'USER' } },
+          status: 'COMPLETED',
+          walletType: { in: ['REWARD', 'REFERRAL', 'LEVEL', 'SHARE', 'BONUS'] },
+          amount: { gt: 0 },
+        },
+        _sum: { amount: true },
+        _max: { createdAt: true },
+        orderBy: [
+          { _sum: { amount: 'desc' } },
+          { _max: { createdAt: 'asc' } },
+        ],
+        take: 3,
+      }),
+    ])
+
+    settings = currentSettings
+    membershipPlans = plans
+
+    const topUsers = await prisma.user.findMany({
+      where: { id: { in: topEarnings.map((entry) => entry.userId) } },
+      select: { id: true, name: true, profilePictureUrl: true },
+    })
+    const usersById = new Map(topUsers.map((user) => [user.id, user]))
+
+    leaderboardData = topEarnings.flatMap((entry, index) => {
+      const user = usersById.get(entry.userId)
+      if (!user) return []
+
+      return [{
+        rank: index + 1,
+        name: user.name,
+        amount: `₹${(entry._sum.amount || 0).toLocaleString('en-IN')}`,
+        avatar: user.profilePictureUrl || '',
+      }]
+    })
+  } catch (error) {
+    // Keep the public page available during a temporary database/quota outage.
+    // Authenticated and transactional routes still require a live database.
+    console.error('Failed to load homepage database data', error)
   }
 
   const formattedPlans = membershipPlans.map((p, index) => ({
@@ -67,38 +90,6 @@ export default async function HomePage() {
     features: p.features,
     color: p.color
   }))
-
-  const leaderboardData = usersRaw
-    .map(u => {
-      const totalEarnings = u.transactions.reduce((sum, tx) => sum + tx.amount, 0)
-      const lastTxTime = u.transactions.length > 0
-        ? Math.max(...u.transactions.map(t => t.createdAt.getTime()))
-        : u.createdAt.getTime()
-
-      return {
-        name: u.name,
-        avatar: u.profilePictureUrl || '',
-        totalEarnings,
-        lastTxTime,
-        createdAt: u.createdAt.getTime()
-      }
-    })
-    .sort((a, b) => {
-      if (b.totalEarnings !== a.totalEarnings) {
-        return b.totalEarnings - a.totalEarnings
-      }
-      if (a.lastTxTime !== b.lastTxTime) {
-        return a.lastTxTime - b.lastTxTime
-      }
-      return a.createdAt - b.createdAt
-    })
-    .slice(0, 3)
-    .map((u, index) => ({
-      rank: index + 1,
-      name: u.name,
-      amount: `₹${u.totalEarnings.toLocaleString('en-IN')}`,
-      avatar: u.avatar
-    }))
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   
@@ -144,7 +135,6 @@ export default async function HomePage() {
         />
         <ScrollingStatsBar />
         <WhyUsSection />
-        {/* <StatsSection stats={stats} /> */}
         <PlansSection plans={formattedPlans} />
         <HowItWorksLeaderboard leaderboard={leaderboardData} />
         <FeaturesSection />

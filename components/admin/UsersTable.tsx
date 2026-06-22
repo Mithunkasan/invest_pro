@@ -125,7 +125,7 @@ function EditUserModal({ user, plans, onClose }: EditUserModalProps) {
     referredById: user.referredById || '',
     membershipPlanId: initialPlan ? initialPlan.id : '',
     basicMembershipAmount: initialPlan ? initialPlan.price : 0,
-    basicMembershipActivatedAt: user.basicMembershipActivatedAt ? new Date(user.basicMembershipActivatedAt).toISOString().split('T')[0] : '',
+    basicMembershipActivatedAt: user.basicMembershipActivatedAt ? new Date(user.basicMembershipActivatedAt).toISOString().slice(0, 16) : '',
     basicMembershipExpiresAt: user.basicMembershipExpiresAt ? new Date(user.basicMembershipExpiresAt).toISOString().split('T')[0] : '',
     lastDailyYieldAt: user.lastDailyYieldAt ? new Date(user.lastDailyYieldAt).toISOString().split('T')[0] : '',
     // Ranks/Badges
@@ -609,7 +609,7 @@ function EditUserModal({ user, plans, onClose }: EditUserModalProps) {
                 <div>
                   <label className="block text-xs font-semibold text-brand-200 mb-1">Basic Activated At</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     name="basicMembershipActivatedAt"
                     value={form.basicMembershipActivatedAt}
                     onChange={handleChange}
@@ -1193,7 +1193,7 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
     memberType: initialPlan ? (initialPlan.name === 'Free Membership' ? 'FREE' : initialPlan.name === 'Basic Membership' ? 'BASIC' : 'PREMIUM') : 'FREE',
     membershipPlanId: initialPlan ? initialPlan.id : '',
     basicMembershipAmount: initialPlan ? initialPlan.price : 0,
-    basicMembershipActivatedAt: user.basicMembershipActivatedAt ? new Date(user.basicMembershipActivatedAt).toISOString().split('T')[0] : '',
+    basicMembershipActivatedAt: user.basicMembershipActivatedAt ? new Date(user.basicMembershipActivatedAt).toISOString().slice(0, 16) : '',
     basicMembershipExpiresAt: user.basicMembershipExpiresAt ? new Date(user.basicMembershipExpiresAt).toISOString().split('T')[0] : '',
     lastDailyYieldAt: user.lastDailyYieldAt ? new Date(user.lastDailyYieldAt).toISOString().split('T')[0] : '',
   })
@@ -1352,7 +1352,7 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
                 <div>
                   <label className="block text-[11px] text-brand-200 mb-1 font-medium">Activated At</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     name="basicMembershipActivatedAt"
                     value={form.basicMembershipActivatedAt}
                     onChange={handleActivatedAtChange}
