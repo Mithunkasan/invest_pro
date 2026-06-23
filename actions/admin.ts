@@ -1395,7 +1395,7 @@ export async function impersonateUserAction(userId: string): Promise<ApiResponse
 // ── Update Bank Details ───────────────────────────────────────────────────────
 export async function updateBankDetailsAction(formData: FormData): Promise<ApiResponse> {
   const session = await getAdminSession()
-  if (!session || session.role !== 'SUPER_ADMIN') {
+  if (!session) {
     return { success: false, message: 'Unauthorized' }
   }
 
