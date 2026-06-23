@@ -31,7 +31,7 @@ export function Testimonials() {
   return (
     <section className="section-container bg-transparent">
       <div className="text-center mb-16">
-        <h2 className="section-heading">What Our Investors Say</h2>
+        <h2 className="section-heading">What Our Community Members Say</h2>
         <p className="section-subheading">
           Join over 25,000 satisfied investors who are growing their wealth with VR Galaxy.
         </p>
