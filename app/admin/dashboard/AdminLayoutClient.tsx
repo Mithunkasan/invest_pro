@@ -29,6 +29,7 @@ const adminNavItems: {
   { href: '/admin/dashboard/deposits',          label: 'Deposits',            icon: ArrowDownToLine, badgeKey: 'deposits' },
   { href: '/admin/dashboard/withdrawals',       label: 'Withdrawals',         icon: ArrowUpFromLine, badgeKey: 'withdrawals' },
   { href: '/admin/dashboard/user-pay',          label: 'User Pay Requests',   icon: Send,            badgeKey: 'userPay' },
+  { href: '/admin/dashboard/bank-details',      label: 'Bank Details',        icon: Wallet },
   { href: '/admin/dashboard/memberships',       label: 'Manage Membership',   icon: Crown,           badgeKey: 'memberships' },
   { href: '/admin/dashboard/gifts',             label: 'Gifts Management',    icon: Gift,            badgeKey: 'gifts' },
   { href: '/admin/dashboard/kyc',               label: 'KYC Management',      icon: ShieldCheck,     badgeKey: 'kyc' },

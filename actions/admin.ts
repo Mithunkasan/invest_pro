@@ -1391,3 +1391,95 @@ export async function impersonateUserAction(userId: string): Promise<ApiResponse
     return { success: false, message: error.message || 'Failed to impersonate user' }
   }
 }
+
+// ── Update Bank Details ───────────────────────────────────────────────────────
+export async function updateBankDetailsAction(formData: FormData): Promise<ApiResponse> {
+  const session = await getAdminSession()
+  if (!session) {
+    return { success: false, message: 'Unauthorized' }
+  }
+
+  const upiId = formData.get('upiId')?.toString() || ''
+  const bankName = formData.get('bankName')?.toString() || ''
+  const accountName = formData.get('accountName')?.toString() || ''
+  const accountNumber = formData.get('accountNumber')?.toString() || ''
+  const ifscCode = formData.get('ifscCode')?.toString() || ''
+  
+  const qrCodeFile = formData.get('qrCodeImage') as File | null
+
+  try {
+    let qrCodeUrl = formData.get('existingQrCodeUrl')?.toString() || ''
+
+    if (qrCodeFile && qrCodeFile.size > 0) {
+      if (qrCodeFile.size > 500 * 1024) {
+        return { success: false, message: 'QR Code image must be smaller than 500 KB' }
+      }
+
+      // Try Cloudinary first
+      const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.replace(/['"]/g, '')
+      const apiKey = process.env.CLOUDINARY_API_KEY?.replace(/['"]/g, '')
+      const apiSecret = process.env.CLOUDINARY_API_SECRET?.replace(/['"]/g, '')
+
+      const isPlaceholder = (val: string | undefined) => {
+        if (!val) return true
+        const clean = val.trim().toLowerCase()
+        return clean.includes('your_') || clean.includes('placeholder') || clean.includes('***') || clean === ''
+      }
+
+      const isCloudinaryConfigured = cloudName && !isPlaceholder(cloudName) && apiKey && !isPlaceholder(apiKey) && apiSecret && !isPlaceholder(apiSecret)
+
+      let uploadedToCloudinary = false
+      if (isCloudinaryConfigured) {
+        try {
+          const { uploadToCloudinary } = await import('@/lib/cloudinary')
+          const fileBuffer = Buffer.from(await qrCodeFile.arrayBuffer())
+          qrCodeUrl = await uploadToCloudinary(fileBuffer, `qrcode_${Date.now()}`)
+          uploadedToCloudinary = true
+        } catch (err) {
+          console.error('Cloudinary upload failed for QR code, falling back:', err)
+        }
+      }
+
+      if (!uploadedToCloudinary) {
+        const fs = await import('fs')
+        const path = await import('path')
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads')
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true })
+        }
+        const ext = path.extname(qrCodeFile.name) || '.png'
+        const fileName = `qrcode_${Date.now()}${ext}`
+        const filePath = path.join(uploadDir, fileName)
+        const fileBuffer = Buffer.from(await qrCodeFile.arrayBuffer())
+        
+        try {
+          await fs.promises.writeFile(filePath, fileBuffer)
+          qrCodeUrl = `/uploads/${fileName}`
+        } catch (writeError) {
+          console.warn('Local filesystem write failed. Falling back to data url:', writeError)
+          const base64 = fileBuffer.toString('base64')
+          qrCodeUrl = `data:${qrCodeFile.type || 'image/png'};base64,${base64}`
+        }
+      }
+    }
+
+    await prisma.systemSettings.update({
+      where: { id: 'default' },
+      data: {
+        upiId,
+        bankName,
+        accountName,
+        accountNumber,
+        ifscCode,
+        ...(qrCodeUrl ? { qrCodeUrl } : {})
+      }
+    })
+
+    revalidatePath('/admin/dashboard/bank-details')
+    revalidatePath('/dashboard/deposit')
+    return { success: true, message: 'Bank details updated successfully.' }
+  } catch (error: any) {
+    console.error('Error updating bank details:', error)
+    return { success: false, message: error.message || 'Failed to update bank details' }
+  }
+}

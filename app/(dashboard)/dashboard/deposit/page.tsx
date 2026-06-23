@@ -10,10 +10,20 @@ export default async function DepositPage() {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const deposits = await prisma.deposit.findMany({
-    where: { userId: session.id },
-    orderBy: { createdAt: 'desc' },
-  })
+  const [deposits, settings] = await Promise.all([
+    prisma.deposit.findMany({
+      where: { userId: session.id },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.systemSettings.findUnique({
+      where: { id: 'default' }
+    })
+  ])
 
-  return <DepositClient deposits={JSON.parse(JSON.stringify(deposits))} />
+  return (
+    <DepositClient 
+      deposits={JSON.parse(JSON.stringify(deposits))} 
+      settings={JSON.parse(JSON.stringify(settings || {}))} 
+    />
+  )
 }

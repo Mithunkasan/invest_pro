@@ -2,23 +2,13 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Copy, Check, Upload, Smartphone, Building2, QrCode, AlertCircle } from 'lucide-react'
+import { Copy, Check, Upload, Smartphone, Building2, QrCode, AlertCircle, ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/dashboard/DataTable'
 import { submitDepositAction } from '@/actions/deposit'
 import { formatCurrency, formatDate, getStatusColor } from '@/utils/formatters'
 import type { Deposit } from '@/types'
-
-const UPI_ID = 'investpro@upi'
-const ACCOUNT_NO = '1234567890123'
-const IFSC = 'HDFC0001234'
-const BANK_NAME = 'HDFC Bank'
-
-const methods = [
-  { id: 'UPI', label: 'UPI Transfer', icon: Smartphone, desc: UPI_ID },
-  { id: 'BANK_TRANSFER', label: 'Bank Transfer', icon: Building2, desc: `A/C: ${ACCOUNT_NO}` },
-  { id: 'QR_CODE', label: 'QR Code', icon: QrCode, desc: 'Scan QR to pay' },
-]
+import type { SystemSettings } from '@prisma/client'
 
 const cols = [
   { key: 'amount', label: 'Amount', render: (v: unknown) => <span className="font-semibold">{formatCurrency(Number(v))}</span> },
@@ -28,7 +18,7 @@ const cols = [
   { key: 'createdAt', label: 'Date', render: (v: unknown) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
 ]
 
-export function DepositClient({ deposits }: { deposits: Deposit[] }) {
+export function DepositClient({ deposits, settings }: { deposits: Deposit[], settings: SystemSettings }) {
   const [method, setMethod] = useState('UPI')
   const [amount, setAmount] = useState('')
   const [utr, setUtr] = useState('')
@@ -55,6 +45,12 @@ export function DepositClient({ deposits }: { deposits: Deposit[] }) {
     setMsg({ type: result.success ? 'success' : 'error', text: result.message })
     if (result.success) { setAmount(''); setUtr('') }
   }
+
+  const methods = [
+    { id: 'UPI', label: 'UPI Transfer', icon: Smartphone, desc: settings?.upiId || 'Not configured' },
+    { id: 'BANK_TRANSFER', label: 'Bank Transfer', icon: Building2, desc: `A/C: ${settings?.accountNumber || 'Not configured'}` },
+    { id: 'QR_CODE', label: 'QR Code', icon: QrCode, desc: 'Scan QR to pay' },
+  ]
 
   return (
     <div className="space-y-6">
@@ -84,27 +80,32 @@ export function DepositClient({ deposits }: { deposits: Deposit[] }) {
                 <>
                   <p className="text-xs text-muted-foreground font-medium">UPI ID</p>
                   <div className="flex items-center justify-between">
-                    <code className="text-sm font-bold">{UPI_ID}</code>
-                    <button onClick={() => copy(UPI_ID, 'upi')} className="text-primary hover:text-primary/80">
-                      {copied === 'upi' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    </button>
+                    <code className="text-sm font-bold">{settings?.upiId || 'Not configured'}</code>
+                    {settings?.upiId && (
+                      <button onClick={() => copy(settings.upiId!, 'upi')} className="text-primary hover:text-primary/80">
+                        {copied === 'upi' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    )}
                   </div>
                 </>
               )}
               {method === 'BANK_TRANSFER' && (
                 <div className="space-y-2 text-sm">
                   {[
-                    { label: 'Bank', value: BANK_NAME },
-                    { label: 'Account No', value: ACCOUNT_NO },
-                    { label: 'IFSC', value: IFSC },
+                    { label: 'Bank Name', value: settings?.bankName || 'Not configured' },
+                    { label: 'Account Name', value: settings?.accountName || 'Not configured' },
+                    { label: 'Account No', value: settings?.accountNumber || 'Not configured' },
+                    { label: 'IFSC', value: settings?.ifscCode || 'Not configured' },
                   ].map((item) => (
                     <div key={item.label} className="flex justify-between items-center">
                       <span className="text-muted-foreground text-xs">{item.label}</span>
                       <div className="flex items-center gap-2">
                         <code className="font-medium">{item.value}</code>
-                        <button onClick={() => copy(item.value, item.label)} className="text-primary">
-                          {copied === item.label ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                        </button>
+                        {item.value !== 'Not configured' && (
+                          <button onClick={() => copy(item.value, item.label)} className="text-primary">
+                            {copied === item.label ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -112,10 +113,18 @@ export function DepositClient({ deposits }: { deposits: Deposit[] }) {
               )}
               {method === 'QR_CODE' && (
                 <div className="text-center py-4">
-                  <div className="w-32 h-32 bg-white rounded-xl mx-auto flex items-center justify-center">
-                    <QrCode className="w-20 h-20 text-black" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">Scan to pay</p>
+                  {settings?.qrCodeUrl ? (
+                    <div className="w-48 h-48 bg-white rounded-xl mx-auto flex items-center justify-center p-2 border border-border">
+                      <img src={settings.qrCodeUrl} alt="QR Code" className="max-w-full max-h-full object-contain" />
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 bg-white rounded-xl mx-auto flex items-center justify-center">
+                      <ImageIcon className="w-10 h-10 text-muted-foreground opacity-50" />
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {settings?.qrCodeUrl ? 'Scan to pay' : 'QR code not configured'}
+                  </p>
                 </div>
               )}
             </div>
@@ -162,3 +171,4 @@ export function DepositClient({ deposits }: { deposits: Deposit[] }) {
     </div>
   )
 }
+

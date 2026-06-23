@@ -454,6 +454,15 @@ model SystemSettings {
   heroPaid                String   @default("₹12.45 Cr+")
   heroRate                String   @default("99.8%")
   giftDepositAmount        Float    @default(0)
+
+  // Bank Details
+  upiId                   String?
+  bankName                String?
+  accountName             String?
+  accountNumber           String?
+  ifscCode                String?
+  qrCodeUrl               String?
+
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 }
