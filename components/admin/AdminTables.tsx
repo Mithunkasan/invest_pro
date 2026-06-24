@@ -24,6 +24,12 @@ interface TableProps {
   data: any[]
 }
 
+const formatTime = (date: Date | string) =>
+  new Intl.DateTimeFormat('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(date))
+
 export function UsersTable({ users }: { users: any[] }) {
   const [isPending, startTransition] = useTransition()
   const [filterName, setFilterName] = useState('')
@@ -301,6 +307,7 @@ export function DepositsTable({ data }: TableProps) {
     { key: 'utrNumber', label: 'UTR', render: (v: any) => <span className="text-xs font-mono">{String(v || '—')}</span> },
     { key: 'status', label: 'Status', render: (v: any) => <span className={`status-badge ${getStatusColor(String(v))}`}>{String(v)}</span> },
     { key: 'createdAt', label: 'Date', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
+    { key: 'createdTime', label: 'Time', render: (_: unknown, row: Record<string, unknown>) => <span className="text-xs text-muted-foreground">{formatTime(String(row.createdAt))}</span> },
     { key: 'id', label: 'Actions', render: (id: string, row: any) => (
       <div className="flex items-center gap-1.5 flex-wrap">
         <Button 
@@ -502,6 +509,7 @@ export function WithdrawalsTable({ data }: TableProps) {
     )},
     { key: 'status', label: 'Status', render: (v: any) => <span className={`status-badge ${getStatusColor(String(v))}`}>{String(v)}</span> },
     { key: 'createdAt', label: 'Date', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
+    { key: 'createdTime', label: 'Time', render: (_: unknown, row: Record<string, unknown>) => <span className="text-xs text-muted-foreground">{formatTime(String(row.createdAt))}</span> },
     { key: 'id', label: 'Actions', render: (id: string, row: any) => row.status === 'PENDING' && (
       <div className="flex gap-1">
         <Button 
