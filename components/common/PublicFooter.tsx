@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { TrendingUp, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react'
+import Image from 'next/image'
+import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react'
 
 const footerLinks = {
   quickLinks: [
@@ -31,14 +32,14 @@ export function PublicFooter() {
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2.5 font-black text-2xl group">
               <div className="w-10 h-10 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-115">
-                <img src="/logo3.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
+                <Image src="/logo3.png" width={40} height={40} className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Networks logo" />
               </div>
               <span className="bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent font-black tracking-wider">
-                VR Galaxy
+                VR Galaxy Networks
               </span>
             </Link>
             <p className="text-sm text-white/60 leading-relaxed">
-              VR Galaxy is a trusted activation plan platform helping thousands grow their wealth through Smart Hybrid Digital Earnings with Daily Reward Earnings.
+              VR Galaxy Networks is a digital earning platform for community growth, membership benefits, task rewards, referrals, and professional networking.
             </p>
             <div className="flex gap-3">
               {socialLinks.map(({ icon: Icon, href, label }) => (
@@ -110,7 +111,7 @@ export function PublicFooter() {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/40">
-          <p>© {new Date().getFullYear()} VR Galaxy. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} VR Galaxy Networks. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />

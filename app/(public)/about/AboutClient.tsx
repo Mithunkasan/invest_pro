@@ -16,7 +16,7 @@ export function AboutClient() {
   })
 
   // Transforms for split text animation
-  // Text will split: "VR Galaxy" goes left, "Network" goes right
+  // Split the brand name across the animated heading.
   const leftX = useTransform(scrollYProgress, [0, 0.45], [0, -350])
   const rightX = useTransform(scrollYProgress, [0, 0.45], [0, 350])
   const textOpacity = useTransform(scrollYProgress, [0, 0.35, 0.45], [1, 0.8, 0])
@@ -124,7 +124,7 @@ export function AboutClient() {
                 <div className="h-1 w-16 bg-primary rounded-full" />
                 
                 <p className="text-white/70 text-sm sm:text-base leading-relaxed font-medium">
-                  VR Galaxy Network was conceived by a team of visionary technologists and community builders who recognized a gap in the digital landscape. Traditional social platforms offered connection but lacked collaborative growth frameworks. We set out to create a unified network where community builders, digital enthusiasts, and technology leaders could connect, learn, and grow together.
+                  VR Galaxy Networks was conceived by a team of visionary technologists and community builders who recognized a gap in the digital landscape. Traditional social platforms offered connection but lacked collaborative growth frameworks. We set out to create a unified network where community builders, digital enthusiasts, and technology leaders could connect, learn, and grow together.
                 </p>
                 <p className="text-white/60 text-sm leading-relaxed font-medium">
                   Since our inception, our focus has been entirely on user experience, stability, and digital synergy. By combining secure peer-to-peer systems, verified communication pipelines, and customized growth tiers, we have built a thriving space for individuals to scale their networks and leverage modern collaboration tools.

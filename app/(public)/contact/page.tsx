@@ -1,20 +1,21 @@
-import type { Metadata } from 'next'
+import { createPageMetadata, getSiteUrl, serializeJsonLd, SITE_NAME } from '@/lib/seo'
 import { Mail, Phone, MapPin, Clock } from 'lucide-react'
 import ContactClient from './ContactClient'
 
-export const metadata: Metadata = {
-  title: 'Contact Us',
-  description: 'Get in touch with the VR Galaxy support team. We are available 24/7 online to assist with your Smart Hybrid Digital Earning, deposit, withdrawal, and wallet queries in India.',
-  alternates: { canonical: '/contact' },
-}
+export const metadata = createPageMetadata({
+  title: 'Contact Support',
+  description: 'Contact the VR Galaxy Networks support team for help with accounts, memberships, deposits, withdrawals, wallet questions, and platform access in India.',
+  path: '/contact',
+  keywords: ['VR Galaxy Networks support', 'contact digital earning platform', 'account support India'],
+})
 
 export default function ContactPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const baseUrl = getSiteUrl()
   const contactJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ContactPage',
-    'name': 'Contact VR Galaxy support',
-    'description': 'Contact coordinates for VR Galaxy client queries.',
+    'name': `Contact ${SITE_NAME} support`,
+    'description': `${SITE_NAME} customer support contact information.`,
     'url': `${baseUrl}/contact`,
     'contactPoint': {
       '@type': 'ContactPoint',
@@ -29,7 +30,7 @@ export default function ContactPage() {
     <div className="min-h-screen pt-20">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(contactJsonLd) }}
       />
       <div className="section-container">
         <div className="text-center mb-12">

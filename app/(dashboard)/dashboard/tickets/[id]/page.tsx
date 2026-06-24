@@ -6,7 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 import { format } from 'date-fns'
 
 export const metadata = {
-  title: 'Ticket Details - VR Galaxy',
+  title: 'Ticket Details - VR Galaxy Networks',
 }
 
 const statusColors: Record<string, string> = {

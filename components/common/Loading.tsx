@@ -21,7 +21,7 @@ export default function Loading() {
           transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
         />
 
-        {/* Pulsating VR Galaxy Logo - Large Size, No Background Container */}
+        {/* Pulsating brand logo - Large Size, No Background Container */}
         <motion.div
           className="w-32 h-32 flex items-center justify-center z-10"
           animate={{
@@ -36,7 +36,7 @@ export default function Loading() {
           <img
             src="/logo.png"
             className="w-full h-full object-contain filter drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]"
-            alt="VR Galaxy Logo"
+            alt="VR Galaxy Networks logo"
           />
         </motion.div>
       </div>
@@ -49,7 +49,7 @@ export default function Loading() {
         className="mt-8 text-center"
       >
         <h2 className="text-xl font-black tracking-widest bg-gradient-to-r from-primary via-purple-400 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(139,92,246,0.3)]">
-          VR GALAXY
+          VR GALAXY NETWORKS
         </h2>
       </motion.div>
     </div>

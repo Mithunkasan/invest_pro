@@ -63,10 +63,10 @@ function AdminSidebarContent({
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2.5 px-6 py-4 border-b border-sidebar-border">
         <div className="w-11 h-11 flex items-center justify-center overflow-hidden">
-          <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(239,68,68,0.3)]" alt="VR Galaxy Logo" />
+          <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(239,68,68,0.3)]" alt="VR Galaxy Networks logo" />
         </div>
         <div>
-          <span className="font-black tracking-wider text-base bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent block">VR Galaxy</span>
+          <span className="font-black tracking-wider text-base bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent block">VR Galaxy Networks</span>
           <span className="text-[10px] text-muted-foreground block font-bold uppercase tracking-widest">Admin Portal</span>
         </div>
       </div>

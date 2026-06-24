@@ -1,10 +1,11 @@
-import type { Metadata } from 'next'
+import { createPageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'Terms & Conditions',
-  description: 'Terms and Conditions for using VR Galaxy. Read about activation plan risks, KYC requirements, withdrawal policies, and referral program terms.',
-  alternates: { canonical: '/terms' },
-}
+  description: 'Read the VR Galaxy Networks Terms and Conditions covering platform use, earning risks, KYC, withdrawals, referrals, and account security.',
+  path: '/terms',
+  keywords: ['VR Galaxy Networks terms', 'platform terms and conditions', 'withdrawal policy', 'KYC requirements'],
+})
 
 export default function TermsPage() {
   return (
@@ -14,11 +15,11 @@ export default function TermsPage() {
         <div className="prose prose-sm max-w-none space-y-6 text-muted-foreground leading-relaxed">
           <section>
             <h2 className="text-foreground font-bold text-lg mb-2">1. Acceptance of Terms</h2>
-            <p>By accessing and using VR Galaxy Network, you agree to these terms. Please read them carefully before investing.</p>
+            <p>By accessing and using VR Galaxy Networks, you agree to these terms. Please read them carefully before joining an earning plan.</p>
           </section>
           <section>
             <h2 className="text-foreground font-bold text-lg mb-2">2. Activation Plan Risk</h2>
-            <p>All Smart Hybrid Digital Earnings carry risk. Past performance does not guarantee future results. Invest only what you can afford to lose. VR Galaxy Network is not responsible for Smart Hybrid Digital Earning losses.</p>
+            <p>All digital earning activities carry risk. Past performance does not guarantee future results. Commit only what you can afford to lose. VR Galaxy Networks is not responsible for earning platform losses.</p>
           </section>
           <section>
             <h2 className="text-foreground font-bold text-lg mb-2">3. KYC Requirements</h2>

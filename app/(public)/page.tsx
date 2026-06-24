@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import { createPageMetadata, getSiteUrl, serializeJsonLd, SITE_NAME } from '@/lib/seo'
 import { HeroSection } from '@/components/home/HeroSection'
 import { ScrollingStatsBar } from '@/components/home/ScrollingStatsBar'
 import { WhyUsSection } from '@/components/home/WhyUsSection'
@@ -11,11 +11,12 @@ import { AnimatedGalaxyBackground } from '@/components/common/AnimatedGalaxyBack
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-export const metadata: Metadata = {
-  title: 'VR Galaxy Network — Smart activation plan platform',
-  description: 'Grow your wealth with Daily Reward Earnings starting from 1.5%. Join 10,000+ investors. Minimum Smart Hybrid Digital Earning ₹1,000.',
-  alternates: { canonical: '/' },
-}
+export const metadata = createPageMetadata({
+  title: 'Digital Earning & Community Growth Platform',
+  description: 'Join VR Galaxy Networks to explore task rewards, membership benefits, referral opportunities, professional networking, and transparent digital earning tools.',
+  path: '/',
+  keywords: ['VR Galaxy Networks', 'digital earning platform', 'community growth', 'membership benefits', 'referral rewards', 'task rewards'],
+})
 
 export const revalidate = 60
 
@@ -129,20 +130,20 @@ export default async function HomePage() {
     color: p.color
   }))
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const baseUrl = getSiteUrl()
   
   const websiteJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    'name': 'VR Galaxy',
+    'name': SITE_NAME,
     'url': baseUrl,
   }
 
-  const financeJsonLd = {
+  const earningPlatformJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'FinancialProduct',
-    'name': 'VR Galaxy Daily Reward Earnings Activation Plan',
-    'description': 'High-yield smart activation plans starting from ₹1,000 with Daily Reward Earnings ranging from 1.5% to 3.0%.',
+    '@type': 'Service',
+    'name': `${SITE_NAME} Earning Platform`,
+    'description': 'Digital earning services with membership benefits, task rewards, referrals, and community growth opportunities.',
     'url': `${baseUrl}/plans`,
     'offers': {
       '@type': 'Offer',
@@ -155,11 +156,11 @@ export default async function HomePage() {
     <div className="relative w-full bg-[#020205] overflow-hidden">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(financeJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(earningPlatformJsonLd) }}
       />
       <AnimatedGalaxyBackground />
       <div className="relative z-10">

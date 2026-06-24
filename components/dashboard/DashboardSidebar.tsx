@@ -148,9 +148,9 @@ export function DashboardSidebar({
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-6 py-4 border-b border-sidebar-border">
           <div className="w-11 h-11 flex items-center justify-center overflow-hidden">
-            <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
+            <img src="/logo.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Networks logo" />
           </div>
-          <span className="font-black tracking-wider text-xl bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">VR Galaxy</span>
+          <span className="font-black tracking-wider text-xl bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">VR Galaxy Networks</span>
         </div>
 
         {/* Nav Items */}
@@ -250,7 +250,7 @@ export function DashboardSidebar({
       <div className="px-4 py-4 border-t border-sidebar-border">
         <div className="flex items-center gap-2 text-xs text-sidebar-foreground/40">
           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <span>VR Galaxy v1.0.0</span>
+          <span>VR Galaxy Networks v1.0.0</span>
         </div>
       </div>
     </div>

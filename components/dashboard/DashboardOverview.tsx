@@ -73,7 +73,7 @@ const transactionColumns = [
     if (v === 'USER_PAY_RECEIVED') label = 'MONEY RECEIVED'
     return <span className="capitalize text-xs font-medium">{label.toLowerCase()}</span>
   }},
-  { key: 'description', label: 'Description', render: (v: unknown) => <span className="text-muted-foreground text-xs">{String(v || '—').replace(/\bROI\b/gi, 'Daily Reward Earnings').replace(/\bInvestment\b/gi, 'Smart Hybrid Digital Earning')}</span> },
+  { key: 'description', label: 'Description', render: (v: unknown) => <span className="text-muted-foreground text-xs">{String(v || '—').replace(/\bROI\b/gi, 'Earning Platform').replace(/\bInvestment\b/gi, 'Earning Platform')}</span> },
   { key: 'amount', label: 'Amount', sortable: true, render: (v: unknown, row: Record<string, unknown>) => (
     <span className={`font-semibold text-sm ${row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' || row.type === 'USER_PAY_SENT' ? 'text-red-500' : 'text-green-500'}`}>
       {row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' || row.type === 'USER_PAY_SENT' ? '-' : '+'}{formatCurrency(Number(v))}

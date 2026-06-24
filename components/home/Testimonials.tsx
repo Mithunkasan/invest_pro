@@ -7,7 +7,7 @@ const testimonials = [
   {
     name: 'Rajesh Kumar',
     role: 'Real Estate Developer',
-    text: 'VR Galaxy has completely changed how I manage my passive income. The Daily Reward Earnings are consistent and the instant withdrawals are a lifesaver.',
+    text: 'VR Galaxy Networks has completely changed how I manage my digital earnings. The reward updates are consistent and the instant withdrawals are a lifesaver.',
     avatar: 'RK',
     rating: 5
   },
@@ -33,7 +33,7 @@ export function Testimonials() {
       <div className="text-center mb-16">
         <h2 className="section-heading">What Our Community Members Say</h2>
         <p className="section-subheading">
-          Join over 25,000 satisfied investors who are growing their wealth with VR Galaxy.
+          Join over 25,000 satisfied members who are growing their opportunities with VR Galaxy Networks.
         </p>
       </div>
 

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -5,6 +6,10 @@ import { DashboardLayoutClient } from './dashboard/DashboardLayoutClient'
 import { creditDueBasicDailyYield } from '@/lib/basicMembership'
 import { creditDueDepositYields } from '@/lib/depositYield'
 import { checkAndExpireMembership } from '@/lib/membershipExpiration'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
+}
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()

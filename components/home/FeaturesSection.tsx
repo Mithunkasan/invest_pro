@@ -61,7 +61,7 @@ export function FeaturesSection() {
   return (
     <section className="section-container bg-transparent">
       <div className="text-center mb-16">
-        <h2 className="section-heading">Why Choose VR Galaxy?</h2>
+        <h2 className="section-heading">Why Choose VR Galaxy Networks?</h2>
         <p className="section-subheading">
           We combine cutting-edge technology with Smart Hybrid Digital Earning strategies to provide the best platform for our users.
         </p>

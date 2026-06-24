@@ -34,7 +34,7 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
       if (v === 'USER_PAY_RECEIVED') label = 'MONEY RECEIVED'
       return <span className="text-xs font-medium capitalize">{label.toLowerCase()}</span>
     } },
-    { key: 'description', label: 'Description', render: (v: unknown) => <span className="text-xs text-muted-foreground">{String(v || '—').replace(/\bROI\b/gi, 'Daily Reward Earnings').replace(/\bInvestment\b/gi, 'Smart Hybrid Digital Earning')}</span> },
+    { key: 'description', label: 'Description', render: (v: unknown) => <span className="text-xs text-muted-foreground">{String(v || '—').replace(/\bROI\b/gi, 'Earning Platform').replace(/\bInvestment\b/gi, 'Earning Platform')}</span> },
     { key: 'walletType', label: 'Wallet', render: (v: unknown) => <span className="text-xs capitalize">{String(v || '—').toLowerCase()}</span> },
     { key: 'amount', label: 'Amount', sortable: true, render: (v: unknown, row: any) => (
       <span className={`font-semibold text-sm ${row.type === 'WITHDRAWAL' || row.type === 'INVESTMENT' || row.type === 'USER_PAY_SENT' ? 'text-red-500' : 'text-green-500'}`}>
