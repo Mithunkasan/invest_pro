@@ -487,7 +487,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
         <h2 className="text-lg font-bold border-b pb-3 border-muted/50 text-white/90">Gift Deposit Settings</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
           <div className="space-y-2">
-            <Label htmlFor="giftDepositAmount" className="text-sm font-semibold">Required Gift Deposit Amount (₹)</Label>
+            <Label htmlFor="giftDepositAmount" className="text-sm font-semibold">Subsequent Gift Application Amount (₹)</Label>
             <div className="relative flex items-center">
               <Input
                 id="giftDepositAmount"
@@ -502,7 +502,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
               />
               <span className="absolute left-3 text-sm text-muted-foreground font-bold pointer-events-none">₹</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">Amount users must deposit and get admin approval before they can submit a gift shipping address. Set to 0 to disable the requirement.</p>
+            <p className="text-[11px] text-muted-foreground">Amount shown and debited from the user&apos;s Deposit Wallet when applying for a gift after the first delivery. The first gift request remains free.</p>
           </div>
         </div>
       </div>
