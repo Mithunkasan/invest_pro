@@ -450,6 +450,7 @@ model SystemSettings {
   userPayDeductionPercent    Float   @default(0.0)
   userPayMinimumAmount        Float   @default(1.0)
   userPayMaximumAmount        Float   @default(10000000.0)
+  minimumDepositAmount        Float   @default(1000.0)
   basicDailyYieldPercent     Float   @default(0.2)
   heroMembers             String   @default("25,689+")
   heroActive              String   @default("8,932+")

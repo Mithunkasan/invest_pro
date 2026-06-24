@@ -25,6 +25,7 @@ export function DepositClient({ deposits, settings }: { deposits: Deposit[], set
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
+  const minimumDepositAmount = Math.max(0, settings.minimumDepositAmount ?? 1000)
 
   const copy = (text: string, key: string) => {
     navigator.clipboard.writeText(text)
@@ -149,8 +150,8 @@ export function DepositClient({ deposits, settings }: { deposits: Deposit[], set
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium block mb-1.5">Deposit Amount (Min ₹1,000)</label>
-              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required min="1000" placeholder="10000" className="form-input" />
+              <label className="text-sm font-medium block mb-1.5">Deposit Amount (Min ₹{minimumDepositAmount.toLocaleString('en-IN')})</label>
+              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required min={minimumDepositAmount} placeholder={String(minimumDepositAmount)} className="form-input" />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1.5">UTR / Transaction Number</label>
