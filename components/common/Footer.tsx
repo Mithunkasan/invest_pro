@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Wallet, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react'
+import Image from 'next/image'
+import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -12,12 +13,12 @@ export function Footer() {
           <div className="space-y-6">
             <Link href="/" className="flex items-center gap-2.5 group">
               <div className="w-12 h-12 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-115">
-                <img src="/logo3.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
+                <Image src="/logo3.png" width={48} height={48} className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Networks logo" />
               </div>
-              <span className="text-2xl font-black tracking-wider bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent">VR Galaxy</span>
+              <span className="text-2xl font-black tracking-wider bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent">VR Galaxy Networks</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
-              VR Galaxy is a trusted activation plan platform helping thousands grow their wealth through Smart Hybrid Digital Earnings with Daily Reward Earnings.
+              VR Galaxy Networks is a digital earning platform for community growth, membership benefits, task rewards, referrals, and professional networking.
             </p>
             <div className="flex gap-4">
               {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
@@ -52,10 +53,10 @@ export function Footer() {
           <div>
             <h4 className="font-black mb-6 uppercase tracking-widest text-xs">Legal</h4>
             <ul className="space-y-4">
-              {['Terms of Service', 'Privacy Policy', 'Cookie Policy', 'Disclaimer', 'Activation Plan Risks'].map((link) => (
-                <li key={link}>
-                  <Link href={`/${link.toLowerCase().replace(/ /g, '-')}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                    {link}
+              {[{ label: 'Terms & Conditions', href: '/terms' }, { label: 'Privacy Policy', href: '/privacy' }].map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    {link.label}
                   </Link>
                 </li>
               ))}
@@ -85,12 +86,11 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted-foreground font-medium">
-            © {currentYear} VR Galaxy Financial Services. All rights reserved.
+            © {currentYear} VR Galaxy Networks. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link href="/terms" className="text-xs text-muted-foreground hover:text-primary">Terms</Link>
             <Link href="/privacy" className="text-xs text-muted-foreground hover:text-primary">Privacy</Link>
-            <Link href="/cookies" className="text-xs text-muted-foreground hover:text-primary">Cookies</Link>
           </div>
         </div>
       </div>

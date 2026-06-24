@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { GiftFormClient } from './GiftFormClient'
 
 export const metadata: Metadata = {
-  title: 'Premium Gift Section — VR Galaxy Network',
+  title: 'Premium Gift Section — VR Galaxy Networks',
   description: 'Manage and track your welcome gift shipment.',
 }
 
@@ -73,7 +73,7 @@ export default async function GiftPage() {
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
           {giftCount === 0 
-            ? 'Complete your details to claim your free exclusive VR Galaxy Network premium welcome kit.'
+            ? 'Complete your details to claim your free exclusive VR Galaxy Networks premium welcome kit.'
             : `Apply for your next premium gift. Subsequent requests require a payment of ₹2,500.`}
         </p>
       </div>

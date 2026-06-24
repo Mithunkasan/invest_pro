@@ -1,19 +1,20 @@
-import type { Metadata } from 'next'
+import { createPageMetadata, getSiteUrl, serializeJsonLd, SITE_NAME } from '@/lib/seo'
 import { AboutClient } from './AboutClient'
 
-export const metadata: Metadata = {
-  title: 'About VR Galaxy Network | Community Growth & Technology Innovation',
-  description: 'Explore the genesis, mission, vision, and core pillars of VR Galaxy Network. Connect with a secure, technology-driven digital community focused on peer networking and professional growth.',
-  alternates: { canonical: '/about' },
-}
+export const metadata = createPageMetadata({
+  title: 'About Our Community Growth Platform',
+  description: 'Discover the mission, vision, and technology behind VR Galaxy Networks, a secure digital community for networking, skills, leadership, and professional growth.',
+  path: '/about',
+  keywords: ['about VR Galaxy Networks', 'community growth platform', 'technology network', 'professional networking'],
+})
 
 export default function AboutPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const baseUrl = getSiteUrl()
   const aboutJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'AboutPage',
-    'name': 'About VR Galaxy Network',
-    'description': 'Explore the genesis, mission, vision, and core pillars of VR Galaxy Network. Connect with a secure, technology-driven digital community focused on peer networking and professional growth.',
+    'name': `About ${SITE_NAME}`,
+    'description': 'Learn about our secure, technology-driven digital community for peer networking and professional growth.',
     'url': `${baseUrl}/about`,
   }
 
@@ -21,7 +22,7 @@ export default function AboutPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(aboutJsonLd) }}
       />
       <AboutClient />
     </>

@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "VR Galaxy",
+    "appName": "VR Galaxy Networks",
     "tagline": "Grow Your Wealth with Smart Activation Plans",
     "loading": "Loading...",
     "save": "Save",
@@ -115,9 +115,9 @@
   "auth": {
     "login": "Login",
     "loginTitle": "Welcome Back",
-    "loginSubtitle": "Sign in to your VR Galaxy account",
+    "loginSubtitle": "Sign in to your VR Galaxy Networks account",
     "register": "Create Account",
-    "registerTitle": "Join VR Galaxy",
+    "registerTitle": "Join VR Galaxy Networks",
     "registerSubtitle": "Start your activation plan journey today",
     "email": "Email Address",
     "password": "Password",
@@ -162,7 +162,7 @@
   },
   "deposit": {
     "title": "Deposit Funds",
-    "subtitle": "Add funds to your VR Galaxy wallet",
+    "subtitle": "Add funds to your VR Galaxy Networks wallet",
     "amount": "Deposit Amount",
     "method": "Payment Method",
     "upi": "UPI Transfer",
@@ -225,7 +225,7 @@
     "suspended": "Suspended"
   },
   "footer": {
-    "description": "VR Galaxy is a trusted activation plan platform helping thousands grow their wealth through smart, transparent activation plans.",
+    "description": "VR Galaxy Networks is a digital earning platform for community growth, membership benefits, task rewards, referrals, and professional networking.",
     "quickLinks": "Quick Links",
     "legal": "Legal",
     "contact": "Contact Us",

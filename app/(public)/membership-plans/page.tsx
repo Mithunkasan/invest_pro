@@ -1,5 +1,6 @@
-import type { Metadata } from 'next'
+import { createPageMetadata } from '@/lib/seo'
 import Link from 'next/link'
+import Image from 'next/image'
 import { prisma } from '@/lib/prisma'
 import { AnimatedGalaxyBackground } from '@/components/common/AnimatedGalaxyBackground'
 import { 
@@ -21,16 +22,17 @@ import {
   ChevronRight
 } from 'lucide-react'
 
-export const metadata: Metadata = {
-  title: 'Membership Plans | Community Growth & Business Expansion',
-  description: 'Explore premier VR Galaxy Membership Plans designed to foster community growth, business networking, team building, and leadership development. Experience enhanced digital earning opportunities and earn referral rewards.',
-  alternates: { canonical: '/membership-plans' },
-}
+export const metadata = createPageMetadata({
+  title: 'Membership Plans for Community Growth',
+  description: 'Explore VR Galaxy Networks membership plans designed for community growth, business networking, team building, leadership development, and digital earning opportunities.',
+  path: '/membership-plans',
+  keywords: ['VR Galaxy Networks membership plans', 'community growth membership', 'business networking', 'leadership development', 'referral rewards'],
+})
 
 function sanitizeFeatures(features: string[]): string[] {
   const prohibitedWords = [
-    { regex: /roi/gi, replacement: 'Daily Reward Earnings' },
-    { regex: /investment/gi, replacement: 'Smart Hybrid Digital Earning' },
+    { regex: /roi/gi, replacement: 'Earning Platform' },
+    { regex: /investment/gi, replacement: 'Earning Platform' },
     { regex: /invest/gi, replacement: 'Join' },
     { regex: /return/gi, replacement: 'Reward' },
     { regex: /profit/gi, replacement: 'Reward' },
@@ -101,7 +103,7 @@ export default async function MembershipPlansPage() {
                 </ul>
 
                 <p className="text-white/60 text-sm sm:text-base leading-relaxed font-medium pt-2 max-w-2xl">
-                  Join our business growth platform and thrive within our online community. VR Galaxy offers premier membership plans designed to foster community growth, business networking, team building, and leadership development. Experience enhanced digital earning opportunities and earn generous referral rewards as you build your network.
+                  Join our business growth platform and thrive within our online community. VR Galaxy Networks offers premier membership plans designed to foster community growth, business networking, team building, and leadership development. Experience enhanced digital earning opportunities and earn generous referral rewards as you build your network.
                 </p>
 
                 {/* Action Buttons in a Row */}
@@ -124,11 +126,14 @@ export default async function MembershipPlansPage() {
               <div className="lg:col-span-5 flex justify-center items-center">
                 <div className="relative w-full max-w-[400px] aspect-square flex items-center justify-center">
                   <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-blue-600/20 rounded-full filter blur-3xl opacity-50 animate-pulse" />
-                  <img 
-                    src="/membership_hero_galaxy.png" 
+                  <Image
+                    src="/membership_hero_galaxy.png"
+                    width={400}
+                    height={400}
                     className="w-full h-full object-contain filter drop-shadow-[0_0_30px_rgba(168,85,247,0.3)] relative z-10" 
                     style={{ animation: 'rotate-slow 40s linear infinite' }}
-                    alt="Futuristic Galaxy Sphere" 
+                    alt="VR Galaxy Networks membership community illustration"
+                    priority
                   />
                 </div>
               </div>
@@ -335,7 +340,7 @@ export default async function MembershipPlansPage() {
                 desc: [
                   "Earn leadership ranks such as Star Performer, Double Star, and Director.",
                   "Get recognition on monthly leaderboard boards and national newsletters.",
-                  "Earn invitations to annual VR Galaxy international conventions."
+                  "Earn invitations to annual VR Galaxy Networks international conventions."
                 ],
                 icon: Compass,
                 color: "text-cyan-500",

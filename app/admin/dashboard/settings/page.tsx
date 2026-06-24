@@ -3,7 +3,7 @@ import { getSystemSettings } from '@/actions/admin'
 import { SettingsForm } from '@/components/admin/SettingsForm'
 
 export const metadata: Metadata = {
-  title: 'System Settings — VR Galaxy Network Admin',
+  title: 'System Settings — VR Galaxy Networks Admin',
 }
 
 export default async function AdminSettingsPage() {

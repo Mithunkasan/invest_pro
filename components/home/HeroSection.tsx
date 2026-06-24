@@ -61,7 +61,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
       {/* Rotating Planets */}
       <motion.img
         src="/planet1.png"
-        alt="Rotating Planet 1"
+        alt="Decorative blue planet in the VR Galaxy Networks hero"
         className="absolute left-[-8%] lg:left-[2%] top-[10%] lg:top-[12%] w-[180px] sm:w-[300px] lg:w-[450px] h-auto pointer-events-none z-10 opacity-75"
         animate={{ rotate: 360 }}
         transition={{
@@ -72,7 +72,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
       />
       <motion.img
         src="/planet2.png"
-        alt="Rotating Planet 2"
+        alt="Decorative purple planet in the VR Galaxy Networks hero"
         className="absolute right-[-8%] lg:right-[5%] top-[15%] lg:top-[18%] w-[75px] sm:w-[130px] lg:w-[190px] h-auto pointer-events-none z-10 opacity-65"
         animate={{ rotate: -360 }}
         transition={{
@@ -280,7 +280,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
               >
                 <motion.img
                   src="/shield.png"
-                  alt="Galaxy Shield"
+                  alt="VR Galaxy Networks secure platform shield"
                   animate={{ y: [0, -12, 0] }}
                   transition={{
                     repeat: Infinity,

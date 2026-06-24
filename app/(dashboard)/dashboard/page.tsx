@@ -6,7 +6,7 @@ import { DashboardOverview } from '@/components/dashboard/DashboardOverview'
 import { KycApprovedFreeDashboard } from '@/components/dashboard/KycApprovedFreeDashboard'
 
 export const metadata: Metadata = {
-  title: 'Dashboard — VR Galaxy Network',
+  title: 'Dashboard — VR Galaxy Networks',
   description: 'View your activation plan portfolio, wallet balance, and recent transactions.',
 }
 

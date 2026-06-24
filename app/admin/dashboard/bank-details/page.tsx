@@ -3,7 +3,7 @@ import { getSystemSettings } from '@/actions/admin'
 import { BankDetailsClient } from '@/components/admin/BankDetailsClient'
 
 export const metadata: Metadata = {
-  title: 'Bank Details — VR Galaxy Network Admin',
+  title: 'Bank Details — VR Galaxy Networks Admin',
 }
 
 export default async function AdminBankDetailsPage() {

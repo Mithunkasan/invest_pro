@@ -8,7 +8,7 @@ import { MembershipUpgradeButton } from '@/components/dashboard/MembershipUpgrad
 import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 
 export const metadata: Metadata = {
-  title: 'Membership Club — VR Galaxy Network',
+  title: 'Membership Club — VR Galaxy Networks',
   description: 'Manage and upgrade your membership status to unlock premium trading benefits, yield multipliers, and multi-level referral commissions.',
 }
 
@@ -87,7 +87,7 @@ export default async function UserMembershipPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
           <Crown className="w-8 h-8 text-amber-500 filter drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]" />
-          VR Galaxy Network VIP Club
+          VR Galaxy Networks VIP Club
         </h1>
         <p className="text-sm text-muted-foreground max-w-xl">
           Elevate your financial compounding potential. Unlock exclusive yield bonuses, speed up withdrawal timelines, and multiply your earnings with recursive multi-level referral commissions.

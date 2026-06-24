@@ -1,10 +1,11 @@
-import type { Metadata } from 'next'
+import { createPageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'Privacy Policy',
-  description: 'Privacy Policy for VR Galaxy. Read how we secure your personal data, KYC documents, and financial transaction records.',
-  alternates: { canonical: '/privacy' },
-}
+  description: 'Read the VR Galaxy Networks Privacy Policy covering personal data, KYC documents, cookies, payment records, security, and information sharing.',
+  path: '/privacy',
+  keywords: ['VR Galaxy Networks privacy policy', 'KYC data security', 'personal data protection'],
+})
 
 export default function PrivacyPage() {
   return (

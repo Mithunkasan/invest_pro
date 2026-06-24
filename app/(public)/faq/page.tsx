@@ -1,8 +1,8 @@
-import type { Metadata } from 'next'
+import { createPageMetadata, serializeJsonLd } from '@/lib/seo'
 import FAQClient from './FAQClient'
 
-export const metadata: Metadata = {
-  title: 'Frequently Asked Questions (FAQ) | VR Galaxy Networks',
+export const metadata = createPageMetadata({
+  title: 'Frequently Asked Questions',
   description: 'Find answers to frequently asked questions about VR Galaxy Networks, including community-based earning, free joining, membership benefits, referral rewards, tasks, rank rewards, and shareholder opportunities.',
   keywords: [
     'VR Galaxy Networks',
@@ -16,8 +16,8 @@ export const metadata: Metadata = {
     'free joining platform',
     'networking platform'
   ],
-  alternates: { canonical: '/faq' },
-}
+  path: '/faq',
+})
 
 export default function FAQPage() {
   const faqJsonLd = {
@@ -159,7 +159,7 @@ export default function FAQPage() {
     <div className="min-h-screen pt-28 pb-16 bg-background">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
       />
       
       {/* Cosmic Header */}

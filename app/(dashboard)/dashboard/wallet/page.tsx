@@ -7,7 +7,7 @@ import { Wallet, TrendingUp, Users } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
-export const metadata: Metadata = { title: 'Wallet — VR Galaxy Network' }
+export const metadata: Metadata = { title: 'Wallet — VR Galaxy Networks' }
 
 export default async function WalletPage() {
   const session = await getSession()
@@ -127,7 +127,7 @@ export default async function WalletPage() {
                     {txn.type === 'WITHDRAWAL' || txn.type === 'INVESTMENT' || txn.type === 'USER_PAY_SENT' ? '↑' : '↓'}
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{(txn.description || (txn.type === 'INVESTMENT' ? 'Smart Hybrid Digital Earning' : txn.type.replace(/_/g, ' '))).replace(/\bROI\b/gi, 'Daily Reward Earnings').replace(/\bInvestment\b/gi, 'Smart Hybrid Digital Earning')}</p>
+                    <p className="text-sm font-medium">{(txn.description || (txn.type === 'INVESTMENT' ? 'Earning Platform' : txn.type.replace(/_/g, ' '))).replace(/\bROI\b/gi, 'Earning Platform').replace(/\bInvestment\b/gi, 'Earning Platform')}</p>
                     <p className="text-xs text-muted-foreground">{formatDateTime(txn.createdAt)}</p>
                   </div>
                 </div>

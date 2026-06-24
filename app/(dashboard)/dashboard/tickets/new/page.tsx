@@ -1,7 +1,7 @@
 import { TicketFormClient } from '@/components/dashboard/TicketFormClient'
 
 export const metadata = {
-  title: 'Raise Ticket - VR Galaxy',
+  title: 'Raise Ticket - VR Galaxy Networks',
 }
 
 export default function NewTicketPage() {

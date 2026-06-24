@@ -4,7 +4,7 @@ import { getUserTickets } from '@/actions/tickets'
 import { format } from 'date-fns'
 
 export const metadata = {
-  title: 'Support Tickets - VR Galaxy',
+  title: 'Support Tickets - VR Galaxy Networks',
 }
 
 const statusColors: Record<string, string> = {

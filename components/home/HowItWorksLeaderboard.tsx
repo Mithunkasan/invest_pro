@@ -183,7 +183,7 @@ export function HowItWorksLeaderboard({ leaderboard = [] }: HowItWorksLeaderboar
             >
               <Image
                 src="/earth.png"
-                alt="Slowly rotating Earth representing VR Galaxy global network"
+                alt="Slowly rotating Earth representing the VR Galaxy Networks global community"
                 fill
                 priority
                 sizes="(max-width: 768px) 100vw, 280px"

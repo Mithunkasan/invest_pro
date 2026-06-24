@@ -1,20 +1,21 @@
-import type { Metadata } from 'next'
+import { createPageMetadata, getSiteUrl, serializeJsonLd } from '@/lib/seo'
 import { getInvestmentPlans } from '@/actions/investment'
 
-export const metadata: Metadata = {
-  title: 'Activation Plans',
-  description: 'Explore our high-yield Daily Reward Earnings activation plan options starting at ₹1,00,000 or less. Choose from Bronze, Silver, Gold, or Platinum plans with daily yields up to 3.0%.',
-  alternates: { canonical: '/plans' },
-}
+export const metadata = createPageMetadata({
+  title: 'Digital Earning Plans',
+  description: 'Compare VR Galaxy Networks digital earning plans, durations, entry ranges, features, and estimated daily reward earnings in one clear overview.',
+  path: '/plans',
+  keywords: ['digital earning plans', 'VR Galaxy Networks plans', 'daily reward earnings', 'earning platform India'],
+})
 
 export default async function PlansPage() {
   const plans = await getInvestmentPlans()
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const baseUrl = getSiteUrl()
 
   const plansJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    'name': 'VR Galaxy Activation Plans',
+    'name': 'VR Galaxy Networks Digital Earning Plans',
     'description': 'A list of high-yield activation plans offering Daily Reward Earnings with clear entry limits.',
     'url': `${baseUrl}/plans`,
     'numberOfItems': plans.length,
@@ -22,9 +23,9 @@ export default async function PlansPage() {
       '@type': 'ListItem',
       'position': index + 1,
       'item': {
-        '@type': 'FinancialProduct',
+        '@type': 'Service',
         'name': plan.name,
-        'description': plan.description.replace(/\bROI\b/g, 'Daily Reward Earnings').replace(/\bInvestment\b/gi, 'Smart Hybrid Digital Earning'),
+        'description': plan.description.replace(/\bROI\b/g, 'Earning Platform').replace(/\bInvestment\b/gi, 'Earning Platform'),
         'offers': {
           '@type': 'Offer',
           'priceCurrency': 'INR',
@@ -38,7 +39,7 @@ export default async function PlansPage() {
     <div className="min-h-screen pt-20">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(plansJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(plansJsonLd) }}
       />
       <div className="section-container">
         <div className="text-center mb-12">
@@ -60,7 +61,7 @@ export default async function PlansPage() {
                 </div>
               </div>
               <div className="p-5 space-y-3">
-                <p className="text-sm text-muted-foreground">{plan.description.replace(/\bROI\b/g, 'Daily Reward Earnings').replace(/\bInvestment\b/gi, 'Smart Hybrid Digital Earning')}</p>
+                <p className="text-sm text-muted-foreground">{plan.description.replace(/\bROI\b/g, 'Earning Platform').replace(/\bInvestment\b/gi, 'Earning Platform')}</p>
                 <div className="space-y-2 text-sm">
                   {[
                     ['Duration', `${plan.durationDays} Days`],
@@ -77,7 +78,7 @@ export default async function PlansPage() {
                 <ul className="space-y-1.5">
                   {plan.features.map((f: string) => (
                     <li key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="text-green-500">✓</span> {f.replace(/\bROI\b/g, 'Daily Reward Earnings').replace(/\bInvestment\b/gi, 'Smart Hybrid Digital Earning')}
+                      <span className="text-green-500">✓</span> {f.replace(/\bROI\b/g, 'Earning Platform').replace(/\bInvestment\b/gi, 'Earning Platform')}
                     </li>
                   ))}
                 </ul>
@@ -92,19 +93,19 @@ export default async function PlansPage() {
         {/* Daily Reward Earnings Calculator */}
         <div className="mt-16 premium-card p-8 text-center">
           <h2 className="text-2xl font-bold mb-4">Quick Daily Reward Earnings Calculator</h2>
-          <p className="text-muted-foreground mb-6">See how much you can earn with VR Galaxy Network</p>
+          <p className="text-muted-foreground mb-6">See how much you can earn with VR Galaxy Networks</p>
           <div className="bg-muted/30 rounded-xl p-6 max-w-lg mx-auto">
             <div className="grid grid-cols-3 gap-4 text-center">
               {[
-                { investment: '₹10,000', plan: 'Bronze', roi: '₹4,500', days: '30d' },
-                { investment: '₹50,000', plan: 'Gold', roi: '₹75,000', days: '60d' },
-                { investment: '₹2,00,000', plan: 'Platinum', roi: '₹5,40,000', days: '90d' },
+                { amount: '₹10,000', plan: 'Bronze', earnings: '₹4,500', days: '30d' },
+                { amount: '₹50,000', plan: 'Gold', earnings: '₹75,000', days: '60d' },
+                { amount: '₹2,00,000', plan: 'Platinum', earnings: '₹5,40,000', days: '90d' },
               ].map((calc: any) => (
                 <div key={calc.plan} className="p-3 rounded-lg bg-background">
                   <p className="text-xs text-muted-foreground">{calc.plan}</p>
-                  <p className="font-bold text-sm">{calc.investment}</p>
+                  <p className="font-bold text-sm">{calc.amount}</p>
                   <p className="text-xs text-muted-foreground">{calc.days}</p>
-                  <p className="text-green-500 font-bold mt-1">{calc.roi}</p>
+                  <p className="text-green-500 font-bold mt-1">{calc.earnings}</p>
                 </div>
               ))}
             </div>

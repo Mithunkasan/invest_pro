@@ -147,10 +147,10 @@ function ForgotPasswordForm() {
       <div className="text-center mb-8">
         <Link href="/" className="inline-flex items-center gap-2.5 font-black text-2xl mb-4 group">
           <div className="w-11 h-11 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-115">
-            <img src="/logo3.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Logo" />
+            <img src="/logo3.png" className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]" alt="VR Galaxy Networks logo" />
           </div>
           <span className="bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent font-black tracking-wider">
-            VR Galaxy
+            VR Galaxy Networks
           </span>
         </Link>
         <h1 className="text-2xl font-bold text-white mt-4">Forgot Password</h1>

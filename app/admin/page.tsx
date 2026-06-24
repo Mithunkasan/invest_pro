@@ -86,7 +86,7 @@ export default function AdminLoginPage() {
           <div className="text-center mt-4">
             <Link href="/" className="text-xs text-white/30 hover:text-white/60 transition-colors flex items-center justify-center gap-1">
               <TrendingUp className="w-3 h-3" />
-              Back to VR Galaxy Network
+              Back to VR Galaxy Networks
             </Link>
           </div>
         </div>

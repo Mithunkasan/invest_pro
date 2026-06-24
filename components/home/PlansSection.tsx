@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const springValues = {
   damping: 30,
@@ -280,8 +281,8 @@ function PlanCard({ plan }: { plan: PlanData }) {
           </div>
           {/* Logo on the right */}
           <div className="flex items-center gap-1.5">
-            <img src="/logo.png" className="h-7 w-auto object-contain filter drop-shadow-[0_2px_4px_rgba(255,255,255,0.15)]" alt="Logo" />
-            <span className="font-extrabold text-xs tracking-wider text-white/80">VR GALAXY</span>
+            <Image src="/logo.png" width={100} height={28} className="h-7 w-auto object-contain filter drop-shadow-[0_2px_4px_rgba(255,255,255,0.15)]" alt="VR Galaxy Networks logo" />
+            <span className="font-extrabold text-xs tracking-wider text-white/80">VR GALAXY NETWORKS</span>
           </div>
         </div>
 
