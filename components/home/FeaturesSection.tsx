@@ -75,15 +75,37 @@ export function FeaturesSection() {
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.05 }}
             viewport={{ once: true }}
-            className="feature-card"
+            className="relative w-full h-[300px] group cursor-pointer"
           >
-            <div className={`w-12 h-12 rounded-2xl ${feature.color} flex items-center justify-center mb-5`}>
-              <feature.icon size={24} />
+            {/* The Expanding Background (Flower blooming / Explosion) */}
+            <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl z-0 transition-all duration-[700ms] ease-[cubic-bezier(0.4,0,0.2,1)] [clip-path:circle(0px_at_50%_34%)] group-hover:[clip-path:circle(150%_at_50%_34%)]" />
+
+            {/* Glowing burst effect */}
+            <div className={`absolute inset-0 rounded-2xl z-0 transition-all duration-[700ms] ease-[cubic-bezier(0.4,0,0.2,1)] [clip-path:circle(0px_at_50%_34%)] group-hover:[clip-path:circle(150%_at_50%_34%)] opacity-0 group-hover:opacity-20 ${feature.color.split(' ')[1]?.replace('text-', 'bg-')} blur-2xl pointer-events-none`} />
+
+            {/* Content Container */}
+            <div className="absolute inset-0 flex flex-col items-center justify-start pt-[70px] p-6 text-center z-10">
+              
+              {/* Icon Container */}
+              <div className={`relative w-16 h-16 rounded-2xl ${feature.color} flex items-center justify-center mb-5 transition-all duration-[700ms] ease-[cubic-bezier(0.175,0.885,0.32,1.275)] group-hover:scale-[1.2] group-hover:rotate-12`}>
+                <feature.icon size={32} />
+              </div>
+
+              {/* Title */}
+              <h3 className="text-xl font-bold transition-all duration-[700ms] ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:-translate-y-2">
+                {feature.title}
+              </h3>
+
+              {/* Description (Hidden initially, blooms on hover) */}
+              <div className="grid grid-rows-[0fr] opacity-0 group-hover:grid-rows-[1fr] group-hover:opacity-100 transition-all duration-[700ms] ease-[cubic-bezier(0.4,0,0.2,1)] w-full">
+                <div className="overflow-hidden">
+                  <p className="text-sm text-muted-foreground leading-relaxed px-2 transition-all duration-[700ms] ease-out translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 pt-2">
+                    {feature.desc}
+                  </p>
+                </div>
+              </div>
+
             </div>
-            <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {feature.desc}
-            </p>
           </motion.div>
         ))}
       </div>

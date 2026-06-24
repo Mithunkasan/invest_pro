@@ -26,10 +26,12 @@ interface UserPayClientProps {
   userId: string
   walletBalance: number
   deductionPercent: number
+  minimumAmount: number
+  maximumAmount: number
   initialRequests: any[]
 }
 
-export function UserPayClient({ userId, walletBalance, deductionPercent, initialRequests }: UserPayClientProps) {
+export function UserPayClient({ userId, walletBalance, deductionPercent, minimumAmount, maximumAmount, initialRequests }: UserPayClientProps) {
   const [email, setEmail] = useState('')
   const [recipientId, setRecipientId] = useState('')
   const [recipientName, setRecipientName] = useState('')
@@ -82,6 +84,9 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, initial
   const enteredAmount = Number(amount) || 0
   const calculatedDeduction = (enteredAmount * deductionPercent) / 100
   const finalTransferAmount = Math.max(0, enteredAmount - calculatedDeduction)
+  const amountBelowMinimum = enteredAmount > 0 && enteredAmount < minimumAmount
+  const amountAboveMaximum = enteredAmount > maximumAmount
+  const maximumTransferableAmount = Math.min(walletBalance, maximumAmount)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -92,6 +97,14 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, initial
     }
     if (enteredAmount <= 0) {
       toast({ title: 'Error', description: 'Please enter an amount greater than 0.', variant: 'destructive' })
+      return
+    }
+    if (amountBelowMinimum || amountAboveMaximum) {
+      toast({
+        title: 'Error',
+        description: `Amount must be between ${formatCurrency(minimumAmount)} and ${formatCurrency(maximumAmount)}.`,
+        variant: 'destructive'
+      })
       return
     }
     if (enteredAmount > walletBalance) {
@@ -188,7 +201,7 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, initial
                 <Label htmlFor="amount">Amount (₹)</Label>
                 <button
                   type="button"
-                  onClick={() => setAmount(String(walletBalance))}
+                  onClick={() => setAmount(String(maximumTransferableAmount))}
                   className="text-xs text-primary hover:text-primary-foreground font-semibold"
                 >
                   Use Max
@@ -200,6 +213,8 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, initial
                   type="number"
                   placeholder="0.00"
                   step="any"
+                  min={minimumAmount}
+                  max={maximumAmount}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   disabled={isPending}
@@ -210,6 +225,11 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, initial
               {enteredAmount > walletBalance && (
                 <p className="text-xs text-red-400 font-medium flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5" /> Amount exceeds available Main Wallet balance
+                </p>
+              )}
+              {(amountBelowMinimum || amountAboveMaximum) && (
+                <p className="text-xs text-red-400 font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" /> Amount must be between {formatCurrency(minimumAmount)} and {formatCurrency(maximumAmount)}
                 </p>
               )}
             </div>
@@ -237,7 +257,7 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, initial
 
             <Button
               type="submit"
-              disabled={isPending || !recipientId || enteredAmount <= 0 || enteredAmount > walletBalance}
+              disabled={isPending || !recipientId || enteredAmount <= 0 || amountBelowMinimum || amountAboveMaximum || enteredAmount > walletBalance}
               className="w-full h-11 transition-all"
             >
               {isPending ? 'Sending...' : 'Send'}
@@ -254,6 +274,16 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, initial
               <Wallet className="w-4 h-4 text-blue-400" /> Available Main Wallet Balance
             </div>
             <p className="text-3xl font-black text-white">{formatCurrency(walletBalance)}</p>
+            <div className="grid grid-cols-2 gap-3 mt-5">
+              <div className="rounded-lg bg-white/5 border border-white/10 p-3">
+                <p className="text-[11px] text-white/50">Minimum Amount</p>
+                <p className="text-sm font-bold text-white mt-1">{formatCurrency(minimumAmount)}</p>
+              </div>
+              <div className="rounded-lg bg-white/5 border border-white/10 p-3">
+                <p className="text-[11px] text-white/50">Maximum Amount</p>
+                <p className="text-sm font-bold text-white mt-1">{formatCurrency(maximumAmount)}</p>
+              </div>
+            </div>
             <p className="text-xs text-white/50 mt-2 leading-relaxed">
               Only Main Wallet balance is eligible for user transfers. Deposit balances cannot be directly sent.
             </p>
@@ -271,6 +301,10 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, initial
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
                 <span>The sender must possess sufficient Main Wallet balance.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                <span>Each transfer must be between {formatCurrency(minimumAmount)} and {formatCurrency(maximumAmount)}.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
