@@ -128,37 +128,54 @@ export async function submitGiftAction(
           }
         }
 
-        // Subsequent gift request -> Pay ₹2,500 from Deposit Wallet.
-        const wallet = await prisma.wallet.findUnique({
-          where: { userId: session.id }
+        const settings = await prisma.systemSettings.findUnique({
+          where: { id: 'default' },
+          select: { giftDepositAmount: true },
         })
-        if (!wallet || wallet.depositBalance < 2500) {
-          return { success: false, message: 'Insufficient Deposit Wallet balance. A payment of ₹2,500 is required for subsequent gift requests.' }
+        const configuredAmount = settings?.giftDepositAmount ?? 0
+        const subsequentGiftAmount = Number.isFinite(configuredAmount)
+          ? Math.max(0, configuredAmount)
+          : 0
+
+        // Subsequent gift request -> debit the admin-configured amount from Deposit Wallet.
+        if (subsequentGiftAmount > 0) {
+          const wallet = await prisma.wallet.findUnique({
+            where: { userId: session.id },
+            select: { depositBalance: true },
+          })
+          if (!wallet || wallet.depositBalance < subsequentGiftAmount) {
+            return {
+              success: false,
+              message: `Insufficient Deposit Wallet balance. A payment of ₹${subsequentGiftAmount.toLocaleString('en-IN')} is required for subsequent gift requests.`,
+            }
+          }
         }
 
         // Deduct payment and create new gift
         await prisma.$transaction(async (tx) => {
-          const deduction = await tx.wallet.updateMany({
-            where: {
-              userId: session.id,
-              depositBalance: { gte: 2500 },
-            },
-            data: { depositBalance: { decrement: 2500 } },
-          })
-          if (deduction.count !== 1) {
-            throw new Error('Insufficient Deposit Wallet balance.')
-          }
-
-          await tx.transaction.create({
-            data: {
-              userId: session.id,
-              type: 'INVESTMENT',
-              amount: 2500,
-              status: 'COMPLETED',
-              description: `Gift Request Payment from Deposit Wallet (Request #${giftCount + 1})`,
-              walletType: 'MAIN'
+          if (subsequentGiftAmount > 0) {
+            const deduction = await tx.wallet.updateMany({
+              where: {
+                userId: session.id,
+                depositBalance: { gte: subsequentGiftAmount },
+              },
+              data: { depositBalance: { decrement: subsequentGiftAmount } },
+            })
+            if (deduction.count !== 1) {
+              throw new Error('Insufficient Deposit Wallet balance.')
             }
-          })
+
+            await tx.transaction.create({
+              data: {
+                userId: session.id,
+                type: 'INVESTMENT',
+                amount: subsequentGiftAmount,
+                status: 'COMPLETED',
+                description: `Gift Request Payment from Deposit Wallet (Request #${giftCount + 1})`,
+                walletType: 'MAIN'
+              }
+            })
+          }
 
           await tx.gift.create({
             data: {
@@ -215,8 +232,11 @@ export async function submitGiftAction(
 
     revalidatePath('/dashboard/gift')
     return { success: true, message: 'Gift request submitted to the admin successfully!' }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error submitting gift address:', error)
-    return { success: false, message: error.message || 'An error occurred during submission' }
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'An error occurred during submission',
+    }
   }
 }

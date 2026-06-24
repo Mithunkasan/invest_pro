@@ -63,7 +63,14 @@ export default async function GiftPage() {
     where: { userId: session.id }
   })
 
+  const settings = await prisma.systemSettings.findUnique({
+    where: { id: 'default' },
+    select: { giftDepositAmount: true },
+  })
+
   const depositWalletBalance = dbUser.wallet?.depositBalance ?? 0
+  const subsequentGiftAmount = Math.max(0, settings?.giftDepositAmount ?? 0)
+  const canApplyForNextGift = latestGift?.deliveryStatus === 'DELIVERED'
 
   return (
     <div className="space-y-6">
@@ -72,9 +79,11 @@ export default async function GiftPage() {
           🎁 Premium Welcome Gift
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {giftCount === 0 
+          {giftCount === 0
             ? 'Complete your details to claim your free exclusive VR Galaxy Networks premium welcome kit.'
-            : `Apply for your next premium gift. Subsequent requests require a payment of ₹2,500.`}
+            : canApplyForNextGift
+              ? `Apply for your next premium gift. ₹${subsequentGiftAmount.toLocaleString('en-IN')} will be debited from your Deposit Wallet.`
+              : 'Track your current premium gift request and delivery updates.'}
         </p>
       </div>
 
@@ -82,6 +91,7 @@ export default async function GiftPage() {
         gift={latestGift ? JSON.parse(JSON.stringify(latestGift)) : null} 
         giftCount={giftCount}
         depositWalletBalance={depositWalletBalance}
+        subsequentGiftAmount={subsequentGiftAmount}
         requiredGiftDepositAmount={0}
         giftDeposit={null}
       />
