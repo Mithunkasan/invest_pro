@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { getAdminSession } from '@/lib/auth'
 import type { ApiResponse, PaginatedResponse, Deposit } from '@/types'
 import { handleDeposit } from './admin'
 
@@ -16,9 +17,17 @@ export async function submitDepositAction(
   const amount = parseFloat(formData.get('amount')?.toString() || '0')
   const method = formData.get('method')?.toString() as 'UPI' | 'BANK_TRANSFER' | 'QR_CODE'
   const utrNumber = formData.get('utrNumber')?.toString() || ''
+  const settings = await prisma.systemSettings.findUnique({
+    where: { id: 'default' },
+    select: { minimumDepositAmount: true },
+  })
+  const minimumDepositAmount = Math.max(0, settings?.minimumDepositAmount ?? 1000)
 
-  if (!amount || amount < 1000) {
-    return { success: false, message: 'Minimum deposit amount is ₹1,000' }
+  if (!amount || amount < minimumDepositAmount) {
+    return {
+      success: false,
+      message: `Minimum deposit amount is ₹${minimumDepositAmount.toLocaleString('en-IN')}`,
+    }
   }
 
   if (!utrNumber || utrNumber.length < 10) {
@@ -53,6 +62,25 @@ export async function submitDepositAction(
   revalidatePath('/dashboard/deposit')
   revalidatePath('/dashboard/transactions')
   return { success: true, message: 'Deposit submitted for review. Admin will approve within 24 hours.' }
+}
+
+export async function updateMinimumDepositAmountAction(amount: number): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { success: false, message: 'Please enter a valid minimum deposit amount.' }
+  }
+
+  await prisma.systemSettings.upsert({
+    where: { id: 'default' },
+    update: { minimumDepositAmount: amount },
+    create: { id: 'default', minimumDepositAmount: amount },
+  })
+
+  revalidatePath('/admin/dashboard/deposits')
+  revalidatePath('/dashboard/deposit')
+  return { success: true, message: 'Minimum deposit amount updated successfully.' }
 }
 
 // ── Get User Deposits ─────────────────────────────────────────────────────────

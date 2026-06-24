@@ -54,6 +54,7 @@ async function main() {
       directorRankEnabled: true,
       userPayMinimumAmount: 1.0,
       userPayMaximumAmount: 10000000.0,
+      minimumDepositAmount: 1000.0,
       heroMembers: '25,689+',
       heroActive: '8,932+',
       heroPaid: '₹12.45 Cr+',
