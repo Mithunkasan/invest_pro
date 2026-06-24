@@ -45,6 +45,8 @@ export default async function UserPayPage() {
 
   const walletBalance = wallet?.mainBalance ?? 0
   const deductionPercent = settings?.userPayDeductionPercent ?? 0.0
+  const minimumAmount = settings?.userPayMinimumAmount ?? 1.0
+  const maximumAmount = settings?.userPayMaximumAmount ?? 10000000.0
 
   const requests = await getUserPayRequestsAction()
 
@@ -61,6 +63,8 @@ export default async function UserPayPage() {
         userId={session.id}
         walletBalance={walletBalance}
         deductionPercent={deductionPercent}
+        minimumAmount={minimumAmount}
+        maximumAmount={maximumAmount}
         initialRequests={JSON.parse(JSON.stringify(requests))}
       />
     </div>

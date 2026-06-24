@@ -69,6 +69,19 @@ export async function submitUserPayRequestAction(data: { recipientEmail: string,
     if (!recipient) return { success: false, message: 'Recipient email does not exist.' }
     if (recipient.id === session.id) return { success: false, message: 'You cannot transfer to yourself.' }
 
+    const settings = await prisma.systemSettings.findUnique({
+      where: { id: 'default' }
+    })
+    const minimumAmount = settings?.userPayMinimumAmount ?? 1.0
+    const maximumAmount = settings?.userPayMaximumAmount ?? 10000000.0
+
+    if (amount < minimumAmount || amount > maximumAmount) {
+      return {
+        success: false,
+        message: `Amount must be between ₹${minimumAmount.toLocaleString('en-IN')} and ₹${maximumAmount.toLocaleString('en-IN')}.`
+      }
+    }
+
     const senderWallet = await prisma.wallet.findUnique({
       where: { userId: session.id }
     })
@@ -76,9 +89,6 @@ export async function submitUserPayRequestAction(data: { recipientEmail: string,
       return { success: false, message: 'Insufficient Main Wallet balance.' }
     }
 
-    const settings = await prisma.systemSettings.findUnique({
-      where: { id: 'default' }
-    })
     const deductionPercent = settings?.userPayDeductionPercent ?? 0.0
     const deductionAmount = (amount * deductionPercent) / 100
     const finalAmount = amount - deductionAmount
@@ -155,6 +165,53 @@ export async function submitUserPayRequestAction(data: { recipientEmail: string,
   } catch (error) {
     console.error('Submit User Pay Request error:', error)
     return { success: false, message: 'Failed to process money transfer' }
+  }
+}
+
+export async function updateUserPaySettingsAction(data: {
+  deductionPercent: number
+  minimumAmount: number
+  maximumAmount: number
+}): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  const deductionPercent = Number(data.deductionPercent)
+  const minimumAmount = Number(data.minimumAmount)
+  const maximumAmount = Number(data.maximumAmount)
+
+  if (!Number.isFinite(deductionPercent) || deductionPercent < 0 || deductionPercent > 100) {
+    return { success: false, message: 'Deduction percentage must be between 0 and 100.' }
+  }
+  if (!Number.isFinite(minimumAmount) || minimumAmount <= 0) {
+    return { success: false, message: 'Minimum Amount must be greater than 0.' }
+  }
+  if (!Number.isFinite(maximumAmount) || maximumAmount < minimumAmount) {
+    return { success: false, message: 'Maximum Amount must be greater than or equal to Minimum Amount.' }
+  }
+
+  try {
+    await prisma.systemSettings.upsert({
+      where: { id: 'default' },
+      update: {
+        userPayDeductionPercent: deductionPercent,
+        userPayMinimumAmount: minimumAmount,
+        userPayMaximumAmount: maximumAmount,
+      },
+      create: {
+        id: 'default',
+        userPayDeductionPercent: deductionPercent,
+        userPayMinimumAmount: minimumAmount,
+        userPayMaximumAmount: maximumAmount,
+      }
+    })
+
+    revalidatePath('/admin/dashboard/user-pay')
+    revalidatePath('/dashboard/user-pay')
+    return { success: true, message: 'Send Money settings updated successfully.' }
+  } catch (error) {
+    console.error('Update User Pay Settings error:', error)
+    return { success: false, message: 'Failed to update Send Money settings.' }
   }
 }
 

@@ -9,7 +9,7 @@ import { Testimonials } from '@/components/home/Testimonials'
 import { FAQSection } from '@/components/home/FAQSection'
 import { AnimatedGalaxyBackground } from '@/components/common/AnimatedGalaxyBackground'
 import { prisma } from '@/lib/prisma'
-import type { Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
 export const metadata: Metadata = {
   title: 'VR Galaxy Network — Smart activation plan platform',
@@ -19,22 +19,39 @@ export const metadata: Metadata = {
 
 export const revalidate = 60
 
-export default async function HomePage() {
-  let settings: Prisma.SystemSettingsGetPayload<object> | null = null
-  let membershipPlans: Prisma.MembershipPlanGetPayload<object>[] = []
-  let leaderboardData: Array<{
-    rank: number
-    name: string
-    amount: string
-    avatar: string
-  }> = []
+const isDatabaseConnectionError = (error: unknown) =>
+  error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P1001'
 
+async function loadHomepageData() {
   try {
-    const [currentSettings, plans, topEarnings] = await Promise.all([
+    return await Promise.all([
       prisma.systemSettings.findUnique({ where: { id: 'default' } }),
       prisma.membershipPlan.findMany({ where: { isActive: true }, orderBy: { price: 'asc' } }),
-      // Aggregate in PostgreSQL and return only three rows. Previously this page
-      // downloaded every matching transaction on every revalidation.
+      prisma.transaction.groupBy({
+        by: ['userId'],
+        where: {
+          user: { is: { role: 'USER' as const } },
+          status: 'COMPLETED' as const,
+          walletType: { in: ['REWARD', 'REFERRAL', 'LEVEL', 'SHARE', 'BONUS'] as const },
+          amount: { gt: 0 },
+        },
+        _sum: { amount: true },
+        _max: { createdAt: true },
+        orderBy: [
+          { _sum: { amount: 'desc' as const } },
+          { _max: { createdAt: 'asc' as const } },
+        ],
+        take: 3,
+      }),
+    ])
+  } catch (error) {
+    if (!isDatabaseConnectionError(error)) throw error
+
+    // Neon may briefly reject the first connection while the endpoint wakes.
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    return Promise.all([
+      prisma.systemSettings.findUnique({ where: { id: 'default' } }),
+      prisma.membershipPlan.findMany({ where: { isActive: true }, orderBy: { price: 'asc' } }),
       prisma.transaction.groupBy({
         by: ['userId'],
         where: {
@@ -52,6 +69,23 @@ export default async function HomePage() {
         take: 3,
       }),
     ])
+  }
+}
+
+export default async function HomePage() {
+  let settings: Prisma.SystemSettingsGetPayload<object> | null = null
+  let membershipPlans: Prisma.MembershipPlanGetPayload<object>[] = []
+  let leaderboardData: Array<{
+    rank: number
+    name: string
+    amount: string
+    avatar: string
+  }> = []
+
+  try {
+    // Aggregate in PostgreSQL and return only three rows. Previously this page
+    // downloaded every matching transaction on every revalidation.
+    const [currentSettings, plans, topEarnings] = await loadHomepageData()
 
     settings = currentSettings
     membershipPlans = plans
@@ -76,7 +110,11 @@ export default async function HomePage() {
   } catch (error) {
     // Keep the public page available during a temporary database/quota outage.
     // Authenticated and transactional routes still require a live database.
-    console.error('Failed to load homepage database data', error)
+    if (isDatabaseConnectionError(error)) {
+      console.warn('Homepage database connection is temporarily unavailable after retrying.')
+    } else {
+      console.error('Failed to load homepage database data', error)
+    }
   }
 
   const formattedPlans = membershipPlans.map((p, index) => ({
