@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
+import { distributeGiftCommissionsForDeliveredGift } from './giftCommission'
 
 export async function acceptGiftAction(giftId: string): Promise<ApiResponse> {
   try {
@@ -64,6 +65,11 @@ export async function updateGiftTrackingAction(
     const dispatchDateVal = data.dispatchDate ? new Date(data.dispatchDate) : null
     const expectedDeliveryDateVal = data.expectedDeliveryDate ? new Date(data.expectedDeliveryDate) : null
 
+    const currentGift = await prisma.gift.findUnique({
+      where: { id: giftId },
+      select: { deliveryStatus: true },
+    })
+
     // 3. Update Gift database record
     const gift = await prisma.gift.update({
       where: { id: giftId },
@@ -102,6 +108,10 @@ export async function updateGiftTrackingAction(
         type: 'SUCCESS'
       }
     })
+
+    if (data.deliveryStatus === 'DELIVERED' && currentGift?.deliveryStatus !== 'DELIVERED') {
+      await distributeGiftCommissionsForDeliveredGift(gift.id)
+    }
 
     revalidatePath('/admin/dashboard/gifts')
     revalidatePath('/dashboard/gift')

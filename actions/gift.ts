@@ -6,6 +6,7 @@ import { getSession } from '@/lib/auth'
 import { giftSchema } from '@/utils/validators'
 import type { ApiResponse } from '@/types'
 import { getLocationsTree } from '@/lib/indiaLocationsLoader'
+import { distributeGiftCommissionsForDeliveredGift } from './giftCommission'
 
 export async function submitGiftAction(
   data: {
@@ -256,6 +257,8 @@ export async function confirmGiftReceivedAction(giftId: string): Promise<ApiResp
         type: 'SUCCESS',
       },
     })
+
+    await distributeGiftCommissionsForDeliveredGift(gift.id)
 
     revalidatePath('/dashboard/gift')
     revalidatePath('/admin/dashboard/gifts')
