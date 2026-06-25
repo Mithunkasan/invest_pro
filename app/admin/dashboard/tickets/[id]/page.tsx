@@ -40,7 +40,11 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
               <span>•</span>
               <span className={priorityColors[ticket.priority]}>{ticket.priority} Priority</span>
               <span>•</span>
-              <span>{format(new Date(ticket.createdAt), 'MMM d, yyyy h:mm a')}</span>
+              <span>Submitted: {format(new Date(ticket.createdAt), 'MMM d, yyyy h:mm a')}</span>
+              <span>&bull;</span>
+              <span>
+                Admin Action: {ticket.status === 'OPEN' ? 'Pending' : format(new Date(ticket.updatedAt), 'MMM d, yyyy h:mm a')}
+              </span>
             </div>
           </div>
         </div>

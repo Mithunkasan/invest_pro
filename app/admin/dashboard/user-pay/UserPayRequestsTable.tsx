@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { DataTable } from '@/components/dashboard/DataTable'
-import { formatCurrency, formatDate, getStatusColor } from '@/utils/formatters'
+import { formatCurrency, formatDateTime, getStatusColor } from '@/utils/formatters'
 
 interface RequestsTableProps {
   initialRequests: any[]
@@ -52,9 +52,19 @@ export function UserPayRequestsTable({ initialRequests }: RequestsTableProps) {
     },
     {
       key: 'createdAt',
-      label: 'Date',
+      label: 'Request Submitted Time',
       sortable: true,
-      render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span>,
+      render: (v: any) => <span className="text-xs text-muted-foreground">{formatDateTime(String(v))}</span>,
+    },
+    {
+      key: 'updatedAt',
+      label: 'Admin Action Time',
+      sortable: true,
+      render: (_: any, row: any) => (
+        <span className="text-xs text-muted-foreground">
+          {row.status === 'PENDING' ? 'Pending' : formatDateTime(String(row.updatedAt))}
+        </span>
+      ),
     },
     {
       key: 'status',

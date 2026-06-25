@@ -13,6 +13,7 @@ interface TicketWithUser {
   priority: string
   status: string
   createdAt: Date
+  updatedAt: Date
   user: {
     name: string
     email: string
@@ -69,7 +70,8 @@ export function TicketsTable({ tickets }: { tickets: TicketWithUser[] }) {
                 <th className="px-6 py-4">User</th>
                 <th className="px-6 py-4">Subject</th>
                 <th className="px-6 py-4">Status & Priority</th>
-                <th className="px-6 py-4">Date</th>
+                <th className="px-6 py-4">Request Submitted Time</th>
+                <th className="px-6 py-4">Admin Action Time</th>
                 <th className="px-6 py-4 text-right">Action</th>
               </tr>
             </thead>
@@ -96,7 +98,10 @@ export function TicketsTable({ tickets }: { tickets: TicketWithUser[] }) {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-xs text-muted-foreground">
-                    {format(new Date(ticket.createdAt), 'MMM d, yyyy')}
+                    {format(new Date(ticket.createdAt), 'MMM d, yyyy h:mm a')}
+                  </td>
+                  <td className="px-6 py-4 text-xs text-muted-foreground">
+                    {ticket.status === 'OPEN' ? 'Pending' : format(new Date(ticket.updatedAt), 'MMM d, yyyy h:mm a')}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <Link 
@@ -110,7 +115,7 @@ export function TicketsTable({ tickets }: { tickets: TicketWithUser[] }) {
               ))}
               {filteredTickets.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
                     No tickets found matching your criteria.
                   </td>
                 </tr>

@@ -4,7 +4,7 @@ import { useTransition, useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ModalPortal } from '@/components/common/ModalPortal'
 import { DataTable } from '@/components/dashboard/DataTable'
-import { formatDate, formatCurrency, getStatusColor } from '@/utils/formatters'
+import { formatDate, formatDateTime, formatCurrency, getStatusColor } from '@/utils/formatters'
 import { Button } from '@/components/ui/button'
 import { 
   handleDeposit, 
@@ -24,11 +24,11 @@ interface TableProps {
   data: any[]
 }
 
-const formatTime = (date: Date | string) =>
-  new Intl.DateTimeFormat('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(date))
+const actionTime = (row: { status?: string; updatedAt?: string; reviewedAt?: string | null; processedAt?: string | null }) => {
+  if (row.status === 'PENDING') return 'Pending'
+  const value = row.reviewedAt || row.processedAt || row.updatedAt
+  return value ? formatDateTime(value) : 'Pending'
+}
 
 export function UsersTable({ users }: { users: any[] }) {
   const [isPending, startTransition] = useTransition()
@@ -306,8 +306,8 @@ export function DepositsTable({ data }: TableProps) {
     { key: 'method', label: 'Method', render: (v: any) => <span className="text-xs uppercase font-bold">{String(v)}</span> },
     { key: 'utrNumber', label: 'UTR', render: (v: any) => <span className="text-xs font-mono">{String(v || '—')}</span> },
     { key: 'status', label: 'Status', render: (v: any) => <span className={`status-badge ${getStatusColor(String(v))}`}>{String(v)}</span> },
-    { key: 'createdAt', label: 'Date', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
-    { key: 'createdTime', label: 'Time', render: (_: unknown, row: Record<string, unknown>) => <span className="text-xs text-muted-foreground">{formatTime(String(row.createdAt))}</span> },
+    { key: 'createdAt', label: 'Request Submitted Time', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDateTime(String(v))}</span> },
+    { key: 'updatedAt', label: 'Admin Action Time', render: (_: unknown, row: any) => <span className="text-xs text-muted-foreground">{actionTime(row)}</span> },
     { key: 'id', label: 'Actions', render: (id: string, row: any) => (
       <div className="flex items-center gap-1.5 flex-wrap">
         <Button 
@@ -401,8 +401,12 @@ export function DepositsTable({ data }: TableProps) {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Date Requested</p>
-                  <p className="text-muted-foreground mt-0.5">{formatDate(selectedDeposit.createdAt)}</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Request Submitted Time</p>
+                  <p className="text-muted-foreground mt-0.5">{formatDateTime(selectedDeposit.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Admin Action Time</p>
+                  <p className="text-muted-foreground mt-0.5">{actionTime(selectedDeposit)}</p>
                 </div>
                 {selectedDeposit.remarks && (
                   <div className="col-span-2">
@@ -508,8 +512,8 @@ export function WithdrawalsTable({ data }: TableProps) {
       </div>
     )},
     { key: 'status', label: 'Status', render: (v: any) => <span className={`status-badge ${getStatusColor(String(v))}`}>{String(v)}</span> },
-    { key: 'createdAt', label: 'Date', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
-    { key: 'createdTime', label: 'Time', render: (_: unknown, row: Record<string, unknown>) => <span className="text-xs text-muted-foreground">{formatTime(String(row.createdAt))}</span> },
+    { key: 'createdAt', label: 'Request Submitted Time', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDateTime(String(v))}</span> },
+    { key: 'processedAt', label: 'Admin Action Time', render: (_: unknown, row: any) => <span className="text-xs text-muted-foreground">{actionTime(row)}</span> },
     { key: 'id', label: 'Actions', render: (id: string, row: any) => row.status === 'PENDING' && (
       <div className="flex gap-1">
         <Button 
@@ -610,7 +614,8 @@ export function KycTable({ data }: TableProps) {
       </div>
     )},
     { key: 'status', label: 'Status', render: (v: any) => <span className={`status-badge ${getStatusColor(String(v))}`}>{String(v)}</span> },
-    { key: 'createdAt', label: 'Submitted', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
+    { key: 'createdAt', label: 'Request Submitted Time', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDateTime(String(v))}</span> },
+    { key: 'reviewedAt', label: 'Admin Action Time', render: (_: unknown, row: any) => <span className="text-xs text-muted-foreground">{actionTime(row)}</span> },
     { key: 'id', label: 'Actions', render: (id: string, row: any) => row.status === 'PENDING' && (
       <div className="flex gap-1">
         <Button 

@@ -489,7 +489,7 @@ export async function handleWithdrawal(withdrawalId: string, action: 'APPROVE' |
         // Reject withdrawal
         await tx.withdrawal.update({
           where: { id: withdrawalId },
-          data: { status: 'REJECTED', approvedById: admin.id, remarks },
+          data: { status: 'REJECTED', approvedById: admin.id, processedAt: new Date(), remarks },
         })
         const bankDetails = withdrawal.bankDetails as Record<string, unknown>
         await refundWithdrawalToWallets(

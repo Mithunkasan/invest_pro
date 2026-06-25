@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { updateGiftTrackingAction, acceptGiftAction } from '@/actions/adminGift'
 import { approveGiftDepositAction, rejectGiftDepositAction } from '@/actions/adminGiftDeposit'
-import { formatDate } from '@/utils/formatters'
+import { formatDateTime } from '@/utils/formatters'
 import { ModalPortal } from '@/components/common/ModalPortal'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -34,6 +34,7 @@ interface GiftAdminItem {
   acceptedAt: string | null
   remarks: string
   createdAt: string
+  updatedAt: string
   user: {
     name: string
     email: string
@@ -55,6 +56,7 @@ interface GiftDepositAdminItem {
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   remarks: string | null
   createdAt: string
+  updatedAt: string
   user: {
     name: string
     email: string
@@ -148,9 +150,11 @@ function ShipmentDrawer({ gift, onClose, onUpdated }: ShipmentDrawerProps) {
 
     const res = await updateGiftTrackingAction(gift.id, trackingForm)
     if (res.success) {
+      const now = new Date().toISOString()
       setSuccessMsg(res.message)
       onUpdated(gift.id, {
         ...trackingForm,
+        updatedAt: now,
         dispatchDate: trackingForm.dispatchDate
           ? new Date(trackingForm.dispatchDate).toISOString()
           : null,
@@ -436,6 +440,10 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
   const [selectedGift, setSelectedGift] = useState<GiftAdminItem | null>(null)
   const [acceptingIds, setAcceptingIds] = useState<Record<string, boolean>>({})
   const [depositActionIds, setDepositActionIds] = useState<Record<string, boolean>>({})
+  const getGiftActionTime = (gift: GiftAdminItem) =>
+    gift.deliveryStatus === 'PENDING' ? 'Pending' : formatDateTime(gift.acceptedAt || gift.updatedAt)
+  const getGiftDepositActionTime = (deposit: GiftDepositAdminItem) =>
+    deposit.status === 'PENDING' ? 'Pending' : formatDateTime(deposit.updatedAt)
 
   // ── Stats ──
   const totalCount = gifts.length
@@ -469,8 +477,9 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
     try {
       const res = await acceptGiftAction(id)
       if (res.success) {
+        const now = new Date().toISOString()
         setGifts((prev) =>
-          prev.map((g) => (g.id === id ? { ...g, deliveryStatus: 'ACCEPTED', acceptedAt: new Date().toISOString() } : g))
+          prev.map((g) => (g.id === id ? { ...g, deliveryStatus: 'ACCEPTED', acceptedAt: now, updatedAt: now } : g))
         )
       } else {
         alert(res.message || 'Failed to accept gift request')
@@ -491,8 +500,9 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
         ? await approveGiftDepositAction(id)
         : await rejectGiftDepositAction(id)
       if (res.success) {
+        const now = new Date().toISOString()
         setGiftDeposits((prev) =>
-          prev.map((d) => d.id === id ? { ...d, status: action === 'approve' ? 'APPROVED' : 'REJECTED' } : d)
+          prev.map((d) => d.id === id ? { ...d, status: action === 'approve' ? 'APPROVED' : 'REJECTED', updatedAt: now } : d)
         )
       } else {
         alert(res.message || `Failed to ${action} deposit`)
@@ -616,7 +626,8 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
                   <th className="px-6 py-4">Premium Member</th>
                   <th className="px-6 py-4">State &amp; City</th>
                   <th className="px-6 py-4">Mobile</th>
-                  <th className="px-6 py-4">Submitted Date</th>
+                  <th className="px-6 py-4">Request Submitted Time</th>
+                  <th className="px-6 py-4">Admin Action Time</th>
                   <th className="px-6 py-4">Courier Status</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
@@ -637,7 +648,8 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
                       <p className="text-[10px] text-muted-foreground">{gift.city} ({gift.pinCode})</p>
                     </td>
                     <td className="px-6 py-4 text-white font-mono select-all">{gift.mobile}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{formatDate(gift.createdAt)}</td>
+                    <td className="px-6 py-4 text-muted-foreground">{formatDateTime(gift.createdAt)}</td>
+                    <td className="px-6 py-4 text-muted-foreground">{getGiftActionTime(gift)}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-full border text-[9px] uppercase font-black ${getStatusBadgeClass(gift.deliveryStatus)}`}>
                         {gift.deliveryStatus.replace(/_/g, ' ')}
@@ -697,7 +709,8 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
                     <th className="px-6 py-4">Member</th>
                     <th className="px-6 py-4">Amount</th>
                     <th className="px-6 py-4">UTR / Proof</th>
-                    <th className="px-6 py-4">Submitted</th>
+                    <th className="px-6 py-4">Request Submitted Time</th>
+                    <th className="px-6 py-4">Admin Action Time</th>
                     <th className="px-6 py-4">Status</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
@@ -725,7 +738,8 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
                           )}
                           {!dep.utrNumber && !dep.proofUrl && <span className="text-white/30">—</span>}
                         </td>
-                        <td className="px-6 py-4 text-muted-foreground">{formatDate(dep.createdAt)}</td>
+                        <td className="px-6 py-4 text-muted-foreground">{formatDateTime(dep.createdAt)}</td>
+                        <td className="px-6 py-4 text-muted-foreground">{getGiftDepositActionTime(dep)}</td>
                         <td className="px-6 py-4">
                           <span className={`px-2.5 py-1 rounded-full border text-[9px] uppercase font-black ${statusColor}`}>
                             {dep.status}
