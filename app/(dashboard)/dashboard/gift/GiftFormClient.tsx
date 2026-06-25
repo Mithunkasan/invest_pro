@@ -1,18 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
-  MapPin, Phone, Mail, User, ShieldCheck, Truck, Package, Clock, Calendar, Check,
-  AlertCircle, ChevronRight, ExternalLink, HelpCircle
+  MapPin, Phone, Mail, User, Clock, Check,
+  AlertCircle, ChevronRight, HelpCircle
 } from 'lucide-react'
 import { getStatesAction, getDistrictsAction, getCitiesAction } from '@/actions/locations'
-import { submitGiftAction } from '@/actions/gift'
+import { confirmGiftReceivedAction, submitGiftAction } from '@/actions/gift'
 import { submitGiftDepositAction } from '@/actions/giftDeposit'
 import { formatDate } from '@/utils/formatters'
 
 interface GiftFormClientProps {
   gift: {
+    id: string
     fullName: string
     age: number
     mobile: string
@@ -34,7 +34,6 @@ interface GiftFormClientProps {
     updatedAt: string
   } | null
   giftCount: number
-  depositWalletBalance: number
   subsequentGiftAmount: number
   requiredGiftDepositAmount: number
   giftDeposit: {
@@ -48,11 +47,12 @@ interface GiftFormClientProps {
   } | null
 }
 
-export function GiftFormClient({ gift: initialGift, giftCount, depositWalletBalance, subsequentGiftAmount, requiredGiftDepositAmount, giftDeposit: initialGiftDeposit }: GiftFormClientProps) {
+export function GiftFormClient({ gift: initialGift, giftCount, subsequentGiftAmount, requiredGiftDepositAmount, giftDeposit: initialGiftDeposit }: GiftFormClientProps) {
   const [gift, setGift] = useState(initialGift)
   const [giftDeposit, setGiftDeposit] = useState(initialGiftDeposit)
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [confirmLoading, setConfirmLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -80,6 +80,7 @@ export function GiftFormClient({ gift: initialGift, giftCount, depositWalletBala
 
   // Synchronize local state with prop updates (to reflect admin status updates in real-time)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setGift(initialGift)
     if (initialGift) {
       setFormData({
@@ -243,6 +244,7 @@ export function GiftFormClient({ gift: initialGift, giftCount, depositWalletBala
       setShowForm(false)
       // Query again or set local gift state to show tracking
       setGift({
+        id: '',
         ...payload,
         trackingNumber: '',
         courierName: '',
@@ -260,6 +262,31 @@ export function GiftFormClient({ gift: initialGift, giftCount, depositWalletBala
     setLoading(false)
   }
 
+  const handleConfirmReceived = async () => {
+    if (!gift?.id) return
+
+    setConfirmLoading(true)
+    setError('')
+    setSuccess('')
+
+    const res = await confirmGiftReceivedAction(gift.id)
+    if (res.success) {
+      const now = new Date().toISOString()
+      setSuccess(res.message)
+      setGift({
+        ...gift,
+        deliveryStatus: 'DELIVERED',
+        expectedDeliveryDate: now,
+        remarks: 'Gift receipt confirmed by user.',
+        updatedAt: now,
+      })
+    } else {
+      setError(res.message)
+    }
+
+    setConfirmLoading(false)
+  }
+
   // --- RENDER TRACKER UI (IF ALREADY SUBMITTED & NOT REQUESTING NEXT) ---
   if (gift && (!showForm || gift.deliveryStatus !== 'DELIVERED')) {
     const statusMap = {
@@ -272,6 +299,7 @@ export function GiftFormClient({ gift: initialGift, giftCount, depositWalletBala
     }
 
     const currentStatus = statusMap[gift.deliveryStatus] || statusMap.PENDING
+    const canConfirmReceived = ['POSTED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(gift.deliveryStatus)
 
     const timelineSteps = [
       {
@@ -426,6 +454,32 @@ export function GiftFormClient({ gift: initialGift, giftCount, depositWalletBala
             </div>
           )}
 
+          {(error || success) && (
+            <div className={`p-3.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${error ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
+              {error ? <AlertCircle className="w-5 h-5 shrink-0" /> : <Check className="w-5 h-5 shrink-0" />}
+              <span>{error || success}</span>
+            </div>
+          )}
+
+          {canConfirmReceived && (
+            <div className="rounded-2xl bg-emerald-500/5 border border-emerald-500/10 p-5 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+              <div className="space-y-1 text-left">
+                <h4 className="font-extrabold text-sm text-white">Confirm Gift Received</h4>
+                <p className="text-xs text-muted-foreground max-w-md">
+                  Confirm after you have received the package. This unlocks your next gift request.
+                </p>
+              </div>
+              <button
+                onClick={handleConfirmReceived}
+                disabled={confirmLoading}
+                className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1 transition-all shadow-md shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span>{confirmLoading ? 'Confirming...' : 'Confirm Received'}</span>
+                <Check className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {gift.deliveryStatus === 'DELIVERED' && (
             <div className="rounded-2xl bg-emerald-500/5 border border-emerald-500/10 p-5 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
               <div className="space-y-1 text-left">
@@ -433,7 +487,7 @@ export function GiftFormClient({ gift: initialGift, giftCount, depositWalletBala
                   <span>Apply for Your Next Gift!</span> 🎁
                 </h4>
                 <p className="text-xs text-muted-foreground max-w-md">
-                  Your welcome kit has been delivered successfully. Your next request costs ₹{subsequentGiftAmount.toLocaleString('en-IN')} from your Deposit Wallet.
+                  Your welcome kit has been delivered successfully. Your next request requires an approved gift deposit of ₹{subsequentGiftAmount.toLocaleString('en-IN')}.
                 </p>
               </div>
               <button
@@ -687,23 +741,8 @@ export function GiftFormClient({ gift: initialGift, giftCount, depositWalletBala
             <span className="font-extrabold text-white">Your previous gift has been delivered!</span>
           </div>
           <p className="text-white/70 leading-relaxed">
-            You are eligible to apply for your next welcome gift. This request requires <strong className="text-emerald-300 font-extrabold">₹{subsequentGiftAmount.toLocaleString('en-IN')}</strong>, deducted from your Deposit Wallet upon submission.
+            You are eligible to apply for your next welcome gift. This request requires an approved gift deposit of <strong className="text-emerald-300 font-extrabold">₹{subsequentGiftAmount.toLocaleString('en-IN')}</strong>.
           </p>
-          <div className="text-[10px] text-white/50">
-            Deposit Wallet Balance: <strong className={depositWalletBalance >= subsequentGiftAmount ? "text-emerald-400 font-extrabold" : "text-rose-400 font-extrabold"}>₹{depositWalletBalance.toLocaleString('en-IN')}</strong>
-          </div>
-        </div>
-      )}
-
-      {giftCount >= 1 && depositWalletBalance < subsequentGiftAmount && (
-        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <span className="block text-white font-extrabold">Insufficient Wallet Balance</span>
-            <span className="block text-white/70 font-medium leading-relaxed">
-              You need at least ₹{subsequentGiftAmount.toLocaleString('en-IN')} in your Deposit Wallet to submit this gift request. Your current Deposit Wallet balance is ₹{depositWalletBalance.toLocaleString('en-IN')}.
-            </span>
-          </div>
         </div>
       )}
 
@@ -875,24 +914,15 @@ export function GiftFormClient({ gift: initialGift, giftCount, depositWalletBala
         <div className="pt-4 flex justify-end">
           <button
             type="submit"
-            disabled={loading || (giftCount >= 1 && depositWalletBalance < subsequentGiftAmount)}
+            disabled={loading}
             className="py-3 px-6 rounded-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/20 transition-all text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Submitting Details...' : (giftCount === 0 ? 'Submit Shipping Details' : `Pay ₹${subsequentGiftAmount.toLocaleString('en-IN')} & Submit Gift Request`)}
+            {loading ? 'Submitting Details...' : (giftCount === 0 ? 'Submit Shipping Details' : 'Submit Gift Request')}
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </form>
     </div>
-    </div>
-  )
-}
-
-// Simple fallback icon mapping for Stepper icons
-function CheckCircle2({ className }: { className?: string }) {
-  return (
-    <div className={`w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white ${className}`}>
-      <Check className="w-3.5 h-3.5" />
     </div>
   )
 }

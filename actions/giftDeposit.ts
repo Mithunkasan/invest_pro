@@ -16,30 +16,35 @@ export async function submitGiftDepositAction(data: {
       return { success: false, message: 'Unauthorized. Please login again.' }
     }
 
-    // 1. Verify user is Premium member
+    // 1. Verify user has an active membership
     const dbUser = await prisma.user.findUnique({
       where: { id: session.id },
       include: { membershipPlan: true }
     })
 
-    if (!dbUser || dbUser.memberType !== 'PREMIUM') {
-      return { success: false, message: 'This feature is only available for Premium Members.' }
+    if (!dbUser) {
+      return { success: false, message: 'User not found.' }
     }
 
-    // 2. Check approved deposit
-    const approvedDeposit = await prisma.deposit.findFirst({
-      where: { userId: session.id, status: 'APPROVED' }
-    })
-    if (!approvedDeposit) {
-      return { success: false, message: 'You must make a deposit before applying for a welcome gift.' }
-    }
-
-    // 3. Check activated membership
     const hasMembership =
-      (dbUser.membershipPlanId && dbUser.membershipPlan && dbUser.membershipPlan.price > 0) ||
-      (dbUser.basicMembershipActivatedAt && dbUser.basicMembershipAmount > 0)
+      Boolean(dbUser.membershipPlanId && dbUser.membershipPlanActivatedAt) ||
+      Boolean(dbUser.basicMembershipActivatedAt && dbUser.basicMembershipAmount > 0)
     if (!hasMembership) {
       return { success: false, message: 'You must activate a membership plan before applying for a welcome gift.' }
+    }
+
+    const latestGift = await prisma.gift.findFirst({
+      where: { userId: session.id },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true, deliveryStatus: true },
+    })
+
+    if (!latestGift) {
+      return { success: false, message: 'Your first gift request is free. Please submit your shipping address first.' }
+    }
+
+    if (latestGift.deliveryStatus !== 'DELIVERED') {
+      return { success: false, message: 'You can deposit for the next gift only after confirming your previous gift has been received.' }
     }
 
     // 4. Get required gift deposit amount from settings
@@ -51,7 +56,7 @@ export async function submitGiftDepositAction(data: {
     }
 
     // 5. Validate submitted amount matches required
-    if (data.amount !== required) {
+    if (Math.abs(data.amount - required) > 0.005) {
       return {
         success: false,
         message: `The deposit amount must be exactly ₹${required.toLocaleString('en-IN')}.`
@@ -60,7 +65,11 @@ export async function submitGiftDepositAction(data: {
 
     // 6. Check for an existing PENDING gift deposit (don't allow duplicates)
     const existingPending = await prisma.giftDeposit.findFirst({
-      where: { userId: session.id, status: 'PENDING' }
+      where: {
+        userId: session.id,
+        status: 'PENDING',
+        createdAt: { gt: latestGift.createdAt },
+      }
     })
     if (existingPending) {
       return {
@@ -71,7 +80,11 @@ export async function submitGiftDepositAction(data: {
 
     // 7. Check if already approved
     const existingApproved = await prisma.giftDeposit.findFirst({
-      where: { userId: session.id, status: 'APPROVED' }
+      where: {
+        userId: session.id,
+        status: 'APPROVED',
+        createdAt: { gt: latestGift.createdAt },
+      }
     })
     if (existingApproved) {
       return {
@@ -110,8 +123,11 @@ export async function submitGiftDepositAction(data: {
 
     revalidatePath('/dashboard/gift')
     return { success: true, message: 'Gift deposit submitted successfully! Please wait for admin approval.' }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error submitting gift deposit:', error)
-    return { success: false, message: error.message || 'An unexpected error occurred.' }
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'An unexpected error occurred.',
+    }
   }
 }

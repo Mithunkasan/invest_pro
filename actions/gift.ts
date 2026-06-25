@@ -119,12 +119,12 @@ export async function submitGiftAction(
         const latestGift = await prisma.gift.findFirst({
           where: { userId: session.id },
           orderBy: { createdAt: 'desc' },
-          select: { deliveryStatus: true },
+          select: { deliveryStatus: true, createdAt: true },
         })
         if (latestGift?.deliveryStatus !== 'DELIVERED') {
           return {
             success: false,
-            message: 'You can apply for the next gift only after your previous gift has been delivered.',
+            message: 'You can apply for the next gift only after you confirm your previous gift has been received.',
           }
         }
 
@@ -137,62 +137,40 @@ export async function submitGiftAction(
           ? Math.max(0, configuredAmount)
           : 0
 
-        // Subsequent gift request -> debit the admin-configured amount from Deposit Wallet.
         if (subsequentGiftAmount > 0) {
-          const wallet = await prisma.wallet.findUnique({
-            where: { userId: session.id },
-            select: { depositBalance: true },
+          const approvedGiftDeposit = await prisma.giftDeposit.findFirst({
+            where: {
+              userId: session.id,
+              status: 'APPROVED',
+              amount: subsequentGiftAmount,
+              createdAt: { gt: latestGift.createdAt },
+            },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true },
           })
-          if (!wallet || wallet.depositBalance < subsequentGiftAmount) {
+          if (!approvedGiftDeposit) {
             return {
               success: false,
-              message: `Insufficient Deposit Wallet balance. A payment of ₹${subsequentGiftAmount.toLocaleString('en-IN')} is required for subsequent gift requests.`,
+              message: `Please deposit Rs. ${subsequentGiftAmount.toLocaleString('en-IN')} and wait for admin approval before applying for your next gift.`,
             }
           }
         }
 
-        // Deduct payment and create new gift
-        await prisma.$transaction(async (tx) => {
-          if (subsequentGiftAmount > 0) {
-            const deduction = await tx.wallet.updateMany({
-              where: {
-                userId: session.id,
-                depositBalance: { gte: subsequentGiftAmount },
-              },
-              data: { depositBalance: { decrement: subsequentGiftAmount } },
-            })
-            if (deduction.count !== 1) {
-              throw new Error('Insufficient Deposit Wallet balance.')
-            }
-
-            await tx.transaction.create({
-              data: {
-                userId: session.id,
-                type: 'INVESTMENT',
-                amount: subsequentGiftAmount,
-                status: 'COMPLETED',
-                description: `Gift Request Payment from Deposit Wallet (Request #${giftCount + 1})`,
-                walletType: 'MAIN'
-              }
-            })
+        await prisma.gift.create({
+          data: {
+            userId: session.id,
+            fullName: parsed.data.fullName,
+            age: parsed.data.age,
+            mobile: parsed.data.mobile,
+            email: parsed.data.email,
+            houseNo: parsed.data.houseNo,
+            area: parsed.data.area,
+            state: parsed.data.state,
+            district: parsed.data.district,
+            city: parsed.data.city,
+            pinCode: parsed.data.pinCode,
+            deliveryStatus: 'PENDING'
           }
-
-          await tx.gift.create({
-            data: {
-              userId: session.id,
-              fullName: parsed.data.fullName,
-              age: parsed.data.age,
-              mobile: parsed.data.mobile,
-              email: parsed.data.email,
-              houseNo: parsed.data.houseNo,
-              area: parsed.data.area,
-              state: parsed.data.state,
-              district: parsed.data.district,
-              city: parsed.data.city,
-              pinCode: parsed.data.pinCode,
-              deliveryStatus: 'PENDING'
-            }
-          })
         })
       } else {
         // First gift request -> Free
@@ -237,6 +215,56 @@ export async function submitGiftAction(
     return {
       success: false,
       message: error instanceof Error ? error.message : 'An error occurred during submission',
+    }
+  }
+}
+
+export async function confirmGiftReceivedAction(giftId: string): Promise<ApiResponse> {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return { success: false, message: 'Unauthorized. Please login again.' }
+    }
+
+    const gift = await prisma.gift.findFirst({
+      where: {
+        id: giftId,
+        userId: session.id,
+        deliveryStatus: { in: ['POSTED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'] },
+      },
+      select: { id: true },
+    })
+
+    if (!gift) {
+      return { success: false, message: 'This gift cannot be confirmed as received yet.' }
+    }
+
+    await prisma.gift.update({
+      where: { id: gift.id },
+      data: {
+        deliveryStatus: 'DELIVERED',
+        expectedDeliveryDate: new Date(),
+        remarks: 'Gift receipt confirmed by user.',
+      },
+    })
+
+    await prisma.notification.create({
+      data: {
+        userId: session.id,
+        title: 'Gift Receipt Confirmed',
+        message: 'Your gift receipt confirmation has been recorded. You can now apply for your next gift.',
+        type: 'SUCCESS',
+      },
+    })
+
+    revalidatePath('/dashboard/gift')
+    revalidatePath('/admin/dashboard/gifts')
+    return { success: true, message: 'Gift receipt confirmed successfully.' }
+  } catch (error: unknown) {
+    console.error('Error confirming gift receipt:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'An error occurred while confirming gift receipt',
     }
   }
 }
