@@ -1,6 +1,6 @@
 import { createPageMetadata } from '@/lib/seo'
 import Link from 'next/link'
-import Image from 'next/image'
+import { CurrencyClock } from '@/components/common/CurrencyClock'
 import { prisma } from '@/lib/prisma'
 import { AnimatedGalaxyBackground } from '@/components/common/AnimatedGalaxyBackground'
 import { 
@@ -122,20 +122,9 @@ export default async function MembershipPlansPage() {
                 </div>
               </div>
 
-              {/* Right Column: Galaxy Globe Image */}
+              {/* Right Column: Currency Analog Clock */}
               <div className="lg:col-span-5 flex justify-center items-center">
-                <div className="relative w-full max-w-[400px] aspect-square flex items-center justify-center">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-blue-600/20 rounded-full filter blur-3xl opacity-50 animate-pulse" />
-                  <Image
-                    src="/membership_hero_galaxy.png"
-                    width={400}
-                    height={400}
-                    className="w-full h-full object-contain filter drop-shadow-[0_0_30px_rgba(168,85,247,0.3)] relative z-10" 
-                    style={{ animation: 'rotate-slow 40s linear infinite' }}
-                    alt="VR Galaxy Networks membership community illustration"
-                    priority
-                  />
-                </div>
+                <CurrencyClock />
               </div>
             </div>
           </div>
