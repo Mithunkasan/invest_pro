@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { User, Lock, Shield, Calendar, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDate, formatDateTime, formatCurrency } from '@/utils/formatters'
@@ -30,6 +31,7 @@ interface ProfileClientProps {
 }
 
 export function ProfileClient({ user }: ProfileClientProps) {
+  const router = useRouter()
   const [name, setName] = useState(user.name)
   const [phone, setPhone] = useState(user.phone || '')
   const [dateOfBirth, setDateOfBirth] = useState(user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : '')
@@ -153,6 +155,11 @@ export function ProfileClient({ user }: ProfileClientProps) {
     const result = await updateProfileAction(formData)
     setMsg(result.message)
     setSaving(false)
+    if (result.success) {
+      router.refresh()
+      router.push('/dashboard')
+      return
+    }
     setTimeout(() => setMsg(''), 3000)
   }
 

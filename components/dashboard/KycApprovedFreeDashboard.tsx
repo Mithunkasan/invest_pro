@@ -108,7 +108,7 @@ export function KycApprovedFreeDashboard({ userName, mainBalance, depositBalance
         </motion.div>
       </div>
 
-      {/* KYC Verified notice */}
+      {/* Profile Verified notice */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -117,7 +117,7 @@ export function KycApprovedFreeDashboard({ userName, mainBalance, depositBalance
       >
         <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0" />
         <p className="text-sm text-emerald-400 font-medium flex-1">
-          KYC Verified — Your identity has been successfully verified.
+          Profile Verified — Your profile has been successfully verified.
         </p>
       </motion.div>
     </div>

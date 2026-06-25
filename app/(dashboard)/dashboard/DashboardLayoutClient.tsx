@@ -41,6 +41,13 @@ export function DashboardLayoutClient({
   const showProfilePopup = !requiresKyc && !user.profileCompleted && !pathname.startsWith('/dashboard/profile')
 
   useEffect(() => {
+    if (!user.profileCompleted) {
+      if (!pathname.startsWith('/dashboard/profile')) {
+        router.push('/dashboard/profile')
+      }
+      return
+    }
+
     if (requiresKyc) {
       if (!pathname.startsWith('/dashboard/kyc')) {
         router.replace('/dashboard/kyc')
@@ -58,30 +65,17 @@ export function DashboardLayoutClient({
       return
     }
 
-    if (!user.profileCompleted) {
-      const allowedRoutes = ['/dashboard', '/dashboard/profile']
-      const isAllowed = allowedRoutes.some((route) => {
-        if (route === '/dashboard') return pathname === '/dashboard'
-        return pathname === route || pathname.startsWith(route)
-      })
-
-      if (!isAllowed) {
-        router.push('/dashboard')
-      }
-      return
-    }
-
     const adminApproved = hasApprovedDeposit && isMembershipActivated
 
     if (!adminApproved) {
       const isFree = user.memberType === 'FREE'
       const allowedRoutes = isFree
         ? (hasApprovedDeposit
-            ? ['/dashboard', '/dashboard/profile', '/dashboard/deposit', '/dashboard/membership']
-            : ['/dashboard', '/dashboard/profile', '/dashboard/deposit'])
+            ? ['/dashboard', '/dashboard/profile', '/dashboard/deposit', '/dashboard/membership', '/dashboard/transactions', '/dashboard/notifications']
+            : ['/dashboard', '/dashboard/profile', '/dashboard/deposit', '/dashboard/transactions', '/dashboard/notifications'])
         : isMembershipActivated
-          ? ['/dashboard', '/dashboard/deposit', '/dashboard/gift', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile']
-          : ['/dashboard', '/dashboard/deposit', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile']
+          ? ['/dashboard', '/dashboard/deposit', '/dashboard/gift', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile', '/dashboard/transactions', '/dashboard/notifications']
+          : ['/dashboard', '/dashboard/deposit', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile', '/dashboard/transactions', '/dashboard/notifications']
 
       const isAllowed = allowedRoutes.some((route) => {
         if (route === '/dashboard') return pathname === '/dashboard'
@@ -111,12 +105,13 @@ export function DashboardLayoutClient({
 
       const allowedRoutes = isFree
         ? (hasApprovedDeposit
-            ? ['/dashboard', '/dashboard/kyc', '/dashboard/profile', '/dashboard/deposit', '/dashboard/membership']
-            : ['/dashboard', '/dashboard/kyc', '/dashboard/profile', '/dashboard/deposit'])
+            ? ['/dashboard', '/dashboard/kyc', '/dashboard/profile', '/dashboard/deposit', '/dashboard/membership', '/dashboard/transactions', '/dashboard/notifications']
+            : ['/dashboard', '/dashboard/kyc', '/dashboard/profile', '/dashboard/deposit', '/dashboard/transactions', '/dashboard/notifications'])
         : [
             '/dashboard',
             '/dashboard/deposit',
             '/dashboard/membership',
+            '/dashboard/transactions',
             '/dashboard/notifications',
             '/dashboard/kyc',
             '/dashboard/profile',
