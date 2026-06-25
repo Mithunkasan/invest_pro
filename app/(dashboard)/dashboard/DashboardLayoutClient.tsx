@@ -177,6 +177,24 @@ export function DashboardLayoutClient({
         </main>
       </div>
 
+      <a
+        href="https://t.me/GalaxyNetworkPvtLtd"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open Telegram support"
+        className="fixed bottom-6 right-6 z-40 w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-full bg-[#26a5e4] text-white shadow-[0_6px_28px_rgba(38,165,228,0.45)] transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#26a5e4]/50 focus:ring-offset-2 focus:ring-offset-background"
+      >
+        <span className="absolute inset-0 rounded-full bg-[#26a5e4] opacity-25 animate-ping" style={{ animationDuration: '3s' }} />
+        <svg
+          viewBox="0 0 24 24"
+          className="w-7 h-7 sm:w-8 sm:h-8 fill-current relative z-10"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.17.17 0 0 0-.07-.2c-.08-.06-.19-.04-.27-.02-.11.02-1.89 1.2-5.33 3.52-.5.35-.96.52-1.37.51-.45-.01-1.32-.25-1.97-.46-.79-.26-1.42-.4-1.36-.85.03-.23.35-.47.96-.71 3.76-1.64 6.27-2.72 7.54-3.25 3.58-1.48 4.32-1.74 4.81-1.75.11 0 .35.03.5.16.13.12.17.29.19.41z" />
+        </svg>
+      </a>
+
       <AnimatePresence>
         {showProfilePopup && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
