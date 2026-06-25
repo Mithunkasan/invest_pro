@@ -18,11 +18,6 @@ export default async function GiftPage() {
     where: { id: session.id },
     include: {
       membershipPlan: true,
-      wallet: {
-        select: {
-          depositBalance: true
-        }
-      }
     }
   })
 
@@ -68,9 +63,20 @@ export default async function GiftPage() {
     select: { giftDepositAmount: true },
   })
 
-  const depositWalletBalance = dbUser.wallet?.depositBalance ?? 0
   const subsequentGiftAmount = Math.max(0, settings?.giftDepositAmount ?? 0)
   const canApplyForNextGift = latestGift?.deliveryStatus === 'DELIVERED'
+  const requiredGiftDepositAmount =
+    giftCount >= 1 && canApplyForNextGift ? subsequentGiftAmount : 0
+  const giftDeposit = requiredGiftDepositAmount > 0 && latestGift
+    ? await prisma.giftDeposit.findFirst({
+        where: {
+          userId: session.id,
+          createdAt: { gt: latestGift.createdAt },
+          status: { in: ['PENDING', 'APPROVED', 'REJECTED'] },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+    : null
 
   return (
     <div className="space-y-6">
@@ -82,7 +88,7 @@ export default async function GiftPage() {
           {giftCount === 0
             ? 'Complete your details to claim your free exclusive VR Galaxy Networks premium welcome kit.'
             : canApplyForNextGift
-              ? `Apply for your next premium gift. ₹${subsequentGiftAmount.toLocaleString('en-IN')} will be debited from your Deposit Wallet.`
+              ? `Apply for your next premium gift after depositing the admin configured amount of ₹${subsequentGiftAmount.toLocaleString('en-IN')}.`
               : 'Track your current premium gift request and delivery updates.'}
         </p>
       </div>
@@ -90,10 +96,9 @@ export default async function GiftPage() {
       <GiftFormClient 
         gift={latestGift ? JSON.parse(JSON.stringify(latestGift)) : null} 
         giftCount={giftCount}
-        depositWalletBalance={depositWalletBalance}
         subsequentGiftAmount={subsequentGiftAmount}
-        requiredGiftDepositAmount={0}
-        giftDeposit={null}
+        requiredGiftDepositAmount={requiredGiftDepositAmount}
+        giftDeposit={giftDeposit ? JSON.parse(JSON.stringify(giftDeposit)) : null}
       />
     </div>
   )
