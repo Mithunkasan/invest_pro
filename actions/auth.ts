@@ -2,11 +2,29 @@
 
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { hashPassword, comparePassword, setSession, clearSession } from '@/lib/auth'
 import { sendWelcomeEmail } from '@/lib/mail'
 import { loginSchema, registerSchema, adminLoginSchema } from '@/utils/validators'
 import type { ApiResponse } from '@/types'
 import { findFreeMembershipPlan } from '@/lib/freeMembership'
+
+const DATABASE_UNAVAILABLE_MESSAGE = 'Database is temporarily unavailable. Please try again in a few minutes.'
+
+function isDatabaseConnectionError(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientInitializationError) return true
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P1001') return true
+  return error instanceof Error && error.message.includes("Can't reach database server")
+}
+
+function databaseErrorResponse(error: unknown, context: string): ApiResponse {
+  if (!isDatabaseConnectionError(error)) {
+    throw error
+  }
+
+  console.error(`${context}: database connection failed`, error)
+  return { success: false, message: DATABASE_UNAVAILABLE_MESSAGE }
+}
 
 // ── User Login ────────────────────────────────────────────────────────────────
 export async function loginAction(
@@ -22,10 +40,15 @@ export async function loginAction(
     return { success: false, message: 'Validation failed', errors: parsed.error.flatten().fieldErrors as Record<string, string> }
   }
 
-  const user = await prisma.user.findUnique({
+  const userResult = await prisma.user.findUnique({
     where: { email: parsed.data.email },
     include: { kyc: { select: { status: true } } },
-  })
+  }).catch((error) => databaseErrorResponse(error, 'User login'))
+  if (userResult && 'success' in userResult) {
+    return userResult
+  }
+
+  const user = userResult
   if (!user) {
     return { success: false, message: 'Invalid email or password' }
   }
@@ -40,6 +63,21 @@ export async function loginAction(
   }
 
   await setSession({ id: user.id, email: user.email, name: user.name, role: 'USER', type: 'user', memberType: user.memberType as 'FREE' | 'BASIC' | 'PREMIUM' })
+  const profileComplete = Boolean(
+    user.profileCompleted ||
+    (
+      user.name?.trim() &&
+      user.phone?.trim() &&
+      user.dateOfBirth &&
+      user.addressLine?.trim() &&
+      user.city?.trim() &&
+      user.state?.trim() &&
+      user.pinCode?.trim()
+    )
+  )
+  if (!profileComplete) {
+    redirect('/dashboard/profile')
+  }
   if (user.membershipPlanId && user.membershipPlanActivatedAt && user.kyc?.status !== 'APPROVED') {
     redirect('/dashboard/kyc')
   }
@@ -154,14 +192,19 @@ export async function adminLoginAction(
     return { success: false, message: 'Validation failed' }
   }
 
-  const admin = await prisma.admin.findFirst({
+  const adminResult = await prisma.admin.findFirst({
     where: {
       OR: [
         { username: parsed.data.username },
         { email: parsed.data.username },
       ],
     },
-  })
+  }).catch((error) => databaseErrorResponse(error, 'Admin login'))
+  if (adminResult && 'success' in adminResult) {
+    return adminResult
+  }
+
+  const admin = adminResult
   if (!admin) {
     return { success: false, message: 'Invalid credentials' }
   }

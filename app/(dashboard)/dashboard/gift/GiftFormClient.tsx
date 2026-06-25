@@ -287,6 +287,8 @@ export function GiftFormClient({ gift: initialGift, giftCount, subsequentGiftAmo
     setConfirmLoading(false)
   }
 
+  const canSubmitNextGiftAddress = requiredGiftDepositAmount === 0 || giftDeposit?.status === 'APPROVED'
+
   // --- RENDER TRACKER UI (IF ALREADY SUBMITTED & NOT REQUESTING NEXT) ---
   if (gift && (!showForm || gift.deliveryStatus !== 'DELIVERED')) {
     const statusMap = {
@@ -494,7 +496,7 @@ export function GiftFormClient({ gift: initialGift, giftCount, subsequentGiftAmo
                 onClick={() => setShowForm(true)}
                 className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-1 transition-all shadow-md shrink-0 cursor-pointer"
               >
-                <span>Request Next Gift</span>
+                <span>{canSubmitNextGiftAddress ? 'Update Address & Request' : 'Request Next Gift'}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -738,7 +740,7 @@ export function GiftFormClient({ gift: initialGift, giftCount, subsequentGiftAmo
         <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold space-y-2">
           <div className="flex items-center gap-2">
             <span className="text-lg">🎉</span>
-            <span className="font-extrabold text-white">Your previous gift has been delivered!</span>
+            <span className="font-extrabold text-white">Your previous gift has been delivered! Review and update your address before submitting the next request.</span>
           </div>
           <p className="text-white/70 leading-relaxed">
             You are eligible to apply for your next welcome gift. This request requires an approved gift deposit of <strong className="text-emerald-300 font-extrabold">₹{subsequentGiftAmount.toLocaleString('en-IN')}</strong>.

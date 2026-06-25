@@ -84,7 +84,7 @@ export function DashboardSidebar({
     if (isFree) {
       // KYC-approved FREE users: Overview, KYC, Profile, Deposit and Withdraw
       // If they have deposited, they can also see Membership to upgrade
-      const allowedLabels = ['Overview', 'KYC', 'Profile', 'Deposit', 'Withdraw']
+      const allowedLabels = ['Overview', 'KYC', 'Profile', 'Deposit', 'Withdraw', 'Transactions', 'Notifications']
       if (hasApprovedDeposit) allowedLabels.push('Membership')
 
       baseItems = baseItems.filter((item) => allowedLabels.includes(item.label))
@@ -123,7 +123,7 @@ export function DashboardSidebar({
         if (isFree) {
           filteredItems = baseItems.filter(item => item.label !== 'KYC')
         } else {
-          const allowedLabelsStrict = ['Overview', 'Deposit', 'Membership', 'Withdraw', 'Profile']
+          const allowedLabelsStrict = ['Overview', 'Deposit', 'Membership', 'Withdraw', 'Profile', 'Transactions', 'Notifications']
           if (isMembershipActivated) allowedLabelsStrict.push('Gift Section')
           filteredItems = baseItems.filter(item => allowedLabelsStrict.includes(item.label))
         }
@@ -136,7 +136,7 @@ export function DashboardSidebar({
           filteredItems = baseItems.filter((item) => item.label === 'Membership' || item.label === 'Withdraw')
         } else if (!isFullAccess) {
           filteredItems = baseItems.filter((item) =>
-            ['Overview', 'Deposit', 'Membership', 'Notifications', 'KYC', 'Profile'].includes(item.label)
+            ['Overview', 'Deposit', 'Membership', 'Transactions', 'Notifications', 'KYC', 'Profile'].includes(item.label)
           )
         }
       }
