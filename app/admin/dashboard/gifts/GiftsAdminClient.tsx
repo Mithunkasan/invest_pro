@@ -437,6 +437,8 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
   const pendingDepositsCount = giftDeposits.filter(d => d.status === 'PENDING').length
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
+  const [depositSearchQuery, setDepositSearchQuery] = useState('')
+  const [depositStatusFilter, setDepositStatusFilter] = useState<string>('ALL')
   const [selectedGift, setSelectedGift] = useState<GiftAdminItem | null>(null)
   const [acceptingIds, setAcceptingIds] = useState<Record<string, boolean>>({})
   const [depositActionIds, setDepositActionIds] = useState<Record<string, boolean>>({})
@@ -470,6 +472,22 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
 
     return matchesSearch && matchesStatus
   })
+
+  const filteredGiftDeposits = giftDeposits.filter((deposit) => {
+    const q = depositSearchQuery.toLowerCase()
+    const matchesSearch =
+      deposit.user.name.toLowerCase().includes(q) ||
+      deposit.user.email.toLowerCase().includes(q) ||
+      (deposit.user.phone || '').includes(depositSearchQuery) ||
+      String(deposit.amount).includes(depositSearchQuery) ||
+      (deposit.utrNumber || '').toLowerCase().includes(q)
+
+    const matchesStatus = depositStatusFilter === 'ALL' || deposit.status === depositStatusFilter
+
+    return matchesSearch && matchesStatus
+  })
+
+  const hasActiveDepositFilters = depositSearchQuery || depositStatusFilter !== 'ALL'
 
   // ── Accept callback ──
   const handleAcceptGift = async (id: string) => {
@@ -696,10 +714,49 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
       </>)}
 
       {activeTab === 'deposits' && (
-        <div className="premium-card overflow-hidden">
-          {giftDeposits.length === 0 ? (
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="relative max-w-sm w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={depositSearchQuery}
+                onChange={(e) => setDepositSearchQuery(e.target.value)}
+                placeholder="Search by member, phone, UTR, amount..."
+                className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/20 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 self-start md:self-center">
+              <select
+                value={depositStatusFilter}
+                onChange={(e) => setDepositStatusFilter(e.target.value)}
+                className="h-9 px-3 rounded-xl bg-slate-900 border border-white/10 text-white/80 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+              {hasActiveDepositFilters && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDepositSearchQuery('')
+                    setDepositStatusFilter('ALL')
+                  }}
+                  className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white/80 text-xs font-bold cursor-pointer transition-colors"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="premium-card overflow-hidden">
+          {filteredGiftDeposits.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-xs font-semibold">
-              No gift deposit requests found.
+              No gift deposit requests match the criteria.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -716,7 +773,7 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {giftDeposits.map((dep) => {
+                  {filteredGiftDeposits.map((dep) => {
                     const statusColor = dep.status === 'APPROVED'
                       ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
                       : dep.status === 'REJECTED'
@@ -776,6 +833,7 @@ export function GiftsAdminClient({ gifts: initialGifts, giftDeposits: initialGif
               </table>
             </div>
           )}
+          </div>
         </div>
       )}
     </div>
