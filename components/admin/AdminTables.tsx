@@ -252,6 +252,8 @@ export function UsersTable({ users }: { users: any[] }) {
 export function DepositsTable({ data }: TableProps) {
   const [isPending, startTransition] = useTransition()
   const [selectedDeposit, setSelectedDeposit] = useState<any | null>(null)
+  const [filterQuery, setFilterQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState('ALL')
 
   const onHandle = (id: string, action: 'APPROVE' | 'REJECT') => {
     let remarks: string | undefined = undefined
@@ -344,9 +346,73 @@ export function DepositsTable({ data }: TableProps) {
     )},
   ]
 
+  const filteredDeposits = useMemo(() => {
+    const q = filterQuery.toLowerCase().trim()
+    return data.filter((row: any) => {
+      if (filterStatus !== 'ALL' && row.status !== filterStatus) return false
+      if (!q) return true
+
+      return [
+        row.user?.name,
+        row.user?.email,
+        row.amount,
+        row.method,
+        row.utrNumber,
+        row.status,
+      ].some((value) => String(value || '').toLowerCase().includes(q))
+    })
+  }, [data, filterQuery, filterStatus])
+
+  const hasActiveFilters = filterQuery || filterStatus !== 'ALL'
+
   return (
     <>
-      <DataTable data={data} columns={cols as any} rowKey="id" searchPlaceholder="Search deposits..." />
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 backdrop-blur-sm">
+          <div className="relative md:col-span-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search deposits by user, amount, method, or UTR..."
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              className="w-full h-10 pl-10 pr-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+            />
+          </div>
+          <div className="flex gap-2">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="flex-1 h-10 px-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFilterQuery('')
+                  setFilterStatus('ALL')
+                }}
+                className="h-10 px-3 font-semibold shrink-0"
+              >
+                Reset
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <DataTable
+          data={filteredDeposits}
+          columns={cols as any}
+          rowKey="id"
+          searchable={false}
+          emptyMessage="No deposits found matching current filters"
+        />
+      </div>
 
       {/* View Details Modal */}
       {selectedDeposit && (
@@ -475,6 +541,8 @@ export function DepositsTable({ data }: TableProps) {
 
 export function WithdrawalsTable({ data }: TableProps) {
   const [isPending, startTransition] = useTransition()
+  const [filterQuery, setFilterQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState('ALL')
 
   const onHandle = (id: string, action: 'APPROVE' | 'REJECT') => {
     startTransition(async () => {
@@ -533,11 +601,82 @@ export function WithdrawalsTable({ data }: TableProps) {
       </div>
     )},
   ]
-  return <DataTable data={data} columns={cols as any} rowKey="id" searchPlaceholder="Search withdrawals..." />
+
+  const filteredWithdrawals = useMemo(() => {
+    const q = filterQuery.toLowerCase().trim()
+    return data.filter((row: any) => {
+      if (filterStatus !== 'ALL' && row.status !== filterStatus) return false
+      if (!q) return true
+
+      return [
+        row.user?.name,
+        row.user?.email,
+        row.amount,
+        row.netAmount,
+        row.bankDetails?.bankName,
+        row.bankDetails?.accountNo,
+        row.bankDetails?.ifsc,
+        row.status,
+      ].some((value) => String(value || '').toLowerCase().includes(q))
+    })
+  }, [data, filterQuery, filterStatus])
+
+  const hasActiveFilters = filterQuery || filterStatus !== 'ALL'
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 backdrop-blur-sm">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search withdrawals by user, bank, account, or IFSC..."
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            className="w-full h-10 pl-10 pr-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+          />
+        </div>
+        <div className="flex gap-2">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="flex-1 h-10 px-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFilterQuery('')
+                setFilterStatus('ALL')
+              }}
+              className="h-10 px-3 font-semibold shrink-0"
+            >
+              Reset
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <DataTable
+        data={filteredWithdrawals}
+        columns={cols as any}
+        rowKey="id"
+        searchable={false}
+        emptyMessage="No withdrawals found matching current filters"
+      />
+    </div>
+  )
 }
 
 export function KycTable({ data }: TableProps) {
   const [isPending, startTransition] = useTransition()
+  const [filterQuery, setFilterQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState('ALL')
 
   const onHandle = (id: string, action: 'APPROVED' | 'REJECTED') => {
     startTransition(async () => {
@@ -635,7 +774,73 @@ export function KycTable({ data }: TableProps) {
       </div>
     )},
   ]
-  return <DataTable data={data} columns={cols as any} rowKey="id" searchPlaceholder="Search KYC..." />
+
+  const filteredKyc = useMemo(() => {
+    const q = filterQuery.toLowerCase().trim()
+    return data.filter((row: any) => {
+      if (filterStatus !== 'ALL' && row.status !== filterStatus) return false
+      if (!q) return true
+
+      return [
+        row.user?.name,
+        row.user?.email,
+        row.aadhaarNo,
+        row.panNo,
+        row.status,
+      ].some((value) => String(value || '').toLowerCase().includes(q))
+    })
+  }, [data, filterQuery, filterStatus])
+
+  const hasActiveFilters = filterQuery || filterStatus !== 'ALL'
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 backdrop-blur-sm">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search KYC by user, Aadhaar, or PAN..."
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            className="w-full h-10 pl-10 pr-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+          />
+        </div>
+        <div className="flex gap-2">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="flex-1 h-10 px-3 rounded-lg bg-background/50 border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFilterQuery('')
+                setFilterStatus('ALL')
+              }}
+              className="h-10 px-3 font-semibold shrink-0"
+            >
+              Reset
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <DataTable
+        data={filteredKyc}
+        columns={cols as any}
+        rowKey="id"
+        searchable={false}
+        emptyMessage="No KYC submissions found matching current filters"
+      />
+    </div>
+  )
 }
 
 export function ReferralsTable({ data }: TableProps) {
@@ -1026,6 +1231,8 @@ export function MembershipsTable({ data }: TableProps) {
   const [isPending, startTransition] = useTransition()
   const [isModalOpen, setModalOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<any | null>(null)
+  const [filterQuery, setFilterQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState('ALL')
 
   const [formData, setFormData] = useState({
     name: '',
@@ -1213,6 +1420,27 @@ export function MembershipsTable({ data }: TableProps) {
     )},
   ]
 
+  const filteredPlans = useMemo(() => {
+    const q = filterQuery.toLowerCase().trim()
+    return data.filter((row: any) => {
+      if (filterStatus === 'ACTIVE' && !row.isActive) return false
+      if (filterStatus === 'INACTIVE' && row.isActive) return false
+      if (!q) return true
+
+      return [
+        row.name,
+        row.price,
+        row.durationDays === -1 ? 'lifetime' : row.durationDays,
+        row.depositBonus,
+        row.withdrawalTime,
+        row.support,
+        ...(Array.isArray(row.features) ? row.features : []),
+      ].some((value) => String(value || '').toLowerCase().includes(q))
+    })
+  }, [data, filterQuery, filterStatus])
+
+  const hasActiveFilters = filterQuery || filterStatus !== 'ALL'
+
   return (
     <>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 pb-4 border-b border-border/40">
@@ -1228,7 +1456,51 @@ export function MembershipsTable({ data }: TableProps) {
         </Button>
       </div>
 
-      <DataTable data={data} columns={cols as any} rowKey="id" searchPlaceholder="Search plan names..." />
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-brand-900/20 border border-brand-800/40 backdrop-blur-sm">
+          <div className="relative md:col-span-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search plans by name, price, support, or feature..."
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              className="w-full h-10 pl-10 pr-3 rounded-lg bg-background border border-brand-800 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+          <div className="flex gap-2">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="flex-1 h-10 px-3 rounded-lg bg-background border border-brand-800 text-sm text-foreground focus:ring-1 focus:ring-primary outline-none"
+            >
+              <option value="ALL">All Plan Statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFilterQuery('')
+                  setFilterStatus('ALL')
+                }}
+                className="h-10 px-3 font-semibold shrink-0"
+              >
+                Reset
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <DataTable
+          data={filteredPlans}
+          columns={cols as any}
+          rowKey="id"
+          searchable={false}
+          emptyMessage="No membership plans found matching current filters"
+        />
+      </div>
 
       {/* Add / Edit Glassmorphic Dialog Modal */}
       {isModalOpen && (
