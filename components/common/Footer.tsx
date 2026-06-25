@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react'
+import { Mail, MapPin, Send } from 'lucide-react'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -21,11 +21,22 @@ export function Footer() {
               VR Galaxy Networks is a digital earning platform for community growth, membership benefits, task rewards, referrals, and professional networking.
             </p>
             <div className="flex gap-4">
-              {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
-                <a key={i} href="#" className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-white transition-all">
-                  <Icon size={18} />
-                </a>
-              ))}
+              <a
+                href="https://t.me/vrgalaxyceo"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open Telegram"
+                className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-white transition-all"
+              >
+                <Send size={18} />
+              </a>
+              <a
+                href="mailto:vrgalaxynetworksceo@gmail.com"
+                aria-label="Send email"
+                className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-white transition-all"
+              >
+                <Mail size={18} />
+              </a>
             </div>
           </div>
 
@@ -69,15 +80,11 @@ export function Footer() {
             <ul className="space-y-4">
               <li className="flex gap-3 text-sm text-muted-foreground">
                 <Mail size={18} className="text-primary flex-shrink-0" />
-                <span>support@vrgalaxy.com</span>
-              </li>
-              <li className="flex gap-3 text-sm text-muted-foreground">
-                <Phone size={18} className="text-primary flex-shrink-0" />
-                <span>+91 98765 43210</span>
+                <span>vrgalaxynetworksceo@gmail.com</span>
               </li>
               <li className="flex gap-3 text-sm text-muted-foreground">
                 <MapPin size={18} className="text-primary flex-shrink-0" />
-                <span>Financial District, Hyderabad, India</span>
+                <span>Nagercoil, Tamil Nadu, India</span>
               </li>
             </ul>
           </div>
