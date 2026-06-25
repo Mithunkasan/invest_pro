@@ -1,12 +1,13 @@
 'use client'
 
 import { useTransition, useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { DataTable } from '@/components/dashboard/DataTable'
 import { formatDate, formatCurrency, getStatusColor } from '@/utils/formatters'
 import { Button } from '@/components/ui/button'
-import { toggleUserStatus, toggleUserRankAction, updateUserAction, impersonateUserAction } from '@/actions/admin'
+import { assignUserReferrerAction, toggleUserStatus, toggleUserRankAction, updateUserAction, impersonateUserAction } from '@/actions/admin'
 import { toast } from '@/hooks/use-toast'
-import { Search, X, Pencil, Crown } from 'lucide-react'
+import { Search, X, Pencil, Crown, UserPlus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ModalPortal } from '@/components/common/ModalPortal'
 import { getMembershipEndDate } from '@/utils/membershipDates'
@@ -15,6 +16,14 @@ import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 interface UsersTableProps {
   users: any[]
   plans?: any[]
+}
+
+interface ReferralAssignableUser {
+  id: string
+  name: string
+  email: string
+  referralCode?: string | null
+  referredById?: string | null
 }
 
 // ── Helper: derive highest rank label + badge key for a user ──────────────────
@@ -669,7 +678,151 @@ function EditUserModal({ user, plans, onClose }: EditUserModalProps) {
 }
 
 // ── UsersTable ────────────────────────────────────────────────────────────────
+interface AssignReferrerModalProps {
+  user: ReferralAssignableUser
+  users: ReferralAssignableUser[]
+  onClose: () => void
+  onAssigned: () => void
+}
+
+function AssignReferrerModal({ user, users, onClose, onAssigned }: AssignReferrerModalProps) {
+  const [isPending, startTransition] = useTransition()
+  const [referrerId, setReferrerId] = useState('')
+  const [query, setQuery] = useState('')
+
+  const referrerOptions = useMemo(() => {
+    const search = query.trim().toLowerCase()
+    return users
+      .filter((candidate) => candidate.id !== user.id)
+      .filter((candidate) => {
+        if (!search) return true
+        return (
+          candidate.name?.toLowerCase().includes(search) ||
+          candidate.email?.toLowerCase().includes(search) ||
+          candidate.referralCode?.toLowerCase().includes(search)
+        )
+      })
+      .slice(0, 100)
+  }, [query, user.id, users])
+
+  function handleAssign(e: React.FormEvent) {
+    e.preventDefault()
+    startTransition(async () => {
+      const res = await assignUserReferrerAction(user.id, referrerId)
+      if (res.success) {
+        toast({ title: 'Success', description: res.message })
+        onAssigned()
+        onClose()
+      } else {
+        toast({ title: 'Error', description: res.message, variant: 'destructive' })
+      }
+    })
+  }
+
+  return (
+    <ModalPortal>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        style={{ backgroundColor: 'rgba(0,0,0,0.78)' }}
+        onClick={onClose}
+      >
+        <motion.form
+          onSubmit={handleAssign}
+          initial={{ opacity: 0, scale: 0.96, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 16 }}
+          transition={{ type: 'spring', duration: 0.35 }}
+          className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-brand-800 bg-brand-950 p-6 shadow-2xl text-left cursor-default"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between border-b border-brand-800 pb-4">
+            <div>
+              <h3 className="text-lg font-black text-white flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-emerald-400" />
+                Assign Referral Network
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Place <span className="text-primary font-semibold">{user.name}</span> under an existing user&apos;s referral tree.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-brand-300 hover:bg-brand-900 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="mt-4 space-y-4">
+            <div className="text-[11px] font-mono text-brand-300 bg-brand-900/30 px-3 py-2 rounded-lg border border-brand-800/40">
+              User ID: {user.id}<br />
+              Email: {user.email}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-brand-200 mb-1">Search Referrer</label>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by name, email, or referral code"
+                disabled={isPending}
+                className="w-full h-10 px-3 rounded-lg bg-background border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-brand-200 mb-1">Existing Referrer</label>
+              <select
+                value={referrerId}
+                onChange={(e) => setReferrerId(e.target.value)}
+                disabled={isPending}
+                required
+                className="w-full h-10 px-3 rounded-lg bg-background border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+              >
+                <option value="">Select a referrer</option>
+                {referrerOptions.map((candidate) => (
+                  <option key={candidate.id} value={candidate.id}>
+                    {candidate.name} - {candidate.email} ({candidate.referralCode})
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                This creates the same referral relationship as if the user registered with that referral code.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-3 border-t border-brand-800 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isPending}
+              className="px-4 font-semibold text-xs h-9.5"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isPending || !referrerId}
+              className="px-5 font-extrabold text-xs h-9.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl shadow-md transition-all active:scale-95"
+            >
+              {isPending ? 'Assigning...' : 'Assign Referrer'}
+            </Button>
+          </div>
+        </motion.form>
+      </motion.div>
+    </ModalPortal>
+  )
+}
+
 export function UsersTable({ users, plans = [] }: UsersTableProps) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [filterName, setFilterName] = useState('')
   const [filterMembership, setFilterMembership] = useState('ALL')
@@ -678,9 +831,10 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
   const [selectedUser, setSelectedUser] = useState<any | null>(null)
   const [selectedUserMembership, setSelectedUserMembership] = useState<any | null>(null)
   const [editUser, setEditUser] = useState<any | null>(null)
+  const [assignReferralUser, setAssignReferralUser] = useState<ReferralAssignableUser | null>(null)
 
   useEffect(() => {
-    if (selectedUser || editUser || selectedUserMembership) {
+    if (selectedUser || editUser || selectedUserMembership || assignReferralUser) {
       document.body.classList.add('modal-open')
     } else {
       document.body.classList.remove('modal-open')
@@ -688,20 +842,21 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
     return () => {
       document.body.classList.remove('modal-open')
     }
-  }, [selectedUser, editUser, selectedUserMembership])
+  }, [selectedUser, editUser, selectedUserMembership, assignReferralUser])
 
   useEffect(() => {
-    if (!selectedUser && !editUser && !selectedUserMembership) return
+    if (!selectedUser && !editUser && !selectedUserMembership && !assignReferralUser) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSelectedUser(null)
         setEditUser(null)
         setSelectedUserMembership(null)
+        setAssignReferralUser(null)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedUser, editUser, selectedUserMembership])
+  }, [selectedUser, editUser, selectedUserMembership, assignReferralUser])
 
   // Find the selected user in the current list to keep reactive updates
   const currentUser = useMemo(() => {
@@ -877,6 +1032,18 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
           <Pencil className="w-3 h-3 mr-1" />
           Edit
         </Button>
+        {!row.referredById && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-[10px] border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+            onClick={() => setAssignReferralUser(row as ReferralAssignableUser)}
+            disabled={isPending}
+          >
+            <UserPlus className="w-3 h-3 mr-1" />
+            Assign Referrer
+          </Button>
+        )}
         {/* Go to Site Button */}
         <Button
           size="sm"
@@ -1013,6 +1180,17 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
             user={editUser}
             plans={plans}
             onClose={() => setEditUser(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {assignReferralUser && (
+          <AssignReferrerModal
+            user={assignReferralUser}
+            users={users as ReferralAssignableUser[]}
+            onClose={() => setAssignReferralUser(null)}
+            onAssigned={() => router.refresh()}
           />
         )}
       </AnimatePresence>

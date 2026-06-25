@@ -247,6 +247,102 @@ export async function updateUserAction(
   }
 }
 
+// ── Manual Referral Assignment ────────────────────────────────────────────────
+export async function assignUserReferrerAction(
+  userId: string,
+  referrerId: string
+): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  if (!userId || !referrerId) {
+    return { success: false, message: 'Please select both a user and a referrer.' }
+  }
+  if (userId === referrerId) {
+    return { success: false, message: 'A user cannot be assigned under themselves.' }
+  }
+
+  try {
+    const [user, referrer] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, referredById: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: referrerId },
+        select: { id: true, name: true, referredById: true },
+      }),
+    ])
+
+    if (!user) return { success: false, message: 'User not found.' }
+    if (!referrer) return { success: false, message: 'Referrer user not found.' }
+    if (user.referredById) {
+      return { success: false, message: 'This user already belongs to a referral network.' }
+    }
+
+    const visited = new Set<string>([referrer.id])
+    let currentUplineId = referrer.referredById
+    while (currentUplineId) {
+      if (currentUplineId === user.id) {
+        return { success: false, message: 'This assignment would create a circular referral tree.' }
+      }
+      if (visited.has(currentUplineId)) {
+        return { success: false, message: 'The selected referrer already has an invalid circular upline.' }
+      }
+      visited.add(currentUplineId)
+
+      const currentUpline = await prisma.user.findUnique({
+        where: { id: currentUplineId },
+        select: { referredById: true },
+      })
+      currentUplineId = currentUpline?.referredById ?? null
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const claim = await tx.user.updateMany({
+        where: { id: user.id, referredById: null },
+        data: { referredById: referrer.id },
+      })
+      if (claim.count !== 1) {
+        throw new Error('This user already belongs to a referral network.')
+      }
+
+      await tx.referral.deleteMany({
+        where: { referredId: user.id },
+      })
+
+      await tx.referral.create({
+        data: {
+          referrerId: referrer.id,
+          referredId: user.id,
+          commission: 0,
+          level: 1,
+        },
+      })
+
+      await tx.notification.create({
+        data: {
+          userId: user.id,
+          title: 'Referral Network Assigned',
+          message: `Admin placed your account under ${referrer.name}'s referral network.`,
+          type: 'INFO',
+        },
+      })
+    })
+
+    revalidatePath('/admin/dashboard/users')
+    revalidatePath('/admin/dashboard/referrals')
+    revalidatePath('/dashboard/referral')
+    return { success: true, message: `${user.name} has been assigned under ${referrer.name}.` }
+  } catch (error: unknown) {
+    console.error('Error assigning user referrer:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to assign referrer.',
+    }
+  }
+}
+
 // ── Deposit Management ────────────────────────────────────────────────────────
 export async function handleDeposit(depositId: string, action: 'APPROVE' | 'REJECT', remarks?: string): Promise<ApiResponse> {
   const admin = await getAdminSession()
