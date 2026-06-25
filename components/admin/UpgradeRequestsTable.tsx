@@ -2,7 +2,7 @@
 
 import { useTransition, useState, useMemo } from 'react'
 import { DataTable } from '@/components/dashboard/DataTable'
-import { formatDate, formatCurrency } from '@/utils/formatters'
+import { formatDateTime, formatCurrency } from '@/utils/formatters'
 import { Button } from '@/components/ui/button'
 import { processMembershipUpgradeAction } from '@/actions/admin'
 import { toast } from '@/hooks/use-toast'
@@ -89,9 +89,18 @@ export function UpgradeRequestsTable({ requests }: UpgradeRequestsTableProps) {
     },
     {
       key: 'createdAt',
-      label: 'Date Requested',
+      label: 'Request Submitted Time',
       sortable: true,
-      render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span>,
+      render: (v: any) => <span className="text-xs text-muted-foreground">{formatDateTime(String(v))}</span>,
+    },
+    {
+      key: 'updatedAt',
+      label: 'Admin Action Time',
+      render: (_: any, row: any) => (
+        <span className="text-xs text-muted-foreground">
+          {row.status === 'PENDING' ? 'Pending' : formatDateTime(String(row.updatedAt))}
+        </span>
+      ),
     },
     {
       key: 'status',
