@@ -377,6 +377,7 @@ enum TransactionStatus {
 
 enum WalletType {
   MAIN
+  DEPOSIT
   BONUS
   REFERRAL
   LEVEL
@@ -450,6 +451,13 @@ model SystemSettings {
   userPayDeductionPercent    Float   @default(0.0)
   userPayMinimumAmount        Float   @default(1.0)
   userPayMaximumAmount        Float   @default(10000000.0)
+  userPayTransfersEnabled     Boolean @default(true)
+  userPayMainToDepositPercent Float   @default(0.0)
+  userPayDepositToDepositPercent Float @default(0.0)
+  userPayDepositToMainPercent Float   @default(0.0)
+  userPayMainToDepositEnabled Boolean @default(true)
+  userPayDepositToDepositEnabled Boolean @default(true)
+  userPayDepositToMainEnabled Boolean @default(true)
   minimumDepositAmount        Float   @default(1000.0)
   basicDailyYieldPercent     Float   @default(0.2)
   heroMembers             String   @default("25,689+")
@@ -721,6 +729,8 @@ model UserPayRequest {
   deductionPercent   Float             // Deduction Percentage
   deductionAmount    Float             // Deduction Amount
   finalAmount        Float             // Final Transfer Amount
+  sourceWallet        WalletType        @default(MAIN)
+  destinationWallet   WalletType        @default(BONUS)
   status             UserPayStatus     @default(PENDING)
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt

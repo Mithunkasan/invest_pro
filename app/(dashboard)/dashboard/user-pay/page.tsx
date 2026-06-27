@@ -43,8 +43,10 @@ export default async function UserPayPage() {
     where: { id: 'default' }
   })
 
-  const walletBalance = wallet?.mainBalance ?? 0
-  const deductionPercent = settings?.userPayDeductionPercent ?? 0.0
+  const mainWalletBalance = wallet?.mainBalance ?? 0
+  const depositWalletBalance = wallet?.depositBalance ?? 0
+  const fallbackDeductionPercent = settings?.userPayDeductionPercent ?? 0.0
+  const fallbackTransfersEnabled = settings?.userPayTransfersEnabled ?? true
   const minimumAmount = settings?.userPayMinimumAmount ?? 1.0
   const maximumAmount = settings?.userPayMaximumAmount ?? 10000000.0
 
@@ -61,8 +63,22 @@ export default async function UserPayPage() {
 
       <UserPayClient
         userId={session.id}
-        walletBalance={walletBalance}
-        deductionPercent={deductionPercent}
+        mainWalletBalance={mainWalletBalance}
+        depositWalletBalance={depositWalletBalance}
+        transferSettings={{
+          MAIN_TO_DEPOSIT: {
+            deductionPercent: settings?.userPayMainToDepositPercent ?? fallbackDeductionPercent,
+            enabled: settings?.userPayMainToDepositEnabled ?? fallbackTransfersEnabled,
+          },
+          DEPOSIT_TO_DEPOSIT: {
+            deductionPercent: settings?.userPayDepositToDepositPercent ?? fallbackDeductionPercent,
+            enabled: settings?.userPayDepositToDepositEnabled ?? fallbackTransfersEnabled,
+          },
+          DEPOSIT_TO_MAIN: {
+            deductionPercent: settings?.userPayDepositToMainPercent ?? fallbackDeductionPercent,
+            enabled: settings?.userPayDepositToMainEnabled ?? fallbackTransfersEnabled,
+          },
+        }}
         minimumAmount={minimumAmount}
         maximumAmount={maximumAmount}
         initialRequests={JSON.parse(JSON.stringify(requests))}

@@ -9,7 +9,7 @@ export type PlanStatus = 'ACTIVE' | 'INACTIVE'
 export type InvestmentStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED'
 export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL' | 'INVESTMENT' | 'PROFIT' | 'REFERRAL_BONUS' | 'BONUS' | 'LEVEL_INCOME' | 'REWARD' | 'SHARE_BONUS'
 export type TransactionStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
-export type WalletType = 'MAIN' | 'BONUS' | 'REFERRAL' | 'LEVEL' | 'REWARD' | 'SHARE'
+export type WalletType = 'MAIN' | 'DEPOSIT' | 'BONUS' | 'REFERRAL' | 'LEVEL' | 'REWARD' | 'SHARE'
 export type DepositMethod = 'UPI' | 'BANK_TRANSFER' | 'QR_CODE'
 export type DepositStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type WithdrawalStatus = 'PENDING' | 'PROCESSING' | 'APPROVED' | 'REJECTED'
@@ -201,6 +201,13 @@ export interface SystemSettings {
   basicDailyYieldPercent: number
   withdrawalDeductionPercent: number
   userPayDeductionPercent: number
+  userPayTransfersEnabled: boolean
+  userPayMainToDepositPercent: number
+  userPayDepositToDepositPercent: number
+  userPayDepositToMainPercent: number
+  userPayMainToDepositEnabled: boolean
+  userPayDepositToDepositEnabled: boolean
+  userPayDepositToMainEnabled: boolean
   giftDepositAmount: number
   createdAt: Date
   updatedAt: Date
