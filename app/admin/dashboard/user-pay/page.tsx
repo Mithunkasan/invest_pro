@@ -19,6 +19,9 @@ export default async function AdminUserPayPage() {
     prisma.systemSettings.findUnique({ where: { id: 'default' } }),
   ])
 
+  const fallbackDeductionPercent = settings?.userPayDeductionPercent ?? 0.0
+  const fallbackTransfersEnabled = settings?.userPayTransfersEnabled ?? true
+
   return (
     <div className="space-y-6">
       <div>
@@ -30,9 +33,14 @@ export default async function AdminUserPayPage() {
 
       <UserPaySettingsForm
         initialSettings={{
-          deductionPercent: settings?.userPayDeductionPercent ?? 0.0,
+          mainToDepositPercent: settings?.userPayMainToDepositPercent ?? fallbackDeductionPercent,
+          depositToDepositPercent: settings?.userPayDepositToDepositPercent ?? fallbackDeductionPercent,
+          depositToMainPercent: settings?.userPayDepositToMainPercent ?? fallbackDeductionPercent,
           minimumAmount: settings?.userPayMinimumAmount ?? 1.0,
           maximumAmount: settings?.userPayMaximumAmount ?? 10000000.0,
+          mainToDepositEnabled: settings?.userPayMainToDepositEnabled ?? fallbackTransfersEnabled,
+          depositToDepositEnabled: settings?.userPayDepositToDepositEnabled ?? fallbackTransfersEnabled,
+          depositToMainEnabled: settings?.userPayDepositToMainEnabled ?? fallbackTransfersEnabled,
         }}
       />
 

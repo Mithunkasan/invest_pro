@@ -52,6 +52,14 @@ export async function deleteUserAction(userId: string, emailConfirmation: string
         where: { referredById: user.id },
         data: { referredById: null },
       })
+      await tx.referral.deleteMany({
+        where: {
+          OR: [
+            { referrerId: user.id },
+            { referredId: user.id },
+          ],
+        },
+      })
       await tx.user.delete({
         where: { id: user.id },
       })
@@ -701,6 +709,13 @@ export async function getSystemSettings(): Promise<any> {
           directorRankEnabled: true,
           withdrawalDeductionPercent: 20.0,
           userPayDeductionPercent: 0.0,
+          userPayTransfersEnabled: true,
+          userPayMainToDepositPercent: 0.0,
+          userPayDepositToDepositPercent: 0.0,
+          userPayDepositToMainPercent: 0.0,
+          userPayMainToDepositEnabled: true,
+          userPayDepositToDepositEnabled: true,
+          userPayDepositToMainEnabled: true,
           basicDailyYieldPercent: 0.2,
           heroMembers: '25,689+',
           heroActive: '8,932+',

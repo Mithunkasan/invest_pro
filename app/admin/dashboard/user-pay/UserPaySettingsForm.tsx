@@ -21,24 +21,61 @@ const Label = (props: React.LabelHTMLAttributes<HTMLLabelElement>) => (
 
 interface UserPaySettingsFormProps {
   initialSettings: {
-    deductionPercent: number
+    mainToDepositPercent: number
+    depositToDepositPercent: number
+    depositToMainPercent: number
     minimumAmount: number
     maximumAmount: number
+    mainToDepositEnabled: boolean
+    depositToDepositEnabled: boolean
+    depositToMainEnabled: boolean
   }
 }
 
+type SettingsState = {
+  mainToDepositPercent: number | ''
+  depositToDepositPercent: number | ''
+  depositToMainPercent: number | ''
+  minimumAmount: number | ''
+  maximumAmount: number | ''
+  mainToDepositEnabled: boolean
+  depositToDepositEnabled: boolean
+  depositToMainEnabled: boolean
+}
+
+const transferRoutes: Array<{
+  label: string
+  enabledName: 'mainToDepositEnabled' | 'depositToDepositEnabled' | 'depositToMainEnabled'
+  percentName: 'mainToDepositPercent' | 'depositToDepositPercent' | 'depositToMainPercent'
+}> = [
+  {
+    label: 'Main Wallet -> Deposit Wallet',
+    enabledName: 'mainToDepositEnabled',
+    percentName: 'mainToDepositPercent',
+  },
+  {
+    label: 'Deposit Wallet -> Deposit Wallet',
+    enabledName: 'depositToDepositEnabled',
+    percentName: 'depositToDepositPercent',
+  },
+  {
+    label: 'Deposit Wallet -> Main Wallet',
+    enabledName: 'depositToMainEnabled',
+    percentName: 'depositToMainPercent',
+  },
+]
+
 export function UserPaySettingsForm({ initialSettings }: UserPaySettingsFormProps) {
-  const [settings, setSettings] = useState<{
-    deductionPercent: number | ''
-    minimumAmount: number | ''
-    maximumAmount: number | ''
-  }>(initialSettings)
+  const [settings, setSettings] = useState<SettingsState>(initialSettings)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target
-    setSettings((current) => ({ ...current, [name]: value === '' ? '' : Number(value) }))
+    const { name, type, value, checked } = event.target
+    setSettings((current) => ({
+      ...current,
+      [name]: type === 'checkbox' ? checked : value === '' ? '' : Number(value),
+    }))
   }
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -48,9 +85,14 @@ export function UserPaySettingsForm({ initialSettings }: UserPaySettingsFormProp
 
     try {
       const result = await updateUserPaySettingsAction({
-        deductionPercent: Number(settings.deductionPercent),
+        mainToDepositPercent: Number(settings.mainToDepositPercent),
+        depositToDepositPercent: Number(settings.depositToDepositPercent),
+        depositToMainPercent: Number(settings.depositToMainPercent),
         minimumAmount: Number(settings.minimumAmount),
         maximumAmount: Number(settings.maximumAmount),
+        mainToDepositEnabled: settings.mainToDepositEnabled,
+        depositToDepositEnabled: settings.depositToDepositEnabled,
+        depositToMainEnabled: settings.depositToMainEnabled,
       })
       setMessage({ type: result.success ? 'success' : 'error', text: result.message })
     } catch {
@@ -77,30 +119,53 @@ export function UserPaySettingsForm({ initialSettings }: UserPaySettingsFormProp
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-        <div className="space-y-2">
-          <Label htmlFor="deductionPercent">Send Money Deduction Percentage (%)</Label>
-          <div className="relative flex items-center">
-            <Input
-              id="deductionPercent"
-              name="deductionPercent"
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              value={settings.deductionPercent}
-              onChange={handleChange}
-              disabled={loading}
-              className="pr-8 font-medium text-white"
-              required
-            />
-            <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
-          </div>
-          <p className="text-[11px] text-muted-foreground">Percentage deducted from Send Money transfers. Set to 0 for no deduction.</p>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-2">
+        {transferRoutes.map((route) => (
+          <div key={route.percentName} className="rounded-xl border border-border/60 bg-background/30 p-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor={route.enabledName}>{route.label}</Label>
+              <label className="flex h-10 items-center gap-3 rounded-md border border-border bg-background/50 px-3 py-2 text-sm">
+                <input
+                  id={route.enabledName}
+                  name={route.enabledName}
+                  type="checkbox"
+                  checked={settings[route.enabledName]}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className="h-4 w-4 rounded border-border"
+                />
+                <span className="font-medium text-white">
+                  {settings[route.enabledName] ? 'Enabled' : 'Disabled'}
+                </span>
+              </label>
+            </div>
 
+            <div className="space-y-2">
+              <Label htmlFor={route.percentName}>Transfer Charge (%)</Label>
+              <div className="relative flex items-center">
+                <Input
+                  id={route.percentName}
+                  name={route.percentName}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={settings[route.percentName]}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className="pr-8 font-medium text-white"
+                  required
+                />
+                <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
         <div className="space-y-2">
-          <Label htmlFor="minimumAmount">Minimum Amount (₹)</Label>
+          <Label htmlFor="minimumAmount">Minimum Amount (INR)</Label>
           <div className="relative flex items-center">
             <Input
               id="minimumAmount"
@@ -111,16 +176,16 @@ export function UserPaySettingsForm({ initialSettings }: UserPaySettingsFormProp
               value={settings.minimumAmount}
               onChange={handleChange}
               disabled={loading}
-              className="pl-8 font-medium text-white"
+              className="pl-10 font-medium text-white"
               required
             />
-            <span className="absolute left-3 text-sm text-muted-foreground font-bold pointer-events-none">₹</span>
+            <span className="absolute left-3 text-sm text-muted-foreground font-bold pointer-events-none">Rs</span>
           </div>
           <p className="text-[11px] text-muted-foreground">Smallest amount a user can send in one transfer.</p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="maximumAmount">Maximum Amount (₹)</Label>
+          <Label htmlFor="maximumAmount">Maximum Amount (INR)</Label>
           <div className="relative flex items-center">
             <Input
               id="maximumAmount"
@@ -131,10 +196,10 @@ export function UserPaySettingsForm({ initialSettings }: UserPaySettingsFormProp
               value={settings.maximumAmount}
               onChange={handleChange}
               disabled={loading}
-              className="pl-8 font-medium text-white"
+              className="pl-10 font-medium text-white"
               required
             />
-            <span className="absolute left-3 text-sm text-muted-foreground font-bold pointer-events-none">₹</span>
+            <span className="absolute left-3 text-sm text-muted-foreground font-bold pointer-events-none">Rs</span>
           </div>
           <p className="text-[11px] text-muted-foreground">Largest amount a user can send in one transfer.</p>
         </div>

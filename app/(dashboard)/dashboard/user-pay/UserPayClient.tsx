@@ -24,14 +24,42 @@ const Label = (props: React.LabelHTMLAttributes<HTMLLabelElement>) => (
 
 interface UserPayClientProps {
   userId: string
-  walletBalance: number
-  deductionPercent: number
+  mainWalletBalance: number
+  depositWalletBalance: number
   minimumAmount: number
   maximumAmount: number
+  transferSettings: Record<TransferType, { deductionPercent: number; enabled: boolean }>
   initialRequests: any[]
 }
 
-export function UserPayClient({ userId, walletBalance, deductionPercent, minimumAmount, maximumAmount, initialRequests }: UserPayClientProps) {
+type TransferType = 'MAIN_TO_DEPOSIT' | 'DEPOSIT_TO_DEPOSIT' | 'DEPOSIT_TO_MAIN'
+
+const transferOptions: Array<{ value: TransferType; label: string; sourceWallet: 'MAIN' | 'DEPOSIT'; destinationWallet: 'MAIN' | 'DEPOSIT' }> = [
+  { value: 'MAIN_TO_DEPOSIT', label: 'Main Wallet -> Deposit Wallet', sourceWallet: 'MAIN', destinationWallet: 'DEPOSIT' },
+  { value: 'DEPOSIT_TO_DEPOSIT', label: 'Deposit Wallet -> Deposit Wallet', sourceWallet: 'DEPOSIT', destinationWallet: 'DEPOSIT' },
+  { value: 'DEPOSIT_TO_MAIN', label: 'Deposit Wallet -> Main Wallet', sourceWallet: 'DEPOSIT', destinationWallet: 'MAIN' },
+]
+
+function walletLabel(walletType?: string) {
+  if (walletType === 'DEPOSIT') return 'Deposit Wallet'
+  if (walletType === 'MAIN') return 'Main Wallet'
+  if (walletType === 'BONUS') return 'Bonus Wallet'
+  if (walletType === 'REFERRAL') return 'Referral Wallet'
+  if (walletType === 'LEVEL') return 'Level Wallet'
+  if (walletType === 'REWARD') return 'Reward Wallet'
+  if (walletType === 'SHARE') return 'Share Wallet'
+  return 'Wallet'
+}
+
+export function UserPayClient({
+  userId,
+  mainWalletBalance,
+  depositWalletBalance,
+  minimumAmount,
+  maximumAmount,
+  transferSettings,
+  initialRequests
+}: UserPayClientProps) {
   const [email, setEmail] = useState('')
   const [recipientId, setRecipientId] = useState('')
   const [recipientName, setRecipientName] = useState('')
@@ -39,6 +67,7 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
   const [emailError, setEmailError] = useState('')
 
   const [amount, setAmount] = useState('')
+  const [transferType, setTransferType] = useState<TransferType>('DEPOSIT_TO_DEPOSIT')
   const [isPending, startTransition] = useTransition()
   const [requests, setRequests] = useState(initialRequests)
 
@@ -82,16 +111,22 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
 
   // Calculation parameters
   const enteredAmount = Number(amount) || 0
+  const selectedTransfer = transferOptions.find((option) => option.value === transferType) || transferOptions[1]
+  const selectedTransferSettings = transferSettings[transferType]
+  const deductionPercent = selectedTransferSettings.deductionPercent
+  const transferEnabled = selectedTransferSettings.enabled
+  const isUserToUserTransfer = transferType === 'DEPOSIT_TO_DEPOSIT'
+  const selectedWalletBalance = selectedTransfer.sourceWallet === 'MAIN' ? mainWalletBalance : depositWalletBalance
   const calculatedDeduction = (enteredAmount * deductionPercent) / 100
   const finalTransferAmount = Math.max(0, enteredAmount - calculatedDeduction)
   const amountBelowMinimum = enteredAmount > 0 && enteredAmount < minimumAmount
   const amountAboveMaximum = enteredAmount > maximumAmount
-  const maximumTransferableAmount = Math.min(walletBalance, maximumAmount)
+  const maximumTransferableAmount = Math.min(selectedWalletBalance, maximumAmount)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!recipientId) {
+    if (isUserToUserTransfer && !recipientId) {
       toast({ title: 'Error', description: 'Please enter a valid recipient email.', variant: 'destructive' })
       return
     }
@@ -107,15 +142,20 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
       })
       return
     }
-    if (enteredAmount > walletBalance) {
-      toast({ title: 'Error', description: 'Insufficient Main Wallet Balance.', variant: 'destructive' })
+    if (!transferEnabled) {
+      toast({ title: 'Error', description: `${selectedTransfer.label} transfers are currently disabled by admin.`, variant: 'destructive' })
+      return
+    }
+    if (enteredAmount > selectedWalletBalance) {
+      toast({ title: 'Error', description: `Insufficient ${walletLabel(selectedTransfer.sourceWallet)} Balance.`, variant: 'destructive' })
       return
     }
 
     startTransition(async () => {
       const res = await submitUserPayRequestAction({
-        recipientEmail: email,
-        amount: enteredAmount
+        recipientEmail: isUserToUserTransfer ? email : '',
+        amount: enteredAmount,
+        transferType
       })
 
       if (res.success) {
@@ -148,52 +188,85 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            
-            {/* Recipient Email */}
-            <div className="space-y-2">
-              <Label htmlFor="recipientEmail">Recipient Email</Label>
-              <div className="relative">
-                <Input
-                  id="recipientEmail"
-                  type="email"
-                  placeholder="user@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isPending}
-                  className="pr-10"
-                />
-                <div className="absolute right-3 top-2.5 flex items-center">
-                  {isValidatingEmail && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                  )}
-                  {!isValidatingEmail && recipientId && (
-                    <Check className="w-4 h-4 text-green-500" />
-                  )}
-                  {!isValidatingEmail && emailError && (
-                    <AlertCircle className="w-4 h-4 text-red-500" />
-                  )}
-                </div>
+            {!transferEnabled && (
+              <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+                {selectedTransfer.label} transfers are currently disabled by admin.
               </div>
-              {recipientName && (
-                <p className="text-xs text-green-400 font-medium">Recipient Name: {recipientName}</p>
-              )}
-              {emailError && (
-                <p className="text-xs text-red-400 font-medium">{emailError}</p>
-              )}
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="transferType">Transfer Type</Label>
+              <select
+                id="transferType"
+                value={transferType}
+                onChange={(e) => {
+                  setTransferType(e.target.value as TransferType)
+                  setAmount('')
+                  setEmail('')
+                  setRecipientId('')
+                  setRecipientName('')
+                  setEmailError('')
+                }}
+                disabled={isPending}
+                className="flex h-10 w-full rounded-md border border-border bg-background/50 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {transferOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}{transferSettings[option.value].enabled ? '' : ' (Disabled)'}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Recipient User ID (Auto-filled) */}
-            <div className="space-y-2">
-              <Label htmlFor="recipientId">Recipient User ID</Label>
-              <Input
-                id="recipientId"
-                type="text"
-                placeholder="Auto-filled after email validation"
-                value={recipientId}
-                disabled
-                className="bg-muted/40 font-mono text-xs select-all text-white/70 border-dashed"
-              />
-            </div>
+            {isUserToUserTransfer && (
+              <>
+                {/* Recipient Email */}
+                <div className="space-y-2">
+                  <Label htmlFor="recipientEmail">Recipient Email</Label>
+                  <div className="relative">
+                    <Input
+                      id="recipientEmail"
+                      type="email"
+                      placeholder="user@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={isPending || !transferEnabled}
+                      className="pr-10"
+                    />
+                    <div className="absolute right-3 top-2.5 flex items-center">
+                      {isValidatingEmail && (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                      )}
+                      {!isValidatingEmail && recipientId && (
+                        <Check className="w-4 h-4 text-green-500" />
+                      )}
+                      {!isValidatingEmail && emailError && (
+                        <AlertCircle className="w-4 h-4 text-red-500" />
+                      )}
+                    </div>
+                  </div>
+                  {recipientName && (
+                    <p className="text-xs text-green-400 font-medium">Recipient Name: {recipientName}</p>
+                  )}
+                  {emailError && (
+                    <p className="text-xs text-red-400 font-medium">{emailError}</p>
+                  )}
+                </div>
+
+                {/* Recipient User ID (Auto-filled) */}
+                <div className="space-y-2">
+                  <Label htmlFor="recipientId">Recipient User ID</Label>
+                  <Input
+                    id="recipientId"
+                    type="text"
+                    placeholder="Auto-filled after email validation"
+                    value={recipientId}
+                    disabled
+                    className="bg-muted/40 font-mono text-xs select-all text-white/70 border-dashed"
+                  />
+                </div>
+              </>
+            )}
 
             {/* Amount */}
             <div className="space-y-2">
@@ -202,6 +275,7 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
                 <button
                   type="button"
                   onClick={() => setAmount(String(maximumTransferableAmount))}
+                  disabled={!transferEnabled}
                   className="text-xs text-primary hover:text-primary-foreground font-semibold"
                 >
                   Use Max
@@ -217,14 +291,14 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
                   max={maximumAmount}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  disabled={isPending}
+                  disabled={isPending || !transferEnabled}
                   className="pr-8"
                 />
                 <span className="absolute right-3 top-2 text-sm text-muted-foreground font-semibold">₹</span>
               </div>
-              {enteredAmount > walletBalance && (
+              {enteredAmount > selectedWalletBalance && (
                 <p className="text-xs text-red-400 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" /> Amount exceeds available Main Wallet balance
+                  <AlertCircle className="w-3.5 h-3.5" /> Amount exceeds available {walletLabel(selectedTransfer.sourceWallet)} balance
                 </p>
               )}
               {(amountBelowMinimum || amountAboveMaximum) && (
@@ -236,6 +310,14 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
 
             {/* Dynamic Transfer Details Breakdown */}
             <div className="p-4 rounded-xl bg-background/60 border border-muted/50 space-y-2.5 text-sm">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Source Wallet</span>
+                <span className="font-semibold text-white">{walletLabel(selectedTransfer.sourceWallet)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Destination Wallet</span>
+                <span className="font-semibold text-white">{walletLabel(selectedTransfer.destinationWallet)}</span>
+              </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Entered Amount</span>
                 <span className="font-semibold text-white">{formatCurrency(enteredAmount)}</span>
@@ -257,7 +339,7 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
 
             <Button
               type="submit"
-              disabled={isPending || !recipientId || enteredAmount <= 0 || amountBelowMinimum || amountAboveMaximum || enteredAmount > walletBalance}
+              disabled={!transferEnabled || isPending || (isUserToUserTransfer && !recipientId) || enteredAmount <= 0 || amountBelowMinimum || amountAboveMaximum || enteredAmount > selectedWalletBalance}
               className="w-full h-11 transition-all"
             >
               {isPending ? 'Sending...' : 'Send'}
@@ -271,21 +353,21 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
             
             <div className="flex items-center gap-2 text-white/70 text-xs font-semibold uppercase tracking-wider mb-2">
-              <Wallet className="w-4 h-4 text-blue-400" /> Available Main Wallet Balance
+              <Wallet className="w-4 h-4 text-blue-400" /> Available {walletLabel(selectedTransfer.sourceWallet)} Balance
             </div>
-            <p className="text-3xl font-black text-white">{formatCurrency(walletBalance)}</p>
+            <p className="text-3xl font-black text-white">{formatCurrency(selectedWalletBalance)}</p>
             <div className="grid grid-cols-2 gap-3 mt-5">
               <div className="rounded-lg bg-white/5 border border-white/10 p-3">
-                <p className="text-[11px] text-white/50">Minimum Amount</p>
-                <p className="text-sm font-bold text-white mt-1">{formatCurrency(minimumAmount)}</p>
+                <p className="text-[11px] text-white/50">Main Wallet</p>
+                <p className="text-sm font-bold text-white mt-1">{formatCurrency(mainWalletBalance)}</p>
               </div>
               <div className="rounded-lg bg-white/5 border border-white/10 p-3">
-                <p className="text-[11px] text-white/50">Maximum Amount</p>
-                <p className="text-sm font-bold text-white mt-1">{formatCurrency(maximumAmount)}</p>
+                <p className="text-[11px] text-white/50">Deposit Wallet</p>
+                <p className="text-sm font-bold text-white mt-1">{formatCurrency(depositWalletBalance)}</p>
               </div>
             </div>
             <p className="text-xs text-white/50 mt-2 leading-relaxed">
-              Only Main Wallet balance is eligible for user transfers. Deposit balances cannot be directly sent.
+              Selected route: {walletLabel(selectedTransfer.sourceWallet)} to {walletLabel(selectedTransfer.destinationWallet)}.
             </p>
           </div>
 
@@ -296,11 +378,11 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
             <ul className="text-xs text-muted-foreground space-y-2.5 leading-normal">
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                <span>Peer-to-peer transfers are instant and credited directly to the receiver's account.</span>
+                <span>Peer-to-peer transfers are instant and recorded for admin monitoring.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                <span>The sender must possess sufficient Main Wallet balance.</span>
+                <span>The sender must possess sufficient balance in the selected source wallet.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
@@ -331,6 +413,7 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
                 <tr className="border-b border-border text-muted-foreground text-xs uppercase font-semibold">
                   <th className="py-3 px-4">Type</th>
                   <th className="py-3 px-4">Party Details</th>
+                  <th className="py-3 px-4">Wallet Route</th>
                   <th className="py-3 px-4">Amount</th>
                   <th className="py-3 px-4">Deduction</th>
                   <th className="py-3 px-4">Final Net</th>
@@ -366,6 +449,10 @@ export function UserPayClient({ userId, walletBalance, deductionPercent, minimum
                             <p className="text-xs text-muted-foreground">ID: {req.senderId}</p>
                           </div>
                         )}
+                      </td>
+                      <td className="py-3.5 px-4 text-xs text-muted-foreground">
+                        <p className="font-semibold text-white/80">{walletLabel(req.sourceWallet)}</p>
+                        <p>to {walletLabel(req.destinationWallet)}</p>
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-white">
                         {formatCurrency(req.amount)}
