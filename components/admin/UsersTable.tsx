@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import { DataTable } from '@/components/dashboard/DataTable'
 import { formatDate, formatCurrency, getStatusColor } from '@/utils/formatters'
 import { Button } from '@/components/ui/button'
-import { assignUserReferrerAction, toggleUserStatus, toggleUserRankAction, updateUserAction, impersonateUserAction } from '@/actions/admin'
+import { assignUserReferrerAction, toggleUserStatus, toggleUserRankAction, updateUserAction, impersonateUserAction, deleteUserAction } from '@/actions/admin'
 import { toast } from '@/hooks/use-toast'
-import { Search, X, Pencil, Crown, UserPlus } from 'lucide-react'
+import { Search, X, Pencil, Crown, UserPlus, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ModalPortal } from '@/components/common/ModalPortal'
 import { getMembershipEndDate } from '@/utils/membershipDates'
@@ -24,6 +24,12 @@ interface ReferralAssignableUser {
   email: string
   referralCode?: string | null
   referredById?: string | null
+}
+
+interface DeletableUser {
+  id: string
+  name: string
+  email: string
 }
 
 // ── Helper: derive highest rank label + badge key for a user ──────────────────
@@ -821,6 +827,149 @@ function AssignReferrerModal({ user, users, onClose, onAssigned }: AssignReferre
   )
 }
 
+interface DeleteUserModalProps {
+  user: DeletableUser
+  onClose: () => void
+  onDeleted: () => void
+}
+
+function DeleteUserModal({ user, onClose, onDeleted }: DeleteUserModalProps) {
+  const [isPending, startTransition] = useTransition()
+  const [step, setStep] = useState<'confirm' | 'email'>('confirm')
+  const [emailConfirmation, setEmailConfirmation] = useState('')
+  const [error, setError] = useState('')
+
+  function handleDelete(e: React.FormEvent) {
+    e.preventDefault()
+    if (emailConfirmation !== user.email) {
+      setError('Email address does not match. User was not deleted.')
+      return
+    }
+
+    setError('')
+    startTransition(async () => {
+      const res = await deleteUserAction(user.id, emailConfirmation)
+      if (res.success) {
+        toast({ title: 'Success', description: res.message })
+        onDeleted()
+        onClose()
+      } else {
+        setError(res.message)
+        toast({ title: 'Error', description: res.message, variant: 'destructive' })
+      }
+    })
+  }
+
+  return (
+    <ModalPortal>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        style={{ backgroundColor: 'rgba(0,0,0,0.78)' }}
+        onClick={onClose}
+      >
+        <motion.form
+          onSubmit={handleDelete}
+          initial={{ opacity: 0, scale: 0.96, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 16 }}
+          transition={{ type: 'spring', duration: 0.35 }}
+          className="relative w-full max-w-md overflow-hidden rounded-2xl border border-red-500/30 bg-brand-950 p-6 shadow-2xl text-left cursor-default"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between border-b border-brand-800 pb-4">
+            <div>
+              <h3 className="text-lg font-black text-white flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-red-400" />
+                Delete User
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {user.name} - {user.email}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-brand-300 hover:bg-brand-900 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {step === 'confirm' ? (
+            <div className="mt-5 space-y-5">
+              <p className="text-sm font-semibold text-white">Are you sure you want to delete this user?</p>
+              <div className="flex justify-end gap-3 border-t border-brand-800 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="px-4 font-semibold text-xs h-9.5"
+                >
+                  No
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setStep('email')}
+                  className="px-5 font-extrabold text-xs h-9.5 bg-red-600 hover:bg-red-500 text-white rounded-xl shadow-md transition-all active:scale-95"
+                >
+                  Yes
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-brand-200 mb-1">
+                  Copy and paste the user&apos;s email address to confirm
+                </label>
+                <input
+                  type="email"
+                  value={emailConfirmation}
+                  onChange={(e) => {
+                    setEmailConfirmation(e.target.value)
+                    if (error) setError('')
+                  }}
+                  disabled={isPending}
+                  className="w-full h-10 px-3 rounded-lg bg-background border border-border/60 text-sm text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                />
+                <p className="mt-2 text-[11px] font-mono text-brand-300">{user.email}</p>
+              </div>
+
+              {error && (
+                <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300">
+                  {error}
+                </p>
+              )}
+
+              <div className="flex justify-end gap-3 border-t border-brand-800 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={isPending}
+                  className="px-4 font-semibold text-xs h-9.5"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-5 font-extrabold text-xs h-9.5 bg-red-600 hover:bg-red-500 text-white rounded-xl shadow-md transition-all active:scale-95"
+                >
+                  {isPending ? 'Deleting...' : 'Delete'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </motion.form>
+      </motion.div>
+    </ModalPortal>
+  )
+}
+
 export function UsersTable({ users, plans = [] }: UsersTableProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -832,9 +981,10 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
   const [selectedUserMembership, setSelectedUserMembership] = useState<any | null>(null)
   const [editUser, setEditUser] = useState<any | null>(null)
   const [assignReferralUser, setAssignReferralUser] = useState<ReferralAssignableUser | null>(null)
+  const [deleteUser, setDeleteUser] = useState<DeletableUser | null>(null)
 
   useEffect(() => {
-    if (selectedUser || editUser || selectedUserMembership || assignReferralUser) {
+    if (selectedUser || editUser || selectedUserMembership || assignReferralUser || deleteUser) {
       document.body.classList.add('modal-open')
     } else {
       document.body.classList.remove('modal-open')
@@ -842,21 +992,22 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
     return () => {
       document.body.classList.remove('modal-open')
     }
-  }, [selectedUser, editUser, selectedUserMembership, assignReferralUser])
+  }, [selectedUser, editUser, selectedUserMembership, assignReferralUser, deleteUser])
 
   useEffect(() => {
-    if (!selectedUser && !editUser && !selectedUserMembership && !assignReferralUser) return
+    if (!selectedUser && !editUser && !selectedUserMembership && !assignReferralUser && !deleteUser) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSelectedUser(null)
         setEditUser(null)
         setSelectedUserMembership(null)
         setAssignReferralUser(null)
+        setDeleteUser(null)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedUser, editUser, selectedUserMembership, assignReferralUser])
+  }, [selectedUser, editUser, selectedUserMembership, assignReferralUser, deleteUser])
 
   // Find the selected user in the current list to keep reactive updates
   const currentUser = useMemo(() => {
@@ -1081,6 +1232,16 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
         >
           {row.status === 'ACTIVE' ? 'Suspend' : 'Activate'}
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 px-2 text-[10px] border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+          onClick={() => setDeleteUser(row as DeletableUser)}
+          disabled={isPending}
+        >
+          <Trash2 className="w-3 h-3 mr-1" />
+          Delete
+        </Button>
       </div>
     )},
   ]
@@ -1191,6 +1352,16 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
             users={users as ReferralAssignableUser[]}
             onClose={() => setAssignReferralUser(null)}
             onAssigned={() => router.refresh()}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deleteUser && (
+          <DeleteUserModal
+            user={deleteUser}
+            onClose={() => setDeleteUser(null)}
+            onDeleted={() => router.refresh()}
           />
         )}
       </AnimatePresence>

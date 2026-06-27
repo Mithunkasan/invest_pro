@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { TrendingUp, Eye, EyeOff, Mail, Lock, User, Phone, Gift } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { registerAction } from '@/actions/auth'
+import { getReferrerByCodeAction, registerAction } from '@/actions/auth'
 import { useFormStatus } from 'react-dom'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
@@ -31,6 +31,26 @@ function RegisterForm() {
   const [success, setSuccess] = useState('')
   const searchParams = useSearchParams()
   const refCode = searchParams.get('ref') || ''
+  const [referralCode, setReferralCode] = useState(refCode)
+  const [referrer, setReferrer] = useState<{ name: string; email: string } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const code = referralCode.trim()
+
+    if (!code) {
+      return
+    }
+
+    getReferrerByCodeAction(code).then((result) => {
+      if (cancelled) return
+      setReferrer(result.success && result.data ? result.data : null)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [referralCode])
 
   async function handleAction(formData: FormData) {
     setError('')
@@ -130,8 +150,24 @@ function RegisterForm() {
           <label className="text-xs text-white/70 font-medium block mb-1">Referral Code (Optional)</label>
           <div className="relative">
             <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-            <input name="referralCode" type="text" defaultValue={refCode} placeholder="ARJUN001" className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400 text-sm transition-all" />
+            <input
+              name="referralCode"
+              type="text"
+              value={referralCode}
+              onChange={(e) => {
+                setReferralCode(e.target.value)
+                setReferrer(null)
+              }}
+              placeholder="ARJUN001"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400 text-sm transition-all"
+            />
           </div>
+          {referrer && (
+            <div className="mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-300">
+              <p className="font-semibold text-emerald-200">Referred by {referrer.name}</p>
+              <p className="mt-0.5 break-all">{referrer.email}</p>
+            </div>
+          )}
         </div>
 
         {/* Terms */}

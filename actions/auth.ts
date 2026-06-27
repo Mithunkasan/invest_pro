@@ -85,6 +85,34 @@ export async function loginAction(
 }
 
 // ── User Register ─────────────────────────────────────────────────────────────
+export async function getReferrerByCodeAction(
+  referralCode: string
+): Promise<ApiResponse<{ name: string; email: string }>> {
+  const code = referralCode.trim()
+  if (!code) return { success: false, message: 'Referral code is required' }
+
+  const referrerResult = await prisma.user.findUnique({
+    where: { referralCode: code },
+    select: { name: true, email: true },
+  }).catch((error) => databaseErrorResponse(error, 'Referral lookup'))
+  if (referrerResult && 'success' in referrerResult) {
+    return { success: false, message: referrerResult.message, errors: referrerResult.errors }
+  }
+
+  if (!referrerResult) {
+    return { success: false, message: 'Invalid referral code' }
+  }
+
+  return {
+    success: true,
+    message: 'Referrer found',
+    data: {
+      name: referrerResult.name,
+      email: referrerResult.email,
+    },
+  }
+}
+
 export async function registerAction(
   formData: FormData
 ): Promise<ApiResponse> {

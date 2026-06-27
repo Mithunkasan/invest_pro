@@ -31,6 +31,40 @@ export async function toggleUserStatus(userId: string): Promise<ApiResponse> {
   }
 }
 
+// ── Delete User ───────────────────────────────────────────────────────────────
+export async function deleteUserAction(userId: string, emailConfirmation: string): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    })
+    if (!user) return { success: false, message: 'User not found' }
+
+    if (emailConfirmation !== user.email) {
+      return { success: false, message: 'Email address does not match. User was not deleted.' }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.updateMany({
+        where: { referredById: user.id },
+        data: { referredById: null },
+      })
+      await tx.user.delete({
+        where: { id: user.id },
+      })
+    })
+
+    revalidatePath('/admin/dashboard/users')
+    return { success: true, message: 'User deleted successfully' }
+  } catch (error) {
+    console.error('Error deleting user:', error)
+    return { success: false, message: 'Failed to delete user' }
+  }
+}
+
 // ── Update User Details ───────────────────────────────────────────────────────
 export async function updateUserAction(
   userId: string,
