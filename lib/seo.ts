@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const SITE_NAME = 'VR Galaxy Networks'
 export const SITE_DESCRIPTION =
-  'VR Galaxy Networks is a digital earning platform for community growth, membership benefits, task rewards, referrals, and professional networking.'
+  'VR Galaxy Networks is a community growth platform for digital earning opportunities, membership benefits, task rewards, referrals, and professional networking.'
 
 export function getSiteUrl(): string {
   const configuredUrl = process.env.NEXT_PUBLIC_APP_URL
@@ -10,7 +10,7 @@ export function getSiteUrl(): string {
   const isLocalConfiguredUrl = configuredUrl?.includes('localhost') || configuredUrl?.includes('127.0.0.1')
   const siteUrl = vercelHost && (!configuredUrl || isLocalConfiguredUrl)
     ? `https://${vercelHost}`
-    : configuredUrl || 'http://localhost:3000'
+    : configuredUrl || 'https://vrgalaxynetworks.com'
 
   return siteUrl.replace(/\/$/, '')
 }

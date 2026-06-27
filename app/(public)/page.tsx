@@ -13,7 +13,7 @@ import { Prisma } from '@prisma/client'
 
 export const metadata = createPageMetadata({
   title: 'Digital Earning & Community Growth Platform',
-  description: 'Join VR Galaxy Networks to explore task rewards, membership benefits, referral opportunities, professional networking, and transparent digital earning tools.',
+  description: 'Join VR Galaxy Networks for community growth, membership benefits, task rewards, referral opportunities, and transparent digital earning tools.',
   path: '/',
   keywords: ['VR Galaxy Networks', 'digital earning platform', 'community growth', 'membership benefits', 'referral rewards', 'task rewards'],
 })
