@@ -5,6 +5,10 @@ export const SITE_DESCRIPTION =
   'VR Galaxy Networks is a community growth platform for digital earning opportunities, membership benefits, task rewards, referrals, and professional networking.'
 
 export function getSiteUrl(): string {
+  if (process.env.VERCEL_ENV === 'production') {
+    return 'https://vrgalaxynetworks.com'
+  }
+
   const configuredUrl = process.env.NEXT_PUBLIC_APP_URL
   const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL
   const isLocalConfiguredUrl = configuredUrl?.includes('localhost') || configuredUrl?.includes('127.0.0.1')
