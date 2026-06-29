@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { FloatingMoneyBackground } from '@/components/common/FloatingMoneyBackground'
-import { getSiteUrl, serializeJsonLd, SITE_DESCRIPTION, SITE_NAME } from '@/lib/seo'
+import { CANONICAL_SITE_URL, getSiteUrl, serializeJsonLd, SITE_DESCRIPTION, SITE_NAME } from '@/lib/seo'
 import './globals.css'
 
 const outfit = Outfit({
@@ -27,7 +27,7 @@ const jetBrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(getSiteUrl()),
+  metadataBase: new URL("https://www.vrgalaxynetworks.com"),
   title: {
     default: `${SITE_NAME} | Digital Earning & Community Growth Platform`,
     template: `%s | ${SITE_NAME}`,
@@ -43,17 +43,17 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_IN',
-    url: '/',
+    url: CANONICAL_SITE_URL,
     title: `${SITE_NAME} | Digital Earning & Community Growth Platform`,
     description: SITE_DESCRIPTION,
     siteName: SITE_NAME,
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: `${SITE_NAME} digital earning platform` }],
+    images: [{ url: `${CANONICAL_SITE_URL}/opengraph-image`, width: 1200, height: 630, alt: `${SITE_NAME} digital earning platform` }],
   },
   twitter: {
     card: 'summary_large_image',
     title: `${SITE_NAME} | Digital Earning & Community Growth Platform`,
     description: SITE_DESCRIPTION,
-    images: ['/opengraph-image'],
+    images: [`${CANONICAL_SITE_URL}/opengraph-image`],
   },
   robots: {
     index: true,

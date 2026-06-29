@@ -1,8 +1,8 @@
 import type { MetadataRoute } from 'next'
-import { getSiteUrl } from '@/lib/seo'
+import { CANONICAL_SITE_URL } from '@/lib/seo'
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = getSiteUrl()
+  const baseUrl = CANONICAL_SITE_URL
   return {
     rules: [
       {
