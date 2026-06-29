@@ -1,8 +1,8 @@
 import type { MetadataRoute } from 'next'
-import { getSiteUrl } from '@/lib/seo'
+import { CANONICAL_SITE_URL } from '@/lib/seo'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = getSiteUrl()
+  const baseUrl = CANONICAL_SITE_URL
   const lastModified = new Date('2026-06-24')
 
   return [
