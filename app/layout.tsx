@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { FloatingMoneyBackground } from '@/components/common/FloatingMoneyBackground'
 import { CANONICAL_SITE_URL, getSiteUrl, serializeJsonLd, SITE_DESCRIPTION, SITE_NAME } from '@/lib/seo'
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { Analytics } from "@vercel/analytics/next"
 import './globals.css'
 
@@ -116,6 +117,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           >
             <FloatingMoneyBackground />
             {children}
+
+            <GoogleAnalytics gaId="G-WP9QG8WK79" />
             <Toaster />
           </ThemeProvider>
         </NextIntlClientProvider>
