@@ -118,7 +118,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <FloatingMoneyBackground />
             {children}
 
-            <GoogleAnalytics gaId="G-WP9QG8WK79" />
+            <GoogleAnalytics gaId="G-ZLZ7DDGLYE" />
             <Toaster />
           </ThemeProvider>
         </NextIntlClientProvider>
