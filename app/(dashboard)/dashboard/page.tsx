@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { DashboardOverview } from '@/components/dashboard/DashboardOverview'
 import { KycApprovedFreeDashboard } from '@/components/dashboard/KycApprovedFreeDashboard'
+import { getTaskWalletBalance, TIMEWALL_REFERENCE_PREFIX } from '@/lib/timewall'
 
 export const metadata: Metadata = {
   title: 'Dashboard — VR Galaxy Networks',
@@ -83,6 +84,7 @@ export default async function DashboardPage() {
   let totalReferralEarned = 0
   let totalShareEarned = 0
   let totalBonusEarned = 0
+  let totalTaskEarned = 0
 
   completedTxns.forEach(group => {
     const sum = group._sum.amount || 0
@@ -96,6 +98,23 @@ export default async function DashboardPage() {
       totalBonusEarned = sum
     }
   })
+
+  const [taskWalletBalance, taskEarnedAggregate] = await Promise.all([
+    dbWallet ? getTaskWalletBalance(session.id, prisma, dbWallet.bonusBalance || 0) : 0,
+    prisma.transaction.aggregate({
+      where: {
+        userId: session.id,
+        status: 'COMPLETED',
+        reference: {
+          startsWith: TIMEWALL_REFERENCE_PREFIX,
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+    }),
+  ])
+  totalTaskEarned = taskEarnedAggregate._sum.amount || 0
 
   // Calculate monthly profit/Smart Hybrid Digital Earning for chart
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -179,10 +198,12 @@ export default async function DashboardPage() {
     referralIncome: referralIncome._sum.commission || 0,
     activePlans: investments.length,
     wallet: dbWallet || { mainBalance: 0, depositBalance: 0, bonusBalance: 0, referralBalance: 0, rewardBalance: 0, levelBalance: 0, shareBalance: 0, totalEarned: 0 },
+    taskWalletBalance,
     totalRewardEarned,
     totalReferralEarned,
     totalShareEarned,
     totalBonusEarned,
+    totalTaskEarned,
   }
 
   // KYC-approved FREE users: show simple Free Membership overview (Main Wallet + Deposit Wallet + status)
@@ -192,6 +213,7 @@ export default async function DashboardPage() {
         userName={session.name}
         mainBalance={dbWallet?.mainBalance || 0}
         depositBalance={dbWallet?.depositBalance || 0}
+        taskWalletBalance={taskWalletBalance}
       />
     )
   }
