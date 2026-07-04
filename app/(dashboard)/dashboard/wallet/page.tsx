@@ -6,6 +6,7 @@ import { formatCurrency, formatDateTime } from '@/utils/formatters'
 import { Wallet, TrendingUp, Users } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { getTaskWalletBalance } from '@/lib/timewall'
 
 export const metadata: Metadata = { title: 'Wallet — VR Galaxy Networks' }
 
@@ -41,6 +42,9 @@ export default async function WalletPage() {
     take: 5,
   })
 
+  const taskWalletBalance = wallet
+    ? await getTaskWalletBalance(session.id, prisma, wallet.bonusBalance || 0)
+    : 0
   const total = wallet?.mainBalance || 0
 
   return (
@@ -63,7 +67,7 @@ export default async function WalletPage() {
         {/* Sub-wallets breakdown list below the balance */}
         {!isFree && <div className="mt-6 pt-4 border-t border-white/10">
           <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-3">Sub-Wallets Breakdown</p>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
               <p className="text-[10px] text-white/50 font-medium">Deposit Wallet</p>
               <p className="text-sm font-bold text-blue-400 mt-0.5">{formatCurrency(wallet?.depositBalance || 0)}</p>
@@ -71,6 +75,10 @@ export default async function WalletPage() {
             <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
               <p className="text-[10px] text-white/50 font-medium">Reward Wallet</p>
               <p className="text-sm font-bold text-amber-400 mt-0.5">{formatCurrency(wallet?.rewardBalance || 0)}</p>
+            </div>
+            <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
+              <p className="text-[10px] text-white/50 font-medium">Task Wallet</p>
+              <p className="text-sm font-bold text-lime-400 mt-0.5">{formatCurrency(taskWalletBalance)}</p>
             </div>
             <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
               <p className="text-[10px] text-white/50 font-medium">Referral Income Wallet</p>
@@ -93,6 +101,7 @@ export default async function WalletPage() {
         {[
           { label: 'Main Wallet', value: wallet?.mainBalance || 0, icon: Wallet, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Withdrawable total of earning wallets only', show: true },
           { label: 'Total Wallet', value: wallet?.totalEarned || 0, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Lifetime earnings; withdrawals do not reduce it', show: true },
+          { label: 'Task Wallet', value: taskWalletBalance, icon: TrendingUp, color: 'text-lime-500', bg: 'bg-lime-500/10', desc: 'Net TimeWall task rewards after admin commission', show: true },
           { label: 'Deposit Wallet', value: wallet?.depositBalance || 0, icon: Wallet, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'User deposited amount', show: !isFree },
           { label: 'Reward Wallet', value: wallet?.rewardBalance || 0, icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-500/10', desc: 'Claimed reward balances', show: !isFree },
           { label: 'Referral Income Wallet', value: (wallet?.referralBalance || 0) + (wallet?.levelBalance || 0), icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Commission from direct and multi-level referrals', show: !isFree },

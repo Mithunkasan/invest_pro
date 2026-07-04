@@ -12,6 +12,7 @@ const WALLET_FILTERS = [
   { label: 'All Wallets', value: 'ALL' },
   { label: 'Main', value: 'MAIN' },
   { label: 'Reward', value: 'REWARD' },
+  { label: 'Task', value: 'TASK' },
   { label: 'Referral', value: 'REFERRAL' },
   { label: 'Level', value: 'LEVEL' },
   { label: 'Share', value: 'SHARE' },
@@ -23,6 +24,7 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
 
   const filteredTransactions = transactions.filter((txn) => {
     if (selectedWallet === 'ALL') return true
+    if (selectedWallet === 'TASK') return String(txn.reference || '').startsWith('TIMEWALL:')
     return txn.walletType === selectedWallet
   })
 

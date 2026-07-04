@@ -1,17 +1,17 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Crown, Wallet, ShieldCheck, ArrowRight } from 'lucide-react'
-import Link from 'next/link'
+import { Crown, Wallet, ShieldCheck } from 'lucide-react'
 import { formatCurrency } from '@/utils/formatters'
 
 interface KycApprovedFreeDashboardProps {
   userName: string
   mainBalance: number
   depositBalance: number
+  taskWalletBalance: number
 }
 
-export function KycApprovedFreeDashboard({ userName, mainBalance, depositBalance }: KycApprovedFreeDashboardProps) {
+export function KycApprovedFreeDashboard({ userName, mainBalance, depositBalance, taskWalletBalance }: KycApprovedFreeDashboardProps) {
   return (
     <div className="space-y-6">
       {/* Welcome heading */}
@@ -60,7 +60,7 @@ export function KycApprovedFreeDashboard({ userName, mainBalance, depositBalance
       </motion.div>
 
       {/* Wallet Balance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Main Wallet Balance Card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -79,6 +79,29 @@ export function KycApprovedFreeDashboard({ userName, mainBalance, depositBalance
                   {formatCurrency(mainBalance)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">Available balance for withdrawal</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Task Wallet Balance Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.23 }}
+          className="premium-card p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/50 shadow-lg"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-lime-500/10 text-lime-400 border border-lime-500/20">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Task Wallet</p>
+                <p className="text-3xl font-black text-white mt-1 tracking-tight">
+                  {formatCurrency(taskWalletBalance)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">TimeWall task earnings</p>
               </div>
             </div>
           </div>

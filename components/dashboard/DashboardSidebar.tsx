@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Wallet, ArrowDownToLine, ArrowUpFromLine,
   History, Users, Bell, ShieldCheck, Settings, X, ChevronRight, Crown, Gift, ClipboardList, Gamepad2, MessageSquare,
-  Send
+  Send, Timer
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -29,6 +29,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
   { href: '/dashboard/membership', label: 'Membership', icon: Crown },
   { href: '/dashboard/tasks', label: 'Tasks', icon: ClipboardList },
+  { href: '/dashboard/timewall', label: 'TimeWall', icon: Timer },
   { href: '/dashboard/deposit', label: 'Deposit', icon: ArrowDownToLine },
   { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowUpFromLine },
   { href: '/dashboard/user-pay', label: 'User Pay', icon: Send },
@@ -84,7 +85,7 @@ export function DashboardSidebar({
     if (isFree) {
       // KYC-approved FREE users: Overview, KYC, Profile, Deposit and Withdraw
       // If they have deposited, they can also see Membership to upgrade
-      const allowedLabels = ['Overview', 'KYC', 'Profile', 'Deposit', 'Withdraw', 'Transactions', 'Notifications']
+      const allowedLabels = ['Overview', 'Wallet', 'TimeWall', 'KYC', 'Profile', 'Deposit', 'Withdraw', 'Transactions', 'Notifications']
       if (hasApprovedDeposit) allowedLabels.push('Membership')
 
       baseItems = baseItems.filter((item) => allowedLabels.includes(item.label))
@@ -113,7 +114,7 @@ export function DashboardSidebar({
 
     let filteredItems = baseItems
     if (isMembershipActivated && !isKycApproved) {
-      filteredItems = baseItems.filter((item) => item.label === 'KYC')
+      filteredItems = baseItems.filter((item) => ['KYC', 'Wallet', 'TimeWall'].includes(item.label))
     } else if (!user?.profileCompleted) {
       filteredItems = baseItems.filter((item) => item.label === 'Profile')
     } else {
@@ -123,20 +124,20 @@ export function DashboardSidebar({
         if (isFree) {
           filteredItems = baseItems.filter(item => item.label !== 'KYC')
         } else {
-          const allowedLabelsStrict = ['Overview', 'Deposit', 'Membership', 'Withdraw', 'Profile', 'Transactions', 'Notifications']
+          const allowedLabelsStrict = ['Overview', 'Wallet', 'TimeWall', 'Deposit', 'Membership', 'Withdraw', 'Profile', 'Transactions', 'Notifications']
           if (isMembershipActivated) allowedLabelsStrict.push('Gift Section')
           filteredItems = baseItems.filter(item => allowedLabelsStrict.includes(item.label))
         }
       } else {
         if (!isKycApproved) {
-          filteredItems = baseItems.filter((item) => item.label === 'KYC' || item.label === 'Profile')
+          filteredItems = baseItems.filter((item) => ['KYC', 'Profile', 'Wallet', 'TimeWall'].includes(item.label))
         } else if (isFree) {
           filteredItems = baseItems
         } else if (user?.isMembershipExpired) {
-          filteredItems = baseItems.filter((item) => item.label === 'Membership' || item.label === 'Withdraw')
+          filteredItems = baseItems.filter((item) => ['Membership', 'Withdraw', 'Wallet', 'TimeWall'].includes(item.label))
         } else if (!isFullAccess) {
           filteredItems = baseItems.filter((item) =>
-            ['Overview', 'Deposit', 'Membership', 'Transactions', 'Notifications', 'KYC', 'Profile'].includes(item.label)
+            ['Overview', 'Wallet', 'TimeWall', 'Deposit', 'Membership', 'Transactions', 'Notifications', 'KYC', 'Profile'].includes(item.label)
           )
         }
       }

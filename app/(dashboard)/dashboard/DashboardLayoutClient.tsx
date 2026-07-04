@@ -49,14 +49,17 @@ export function DashboardLayoutClient({
     }
 
     if (requiresKyc) {
-      if (!pathname.startsWith('/dashboard/kyc')) {
+      const allowedRoutes = ['/dashboard/kyc', '/dashboard/wallet', '/dashboard/timewall']
+      const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
+
+      if (!isAllowed) {
         router.replace('/dashboard/kyc')
       }
       return
     }
 
     if (user.isMembershipExpired) {
-      const allowedRoutes = ['/dashboard/membership', '/dashboard/withdraw']
+      const allowedRoutes = ['/dashboard/membership', '/dashboard/withdraw', '/dashboard/wallet', '/dashboard/timewall']
       const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
 
       if (!isAllowed) {
@@ -71,11 +74,11 @@ export function DashboardLayoutClient({
       const isFree = user.memberType === 'FREE'
       const allowedRoutes = isFree
         ? (hasApprovedDeposit
-            ? ['/dashboard', '/dashboard/profile', '/dashboard/deposit', '/dashboard/membership', '/dashboard/transactions', '/dashboard/notifications']
-            : ['/dashboard', '/dashboard/profile', '/dashboard/deposit', '/dashboard/transactions', '/dashboard/notifications'])
+            ? ['/dashboard', '/dashboard/profile', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/deposit', '/dashboard/membership', '/dashboard/transactions', '/dashboard/notifications']
+            : ['/dashboard', '/dashboard/profile', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/deposit', '/dashboard/transactions', '/dashboard/notifications'])
         : isMembershipActivated
-          ? ['/dashboard', '/dashboard/deposit', '/dashboard/gift', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile', '/dashboard/transactions', '/dashboard/notifications']
-          : ['/dashboard', '/dashboard/deposit', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile', '/dashboard/transactions', '/dashboard/notifications']
+          ? ['/dashboard', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/deposit', '/dashboard/gift', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile', '/dashboard/transactions', '/dashboard/notifications']
+          : ['/dashboard', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/deposit', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile', '/dashboard/transactions', '/dashboard/notifications']
 
       const isAllowed = allowedRoutes.some((route) => {
         if (route === '/dashboard') return pathname === '/dashboard'
@@ -89,7 +92,7 @@ export function DashboardLayoutClient({
     }
 
     if (!isKycApproved) {
-      const allowedRoutes = ['/dashboard/kyc', '/dashboard/profile']
+      const allowedRoutes = ['/dashboard/kyc', '/dashboard/profile', '/dashboard/wallet', '/dashboard/timewall']
       const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
 
       if (!isAllowed) {
@@ -105,10 +108,12 @@ export function DashboardLayoutClient({
 
       const allowedRoutes = isFree
         ? (hasApprovedDeposit
-            ? ['/dashboard', '/dashboard/kyc', '/dashboard/profile', '/dashboard/deposit', '/dashboard/membership', '/dashboard/transactions', '/dashboard/notifications']
-            : ['/dashboard', '/dashboard/kyc', '/dashboard/profile', '/dashboard/deposit', '/dashboard/transactions', '/dashboard/notifications'])
+            ? ['/dashboard', '/dashboard/kyc', '/dashboard/profile', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/deposit', '/dashboard/membership', '/dashboard/transactions', '/dashboard/notifications']
+            : ['/dashboard', '/dashboard/kyc', '/dashboard/profile', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/deposit', '/dashboard/transactions', '/dashboard/notifications'])
         : [
             '/dashboard',
+            '/dashboard/wallet',
+            '/dashboard/timewall',
             '/dashboard/deposit',
             '/dashboard/membership',
             '/dashboard/transactions',

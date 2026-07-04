@@ -47,10 +47,12 @@ interface DashboardOverviewProps {
       shareBalance: number
       totalEarned: number
     }
+    taskWalletBalance: number
     totalRewardEarned: number
     totalReferralEarned: number
     totalShareEarned: number
     totalBonusEarned: number
+    totalTaskEarned: number
   }
   investments: Array<{ id: string; amount: number; profit: number; status: string; startDate: string; endDate: string; plan: { name: string; roiPercent: number } }>
   transactions: Array<{ id: string; type: string; amount: number; status: string; description: string | null; createdAt: string }>
@@ -271,6 +273,18 @@ export function DashboardOverview({ user, stats, transactions, chartData, adminB
           className="border-emerald-500/30 hover:border-emerald-400"
         />
         <StatsCard
+          title="Task Wallet"
+          value={stats.taskWalletBalance}
+          icon={
+            <div className="relative flex items-center justify-center">
+              <span className="absolute w-8 h-8 rounded-full bg-lime-500/20 animate-pulse" />
+              <Activity className="w-5 h-5 text-lime-500 relative z-10" />
+            </div>
+          }
+          iconBg="bg-lime-500/10"
+          delay={0.22}
+        />
+        <StatsCard
           title="Share Wallet"
           value={stats.wallet.shareBalance}
           icon={
@@ -359,6 +373,14 @@ export function DashboardOverview({ user, stats, transactions, chartData, adminB
                     <p className="text-base font-bold text-cyan-400 mt-0.5">{formatCurrency(stats.totalShareEarned)}</p>
                   </div>
                   <span className="text-xl">📊</span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary/20 transition-colors">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Task Wallet Income Earned</p>
+                    <p className="text-base font-bold text-lime-400 mt-0.5">{formatCurrency(stats.totalTaskEarned)}</p>
+                  </div>
+                  <span className="text-sm font-black text-lime-400">TW</span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary/20 transition-colors">
