@@ -1,5 +1,5 @@
 import { createPageMetadata, getSiteUrl, serializeJsonLd, SITE_NAME } from '@/lib/seo'
-import { Mail, Phone, MapPin, Clock } from 'lucide-react'
+import { Mail, Send, MapPin, Clock } from 'lucide-react'
 import ContactClient from './ContactClient'
 
 export const metadata = createPageMetadata({
@@ -19,7 +19,6 @@ export default function ContactPage() {
     'url': `${baseUrl}/contact`,
     'contactPoint': {
       '@type': 'ContactPoint',
-      'telephone': '+91-98765-43210',
       'contactType': 'customer support',
       'email': 'support@vrgalaxynetwork.com',
       'availableLanguage': 'en'
@@ -42,10 +41,10 @@ export default function ContactPage() {
           {/* Contact Info */}
           <div className="space-y-6">
             {[
-              { icon: Mail, label: 'Email', value: 'support@vrgalaxynetwork.com', desc: 'We reply within 24 hours' },
-              { icon: Phone, label: 'Phone', value: '+91 98765 43210', desc: 'Mon-Sat, 9AM-6PM IST' },
+              { icon: Mail, label: 'Email', value: 'vrgalaxynetworksceo@gmail.com', desc: 'We reply within 24 hours' },
+              { icon: Send, label: 'Telegram', value: 'https://t.me/vrgalaxyceo', desc: '', href: 'https://t.me/vrgalaxyceo' },
               { icon: MapPin, label: 'Address', value: 'Chennai, Tamil Nadu, India', desc: '' },
-              { icon: Clock, label: 'Support Hours', value: '24/7 Online Support', desc: 'Via email and chat' },
+              { icon: Clock, label: 'Support Hours', value: '16/7 Online Support', desc: 'Via email and Telegram' },
             ].map((item) => (
               <div key={item.label} className="flex items-start gap-4 premium-card p-4">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -53,7 +52,13 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{item.label}</p>
-                  <p className="font-semibold">{item.value}</p>
+                  {item.href ? (
+                    <a href={item.href} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline break-all">
+                      {item.value}
+                    </a>
+                  ) : (
+                    <p className="font-semibold">{item.value}</p>
+                  )}
                   {item.desc && <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>}
                 </div>
               </div>
@@ -67,4 +72,3 @@ export default function ContactPage() {
     </div>
   )
 }
-
