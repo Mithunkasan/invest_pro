@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { FloatingMoneyBackground } from '@/components/common/FloatingMoneyBackground'
-import { CANONICAL_SITE_URL, getSiteUrl, serializeJsonLd, SITE_DESCRIPTION, SITE_NAME } from '@/lib/seo'
+import { CANONICAL_SITE_URL, getSiteUrl, serializeJsonLd, SITE_DESCRIPTION, SITE_NAME, KEYWORDS_LIST } from '@/lib/seo'
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { Analytics } from "@vercel/analytics/next"
 import './globals.css'
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  keywords: ['digital earning platform', 'community growth platform', 'membership benefits', 'referral rewards', 'task rewards', 'business networking', 'India'],
+  keywords: KEYWORDS_LIST,
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
   publisher: SITE_NAME,
