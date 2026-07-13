@@ -24,6 +24,7 @@ interface DashboardLayoutClientProps {
   isKycApproved: boolean
   hasApprovedDeposit: boolean
   isMembershipActivated: boolean
+  timeWallUrl: string
 }
 
 export function DashboardLayoutClient({
@@ -33,6 +34,7 @@ export function DashboardLayoutClient({
   isKycApproved,
   hasApprovedDeposit,
   isMembershipActivated,
+  timeWallUrl,
 }: DashboardLayoutClientProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
@@ -164,6 +166,7 @@ export function DashboardLayoutClient({
         hasApprovedDeposit={hasApprovedDeposit}
         isMembershipActivated={isMembershipActivated}
         user={user}
+        timeWallUrl={timeWallUrl}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardNavbar

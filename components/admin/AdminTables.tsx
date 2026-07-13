@@ -14,7 +14,8 @@ import {
   toggleUserRankAction,
   adjustUserBalanceAction,
   upsertMembershipPlanAction,
-  deleteMembershipPlanAction
+  deleteMembershipPlanAction,
+  handleTimeWallTransaction
 } from '@/actions/admin'
 import { toast } from '@/hooks/use-toast'
 import { Plus, Edit2, Trash2, X, PlusCircle, Search, Calendar } from 'lucide-react'
@@ -1741,5 +1742,122 @@ export function MembershipsTable({ data }: TableProps) {
         </ModalPortal>
       )}
     </>
+  )
+}
+
+export function TimeWallTable({ data }: TableProps) {
+  const [isPending, startTransition] = useTransition()
+  const [filterQuery, setFilterQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState('ALL')
+
+  const onHandle = (id: string, action: 'APPROVE' | 'REJECT') => {
+    let remarks: string | undefined = undefined
+    if (action === 'REJECT') {
+      const input = prompt('Enter rejection reason (optional):')
+      if (input === null) return // Cancelled
+      remarks = input
+    } else {
+      const input = prompt('Enter approval remarks (optional):')
+      if (input === null) return // Cancelled
+      remarks = input
+    }
+    startTransition(async () => {
+      const res = await handleTimeWallTransaction(id, action, remarks)
+      if (res.success) {
+        toast({ title: 'Success', description: res.message })
+      } else {
+        toast({ title: 'Error', description: res.message, variant: 'destructive' })
+      }
+    })
+  }
+
+  const cols = [
+    { key: 'user.name', label: 'User', render: (_: any, row: any) => (
+      <div>
+        <p className="text-sm font-medium">{row.user?.name || 'Unknown'}</p>
+        <p className="text-xs text-muted-foreground">{row.user?.email || '—'}</p>
+      </div>
+    )},
+    { key: 'amount', label: 'Net Amount', sortable: true, render: (v: any) => <span className="font-semibold">{formatCurrency(Number(v))}</span> },
+    { key: 'reference', label: 'Reference ID', render: (v: any) => <span className="text-xs font-mono">{String(v || '—')}</span> },
+    { key: 'description', label: 'Description', render: (v: any) => <span className="text-xs text-muted-foreground block max-w-md break-words">{String(v || '—')}</span> },
+    { key: 'status', label: 'Status', render: (v: any) => <span className={`status-badge ${getStatusColor(String(v))}`}>{String(v)}</span> },
+    { key: 'createdAt', label: 'Submitted Time', render: (v: any) => <span className="text-xs text-muted-foreground">{formatDateTime(String(v))}</span> },
+    { key: 'id', label: 'Actions', render: (id: string, row: any) => (
+      <div className="flex items-center gap-1.5">
+        {row.status === 'PENDING' && (
+          <>
+            <Button 
+              size="sm" 
+              variant="default" 
+              className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700 font-bold"
+              onClick={() => onHandle(id, 'APPROVE')}
+              disabled={isPending}
+            >
+              Approve
+            </Button>
+            <Button 
+              size="sm" 
+              variant="destructive" 
+              className="h-7 px-2 text-xs font-bold"
+              onClick={() => onHandle(id, 'REJECT')}
+              disabled={isPending}
+            >
+              Reject
+            </Button>
+          </>
+        )}
+      </div>
+    )},
+  ]
+
+  const filteredData = useMemo(() => {
+    const q = filterQuery.toLowerCase().trim()
+    return data.filter((row: any) => {
+      const matchQuery = !q || 
+        row.user?.name?.toLowerCase().includes(q) || 
+        row.user?.email?.toLowerCase().includes(q) ||
+        row.reference?.toLowerCase().includes(q) ||
+        row.description?.toLowerCase().includes(q)
+      
+      const matchStatus = filterStatus === 'ALL' || row.status === filterStatus
+      return matchQuery && matchStatus
+    })
+  }, [data, filterQuery, filterStatus])
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
+        <div className="relative flex-1 max-w-md w-full">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <input
+            placeholder="Search by user, reference, or description..."
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            className="pl-9 form-input w-full"
+          />
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="form-input w-full sm:w-40"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      <DataTable 
+        data={filteredData} 
+        columns={cols as any} 
+        rowKey="id" 
+        searchable={false}
+        emptyMessage="No TimeWall transactions found" 
+      />
+    </div>
   )
 }

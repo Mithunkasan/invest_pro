@@ -7,6 +7,7 @@ export const TIMEWALL_REFERENCE_PREFIX = 'TIMEWALL:'
 export interface TimeWallConfig {
   username: string
   password: string
+  placementId: string
   offerwallUrl: string
   commissionPercent: number
   postbackSecret: string
@@ -17,9 +18,18 @@ const configPath = path.join(process.cwd(), '.timewall-settings.json')
 const defaultConfig: TimeWallConfig = {
   username: process.env.TIMEWALL_USERNAME || 'vrgalaxynetworksceo@gmail.com',
   password: process.env.TIMEWALL_PASSWORD || 'Abcd@1234',
-  offerwallUrl: process.env.TIMEWALL_OFFERWALL_URL || 'https://timewall.io/users/login',
+  placementId: process.env.TIMEWALL_PLACEMENT_ID || '',
+  offerwallUrl: process.env.TIMEWALL_OFFERWALL_URL || 'https://timewall.io/tasks',
   commissionPercent: Number(process.env.TIMEWALL_COMMISSION_PERCENT ?? 20),
   postbackSecret: process.env.TIMEWALL_POSTBACK_SECRET || '',
+}
+
+function normalizeOfferwallUrl(value: string) {
+  const trimmed = value.trim()
+  if (trimmed === 'https://timewall.io/users/login' || trimmed === 'https://timewall.io/tasks') {
+    return 'https://timewall.io/tasks'
+  }
+  return trimmed
 }
 
 function normalizePercent(value: unknown, fallback = 20) {
@@ -50,7 +60,8 @@ export async function updateTimeWallConfig(data: Partial<TimeWallConfig>) {
   const next: TimeWallConfig = {
     username: String(data.username ?? current.username).trim(),
     password: String(data.password ?? current.password),
-    offerwallUrl: String(data.offerwallUrl ?? current.offerwallUrl).trim(),
+    placementId: String(data.placementId ?? current.placementId).trim(),
+    offerwallUrl: normalizeOfferwallUrl(String(data.offerwallUrl ?? current.offerwallUrl)),
     commissionPercent: normalizePercent(data.commissionPercent, current.commissionPercent),
     postbackSecret: String(data.postbackSecret ?? current.postbackSecret).trim(),
   }
@@ -64,15 +75,20 @@ export function buildTimeWallUrl(config: TimeWallConfig, user: { id: string; ema
   const encodedEmail = encodeURIComponent(user.email)
   const encodedName = encodeURIComponent(user.name)
 
-  const withPlaceholders = config.offerwallUrl
+  const withPlaceholders = normalizeOfferwallUrl(config.offerwallUrl)
     .replaceAll('{userId}', encodedUserId)
     .replaceAll('{user_id}', encodedUserId)
     .replaceAll('{subId}', encodedUserId)
     .replaceAll('{sub_id}', encodedUserId)
     .replaceAll('{email}', encodedEmail)
     .replaceAll('{name}', encodedName)
+    .replaceAll('{placementId}', encodeURIComponent(config.placementId))
+    .replaceAll('{placement_id}', encodeURIComponent(config.placementId))
 
   const url = new URL(withPlaceholders)
+  if (config.placementId && !url.searchParams.has('placement_id')) {
+    url.searchParams.set('placement_id', config.placementId)
+  }
   if (!url.searchParams.has('user_id')) url.searchParams.set('user_id', user.id)
   if (!url.searchParams.has('sub_id')) url.searchParams.set('sub_id', user.id)
   if (!url.searchParams.has('s1')) url.searchParams.set('s1', user.id)

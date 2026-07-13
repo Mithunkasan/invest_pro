@@ -48,6 +48,7 @@ interface DashboardSidebarProps {
   hasApprovedDeposit: boolean
   isMembershipActivated: boolean
   user: { name: string; email: string; memberType?: 'FREE' | 'BASIC' | 'PREMIUM'; isMembershipExpired?: boolean; profileCompleted?: boolean }
+  timeWallUrl: string
 }
 
 export function DashboardSidebar({
@@ -57,6 +58,7 @@ export function DashboardSidebar({
   hasApprovedDeposit,
   isMembershipActivated,
   user,
+  timeWallUrl,
 }: DashboardSidebarProps) {
   const pathname = usePathname()
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
@@ -228,16 +230,17 @@ export function DashboardSidebar({
           const isActive = href === '/dashboard'
             ? pathname === '/dashboard'
             : pathname.startsWith(href)
+          const linkClassName = cn(
+            'sidebar-link',
+            isActive && 'active text-primary bg-primary/10 font-semibold'
+          )
 
           return (
             <Link
               key={href}
               href={href}
               onClick={onClose}
-              className={cn(
-                'sidebar-link',
-                isActive && 'active text-primary bg-primary/10 font-semibold'
-              )}
+              className={linkClassName}
             >
               <Icon className="w-4 h-4 shrink-0" />
               <span>{item.label}</span>

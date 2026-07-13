@@ -8,6 +8,7 @@ import { syncWalletMainBalance, deductFromWallets, refundWithdrawalToWallets } f
 import { BASIC_MEMBERSHIP_AMOUNT, findBasicMembershipPlan, getBasicMembershipExpiry } from '@/lib/basicMembership'
 import { creditAllDueMembershipYields } from '@/lib/depositYield'
 import { distributeReferralAndLevelCommissions } from './rules'
+import { TIMEWALL_REFERENCE_PREFIX } from '@/lib/timewall'
 
 // ── User Management ───────────────────────────────────────────────────────────
 export async function toggleUserStatus(userId: string): Promise<ApiResponse> {
@@ -557,6 +558,98 @@ export async function handleWithdrawal(withdrawalId: string, action: 'APPROVE' |
     return { success: true, message: `Withdrawal ${action.toLowerCase()}d successfully` }
   } catch (error) {
     return { success: false, message: 'Failed to process withdrawal' }
+  }
+}
+
+// ── TimeWall Management ───────────────────────────────────────────────────────
+export async function handleTimeWallTransaction(
+  transactionId: string,
+  action: 'APPROVE' | 'REJECT',
+  remarks?: string
+): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  try {
+    const transaction = await prisma.transaction.findUnique({
+      where: { id: transactionId },
+      include: { user: true },
+    })
+
+    if (!transaction || transaction.status !== 'PENDING' || !transaction.reference?.startsWith(TIMEWALL_REFERENCE_PREFIX)) {
+      return { success: false, message: 'Invalid or already processed transaction' }
+    }
+
+    if (action === 'APPROVE') {
+      const userAmount = transaction.amount
+      await prisma.$transaction(async (tx) => {
+        // Update transaction status
+        await tx.transaction.update({
+          where: { id: transactionId },
+          data: {
+            status: 'COMPLETED',
+            description: transaction.description + (remarks ? ` Admin remarks: ${remarks}` : ''),
+          },
+        })
+
+        // Increment wallet bonus balance
+        await tx.wallet.upsert({
+          where: { userId: transaction.userId },
+          update: {
+            bonusBalance: { increment: userAmount },
+            totalEarned: { increment: userAmount },
+          },
+          create: {
+            userId: transaction.userId,
+            bonusBalance: userAmount,
+            totalEarned: userAmount,
+          },
+        })
+
+        // Create notification for user
+        await tx.notification.create({
+          data: {
+            userId: transaction.userId,
+            title: 'TimeWall Reward Approved ✅',
+            message: `Your TimeWall reward of Rs ${userAmount.toLocaleString('en-IN')} has been approved by the admin and credited to your Task Wallet.`,
+            type: 'SUCCESS',
+            link: '/dashboard/wallet',
+          },
+        })
+
+        // Sync main balance
+        await syncWalletMainBalance(tx, transaction.userId)
+      })
+
+      revalidatePath('/admin/dashboard/timewall')
+      revalidatePath('/dashboard/wallet')
+      return { success: true, message: 'Transaction approved and credited successfully.' }
+    } else {
+      // REJECT
+      await prisma.transaction.update({
+        where: { id: transactionId },
+        data: {
+          status: 'CANCELLED',
+          description: `Rejected by admin. Remarks: ${remarks || 'No remarks'}. Original: ${transaction.description}`,
+        },
+      })
+
+      // Notify the user
+      await prisma.notification.create({
+        data: {
+          userId: transaction.userId,
+          title: 'TimeWall Reward Rejected ❌',
+          message: `Your TimeWall reward transaction has been rejected by the admin. Remarks: ${remarks || 'None'}.`,
+          type: 'ERROR',
+        },
+      })
+
+      revalidatePath('/admin/dashboard/timewall')
+      return { success: true, message: 'Transaction rejected successfully.' }
+    }
+  } catch (error) {
+    console.error('Error handling TimeWall transaction:', error)
+    return { success: false, message: 'An error occurred while processing the transaction.' }
   }
 }
 

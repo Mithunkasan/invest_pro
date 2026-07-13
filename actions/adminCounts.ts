@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
+import { TIMEWALL_REFERENCE_PREFIX } from '@/lib/timewall'
 
 export interface AdminPendingCounts {
   deposits: number
@@ -12,6 +13,7 @@ export interface AdminPendingCounts {
   userPay: number
   tickets: number      // OPEN tickets
   passwordResets: number
+  timewallTasks: number
 }
 
 /**
@@ -33,6 +35,7 @@ export async function getAdminPendingCounts(): Promise<AdminPendingCounts | null
       userPay,
       tickets,
       passwordResets,
+      timewallTasks,
     ] = await Promise.all([
       prisma.deposit.count({ where: { status: 'PENDING' } }),
       prisma.withdrawal.count({ where: { status: 'PENDING' } }),
@@ -43,6 +46,14 @@ export async function getAdminPendingCounts(): Promise<AdminPendingCounts | null
       prisma.userPayRequest.count({ where: { status: 'PENDING' } }),
       prisma.ticket.count({ where: { status: 'OPEN' } }),
       prisma.passwordResetRequest.count({ where: { status: 'PENDING' } }),
+      prisma.transaction.count({
+        where: {
+          status: 'PENDING',
+          reference: {
+            startsWith: TIMEWALL_REFERENCE_PREFIX,
+          },
+        },
+      }),
     ])
 
     return {
@@ -54,6 +65,7 @@ export async function getAdminPendingCounts(): Promise<AdminPendingCounts | null
       userPay,
       tickets,
       passwordResets,
+      timewallTasks,
     }
   } catch (error) {
     console.error('Error fetching admin pending counts:', error)
