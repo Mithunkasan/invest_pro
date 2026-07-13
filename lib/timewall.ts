@@ -19,17 +19,14 @@ const defaultConfig: TimeWallConfig = {
   username: process.env.TIMEWALL_USERNAME || 'vrgalaxynetworksceo@gmail.com',
   password: process.env.TIMEWALL_PASSWORD || 'Abcd@1234',
   placementId: process.env.TIMEWALL_PLACEMENT_ID || '',
-  offerwallUrl: process.env.TIMEWALL_OFFERWALL_URL || 'https://timewall.io/tasks',
+  offerwallUrl: process.env.TIMEWALL_OFFERWALL_URL || 'https://timewall.io/users/login',
   commissionPercent: Number(process.env.TIMEWALL_COMMISSION_PERCENT ?? 20),
   postbackSecret: process.env.TIMEWALL_POSTBACK_SECRET || '',
 }
 
 function normalizeOfferwallUrl(value: string) {
   const trimmed = value.trim()
-  if (trimmed === 'https://timewall.io/users/login' || trimmed === 'https://timewall.io/tasks') {
-    return 'https://timewall.io/tasks'
-  }
-  return trimmed
+  return trimmed === 'https://timewall.io/tasks' ? 'https://timewall.io/users/login' : trimmed
 }
 
 function normalizePercent(value: unknown, fallback = 20) {
@@ -86,6 +83,11 @@ export function buildTimeWallUrl(config: TimeWallConfig, user: { id: string; ema
     .replaceAll('{placement_id}', encodeURIComponent(config.placementId))
 
   const url = new URL(withPlaceholders)
+  if (config.placementId) {
+    url.searchParams.set('oid', config.placementId)
+  }
+  url.searchParams.set('uid', user.id)
+
   if (config.placementId && !url.searchParams.has('placement_id')) {
     url.searchParams.set('placement_id', config.placementId)
   }
