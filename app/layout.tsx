@@ -107,7 +107,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(orgJsonLd) }}
         />
       </head>
-      <body className={`${outfit.variable} ${plusJakartaSans.variable} ${jetBrainsMono.variable} font-sans antialiased`}>
+      <body
+        className={`${outfit.variable} ${plusJakartaSans.variable} ${jetBrainsMono.variable} font-sans antialiased`}
+        suppressHydrationWarning
+      >
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider
             attribute="class"

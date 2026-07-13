@@ -26,6 +26,7 @@ const adminNavItems: {
   { href: '/admin/dashboard/tickets',           label: 'Ticket Management',   icon: MessageSquare,  badgeKey: 'tickets' },
   { href: '/admin/dashboard/bonus',             label: 'Admin Bonus',         icon: Coins },
   { href: '/admin/dashboard/tasks',             label: 'Offline Tasks',       icon: ClipboardList },
+  { href: '/admin/dashboard/timewall',          label: 'TimeWall Tasks',      icon: ClipboardList,  badgeKey: 'timewallTasks' },
   { href: '/admin/dashboard/deposits',          label: 'Deposits',            icon: ArrowDownToLine, badgeKey: 'deposits' },
   { href: '/admin/dashboard/withdrawals',       label: 'Withdrawals',         icon: ArrowUpFromLine, badgeKey: 'withdrawals' },
   { href: '/admin/dashboard/user-pay',          label: 'User Pay Requests',   icon: Send,            badgeKey: 'userPay' },

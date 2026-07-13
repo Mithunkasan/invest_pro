@@ -6,6 +6,7 @@ import { DashboardLayoutClient } from './dashboard/DashboardLayoutClient'
 import { creditDueBasicDailyYield } from '@/lib/basicMembership'
 import { creditDueDepositYields } from '@/lib/depositYield'
 import { checkAndExpireMembership } from '@/lib/membershipExpiration'
+import { buildTimeWallUrl, getTimeWallConfig } from '@/lib/timewall'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
@@ -76,6 +77,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     where: { userId: session.id, status: 'APPROVED' }
   })
   const hasApprovedDeposit = approvedDepositCount > 0
+  const timeWallConfig = await getTimeWallConfig()
+  const timeWallUrl = buildTimeWallUrl(timeWallConfig, session)
+
   return (
     <DashboardLayoutClient
       user={{ 
@@ -91,6 +95,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       isKycApproved={isKycApproved}
       hasApprovedDeposit={hasApprovedDeposit}
       isMembershipActivated={isMembershipActivated}
+      timeWallUrl={timeWallUrl}
     >
       {children}
     </DashboardLayoutClient>

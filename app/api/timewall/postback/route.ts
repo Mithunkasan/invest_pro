@@ -72,42 +72,27 @@ async function handlePostback(request: NextRequest) {
   const userAmount = Number((amount - adminCommission).toFixed(2))
 
   await prisma.$transaction(async (tx) => {
-    await tx.wallet.upsert({
-      where: { userId },
-      update: {
-        bonusBalance: { increment: userAmount },
-        totalEarned: { increment: userAmount },
-      },
-      create: {
-        userId,
-        bonusBalance: userAmount,
-        totalEarned: userAmount,
-      },
-    })
-
     await tx.transaction.create({
       data: {
         userId,
         type: 'BONUS',
         amount: userAmount,
-        status: 'COMPLETED',
+        status: 'PENDING',
         walletType: 'BONUS',
         reference,
-        description: `TimeWall task reward credited to Task Wallet. Gross: Rs ${amount}, Admin commission: Rs ${adminCommission} (${commissionPercent}%).`,
+        description: `TimeWall task reward pending admin verification. Gross: Rs ${amount}, Admin commission: Rs ${adminCommission} (${commissionPercent}%).`,
       },
     })
 
     await tx.notification.create({
       data: {
         userId,
-        title: 'TimeWall Reward Credited',
-        message: `Your TimeWall reward of Rs ${userAmount.toLocaleString('en-IN')} has been credited to your Task Wallet after ${commissionPercent}% admin commission.`,
-        type: 'SUCCESS',
+        title: 'TimeWall Reward Pending ⏳',
+        message: `Your TimeWall reward of Rs ${userAmount.toLocaleString('en-IN')} has been detected and is pending admin verification.`,
+        type: 'INFO',
         link: '/dashboard/wallet',
       },
     })
-
-    await syncWalletMainBalance(tx, userId)
   })
 
   return Response.json({
