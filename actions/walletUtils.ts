@@ -18,7 +18,8 @@ export async function syncWalletMainBalance(tx: any, userId: string) {
     (wallet.referralBalance || 0) +
     (wallet.levelBalance || 0) +
     (wallet.shareBalance || 0) +
-    (wallet.bonusBalance || 0)
+    (wallet.bonusBalance || 0) +
+    (wallet.taskBalance || 0)
 
   await tx.wallet.update({
     where: { userId },
@@ -97,6 +98,14 @@ export async function deductFromWallets(tx: any, userId: string, amountToDeduct:
     remaining -= deduct
   }
 
+  // 6. Task
+  if (remaining > 0 && wallet.taskBalance > 0) {
+    const deduct = Math.min(remaining, wallet.taskBalance)
+    updates.taskBalance = { decrement: deduct }
+    deductions.taskBalance = deduct
+    remaining -= deduct
+  }
+
   if (remaining > 0) {
     throw new Error('Insufficient total balance across all wallets')
   }
@@ -124,7 +133,8 @@ export async function deductFromWallets(tx: any, userId: string, amountToDeduct:
       (updatedWallet.referralBalance || 0) +
       (updatedWallet.levelBalance || 0) +
       (updatedWallet.shareBalance || 0) +
-      (updatedWallet.bonusBalance || 0)
+      (updatedWallet.bonusBalance || 0) +
+      (updatedWallet.taskBalance || 0)
 
     await tx.wallet.update({
       where: { userId },
@@ -151,6 +161,7 @@ export async function refundWithdrawalToWallets(
     'levelBalance',
     'shareBalance',
     'bonusBalance',
+    'taskBalance',
   ] as const
 
   const data: Record<string, { increment: number }> = {}

@@ -165,6 +165,7 @@ model Wallet {
   mainBalance     Float  @default(0)
   depositBalance  Float  @default(0)
   bonusBalance    Float  @default(0)
+  taskBalance     Float  @default(0)
   referralBalance Float  @default(0)
   rewardBalance   Float  @default(0)
   levelBalance    Float  @default(0)
@@ -383,6 +384,7 @@ enum WalletType {
   LEVEL
   REWARD
   SHARE
+  TASK
 }
 
 enum DepositMethod {

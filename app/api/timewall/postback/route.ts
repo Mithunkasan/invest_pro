@@ -44,7 +44,7 @@ async function handlePostback(request: NextRequest) {
   }
 
   const userId = firstValue(params, ['user_id', 'userid', 'userId', 'sub_id', 'subid', 'subId', 's1'])
-  const rawAmount = firstValue(params, ['amount', 'reward', 'payout', 'currency_amount', 'currencyAmount'])
+  const rawAmount = firstValue(params, ['points', 'amount', 'reward', 'payout', 'currency_amount', 'currencyAmount'])
   const externalTransactionId = firstValue(params, ['transaction_id', 'transactionId', 'txid', 'tx_id', 'id'])
 
   const amount = Number(rawAmount)
@@ -96,17 +96,17 @@ async function handlePostback(request: NextRequest) {
         type: 'BONUS',
         amount: userAmount,
         status: 'PENDING',
-        walletType: 'BONUS',
+        walletType: 'TASK',
         reference,
-        description: `TimeWall task reward.`,
+        description: `TimeWall task reward. Points: ${amount}, Multiplier: ${configuredMultiplier}`,
       },
     })
 
     await tx.notification.create({
       data: {
         userId,
-        title: 'TimeWall Reward Pending ⏳',
-        message: `Your TimeWall reward of ₹${userAmount.toFixed(2)} has been detected and is pending admin verification.`,
+        title: 'TimeWall Reward',
+        message: `TimeWall reward: ₹${userAmount.toFixed(2)}`,
         type: 'INFO',
         link: '/dashboard/wallet',
       },
