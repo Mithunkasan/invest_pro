@@ -59,7 +59,7 @@ export async function updateTimeWallSettingsAction(data: {
 
   const timeWallPercentFree = Number(data.timeWallPercentFree)
   if (!Number.isFinite(timeWallPercentFree) || timeWallPercentFree < 0) {
-    return { success: false, message: 'Free user percentage must be a valid non-negative number.' }
+    return { success: false, message: 'Free user conversion value must be a valid non-negative number.' }
   }
 
   try {

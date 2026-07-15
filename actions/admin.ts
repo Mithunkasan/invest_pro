@@ -611,7 +611,7 @@ export async function handleTimeWallTransaction(
           data: {
             userId: transaction.userId,
             title: 'TimeWall Reward Approved ✅',
-            message: `Your TimeWall reward of Rs ${userAmount.toLocaleString('en-IN')} has been approved by the admin and credited to your Task Wallet.`,
+            message: `Your TimeWall reward of ₹${userAmount.toFixed(2)} has been approved by the admin and credited to your Task Wallet.`,
             type: 'SUCCESS',
             link: '/dashboard/wallet',
           },

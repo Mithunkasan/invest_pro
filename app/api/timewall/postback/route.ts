@@ -83,11 +83,11 @@ async function handlePostback(request: NextRequest) {
   const timeWallPercentFree = systemSettings?.timeWallPercentFree ?? 0.005
 
   const isFree = !user.membershipPlan || user.membershipPlan.price === 0
-  const configuredPercentage = isFree
+  const configuredMultiplier = isFree
     ? timeWallPercentFree
     : (user.membershipPlan?.timeWallPercent ?? 0.005)
 
-  const userAmount = Number((amount * (configuredPercentage / 100)).toFixed(2))
+  const userAmount = Number((amount * configuredMultiplier).toFixed(2))
 
   await prisma.$transaction(async (tx) => {
     await tx.transaction.create({
@@ -98,7 +98,7 @@ async function handlePostback(request: NextRequest) {
         status: 'PENDING',
         walletType: 'BONUS',
         reference,
-        description: `TimeWall task reward pending admin verification. Points: ${amount}, Conversion percentage: ${configuredPercentage}% (${isFree ? 'Free User' : 'Membership User'}).`,
+        description: `TimeWall task reward.`,
       },
     })
 
@@ -106,7 +106,7 @@ async function handlePostback(request: NextRequest) {
       data: {
         userId,
         title: 'TimeWall Reward Pending ⏳',
-        message: `Your TimeWall reward of Rs ${userAmount.toFixed(2)} has been detected and is pending admin verification.`,
+        message: `Your TimeWall reward of ₹${userAmount.toFixed(2)} has been detected and is pending admin verification.`,
         type: 'INFO',
         link: '/dashboard/wallet',
       },
@@ -117,7 +117,7 @@ async function handlePostback(request: NextRequest) {
     success: true,
     points: amount,
     userAmount,
-    configuredPercentage,
+    configuredMultiplier,
     isFree,
   })
 }

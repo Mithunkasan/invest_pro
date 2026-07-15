@@ -143,7 +143,7 @@ export function TimeWallSettingsForm({ initialSettings }: TimeWallSettingsFormPr
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="timeWallPercentFree">Free Users Conversion Percentage (%)</Label>
+          <Label htmlFor="timeWallPercentFree">Free Users Conversion Value (Multiplier)</Label>
           <div className="relative flex items-center">
             <Input
               id="timeWallPercentFree"
@@ -154,10 +154,8 @@ export function TimeWallSettingsForm({ initialSettings }: TimeWallSettingsFormPr
               value={settings.timeWallPercentFree}
               onChange={handleChange}
               disabled={loading}
-              className="pr-8"
               required
             />
-            <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
           </div>
         </div>
 
@@ -174,11 +172,11 @@ export function TimeWallSettingsForm({ initialSettings }: TimeWallSettingsFormPr
         </div>
 
         <div className="md:col-span-2 border-t border-muted/50 pt-4 mt-2">
-          <h3 className="text-sm font-bold text-white/80 mb-4">Membership Plan Conversion Percentages</h3>
+          <h3 className="text-sm font-bold text-white/80 mb-4">Membership Plan Conversion Values (Multipliers)</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {settings.plans.map((plan) => (
               <div key={plan.id} className="space-y-2">
-                <Label htmlFor={`plan-${plan.id}`}>{plan.name} Conversion Percentage (%)</Label>
+                <Label htmlFor={`plan-${plan.id}`}>{plan.name} Conversion Value</Label>
                 <div className="relative flex items-center">
                   <Input
                     id={`plan-${plan.id}`}
@@ -188,10 +186,8 @@ export function TimeWallSettingsForm({ initialSettings }: TimeWallSettingsFormPr
                     value={plan.timeWallPercent}
                     onChange={(e) => handlePlanPercentChange(plan.id, e.target.value)}
                     disabled={loading}
-                    className="pr-8"
                     required
                   />
-                  <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
                 </div>
               </div>
             ))}
