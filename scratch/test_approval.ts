@@ -1,4 +1,5 @@
-process.env.NODE_ENV = 'test'
+// @ts-ignore
+;(process.env as any).NODE_ENV = 'test'
 
 import { handleTimeWallTransaction } from '../actions/admin'
 import { prisma } from '../lib/prisma'
