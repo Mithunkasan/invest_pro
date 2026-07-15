@@ -1632,7 +1632,7 @@ export function MembershipsTable({ data }: TableProps) {
                 {/* TimeWall Conversion Config */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-muted-foreground">TimeWall Conversion Percentage (%)</label>
+                    <label className="text-xs font-semibold text-muted-foreground">TimeWall Conversion Value</label>
                     <input 
                       type="number"
                       step="0.00001"
