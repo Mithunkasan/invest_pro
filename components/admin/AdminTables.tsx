@@ -1243,6 +1243,7 @@ export function MembershipsTable({ data }: TableProps) {
     referralLevel1: '10',
     referralLevel2: '0',
     referralLevel3: '0',
+    timeWallPercent: '0.005',
     withdrawalTime: '24-48 Hours',
     support: 'Standard Email',
     color: '#3B82F6',
@@ -1262,6 +1263,7 @@ export function MembershipsTable({ data }: TableProps) {
       referralLevel1: String(plan.referralLevel1),
       referralLevel2: String(plan.referralLevel2),
       referralLevel3: String(plan.referralLevel3),
+      timeWallPercent: String(plan.timeWallPercent ?? 0.005),
       withdrawalTime: plan.withdrawalTime,
       support: plan.support,
       color: plan.color,
@@ -1282,6 +1284,7 @@ export function MembershipsTable({ data }: TableProps) {
       referralLevel1: '10',
       referralLevel2: '0',
       referralLevel3: '0',
+      timeWallPercent: '0.005',
       withdrawalTime: '24-48 Hours',
       support: 'Standard Email',
       color: '#3B82F6',
@@ -1314,6 +1317,7 @@ export function MembershipsTable({ data }: TableProps) {
         referralLevel1: Number(formData.referralLevel1 || 0),
         referralLevel2: Number(formData.referralLevel2 || 0),
         referralLevel3: Number(formData.referralLevel3 || 0),
+        timeWallPercent: Number(formData.timeWallPercent || 0.005),
         withdrawalTime: formData.withdrawalTime,
         support: formData.support,
         features: featuresList,
@@ -1620,6 +1624,24 @@ export function MembershipsTable({ data }: TableProps) {
                       className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
                       value={formData.support}
                       onChange={(e) => setFormData(prev => ({ ...prev, support: e.target.value }))}
+                      disabled={isPending}
+                    />
+                  </div>
+                </div>
+
+                {/* TimeWall Conversion Config */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground">TimeWall Conversion Percentage (%)</label>
+                    <input 
+                      type="number"
+                      step="0.00001"
+                      min="0"
+                      required
+                      placeholder="e.g. 0.005"
+                      className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+                      value={formData.timeWallPercent}
+                      onChange={(e) => setFormData(prev => ({ ...prev, timeWallPercent: e.target.value }))}
                       disabled={isPending}
                     />
                   </div>

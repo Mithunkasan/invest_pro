@@ -66,6 +66,7 @@ async function main() {
       heroActive: '8,932+',
       heroPaid: '₹12.45 Cr+',
       heroRate: '99.8%',
+      timeWallPercentFree: 0.005,
     }
   })
   console.log('✅ System Settings seeded')
@@ -80,6 +81,7 @@ async function main() {
       referralLevel1: 10,
       referralLevel2: 0,
       referralLevel3: 0,
+      timeWallPercent: 0.005,
       withdrawalTime: '24-48 Hours',
       support: 'Standard Email',
       features: [
@@ -100,6 +102,7 @@ async function main() {
       referralLevel1: 10,
       referralLevel2: 2,
       referralLevel3: 1,
+      timeWallPercent: 0.005,
       withdrawalTime: 'Under 24 Hours',
       support: 'Priority Email Support',
       features: [
@@ -119,6 +122,7 @@ async function main() {
       referralLevel1: 12,
       referralLevel2: 4,
       referralLevel3: 2,
+      timeWallPercent: 0.005,
       withdrawalTime: 'Under 12 Hours',
       support: '24/7 Priority Email & Chat',
       features: [
@@ -139,6 +143,7 @@ async function main() {
       referralLevel1: 15,
       referralLevel2: 6,
       referralLevel3: 3,
+      timeWallPercent: 0.005,
       withdrawalTime: 'Under 6 Hours',
       support: 'Dedicated VIP Support Chat',
       features: [
@@ -160,6 +165,7 @@ async function main() {
       referralLevel1: 18,
       referralLevel2: 8,
       referralLevel3: 4,
+      timeWallPercent: 0.005,
       withdrawalTime: 'Under 2 Hours',
       support: 'Personal Account Manager',
       features: [
@@ -181,6 +187,7 @@ async function main() {
       referralLevel1: 20,
       referralLevel2: 10,
       referralLevel3: 5,
+      timeWallPercent: 0.005,
       withdrawalTime: 'Instant Payouts',
       support: '24/7 VIP Hotline & Elite Support',
       features: [

@@ -465,6 +465,7 @@ model SystemSettings {
   heroPaid                String   @default("₹12.45 Cr+")
   heroRate                String   @default("99.8%")
   giftDepositAmount        Float    @default(0)
+  timeWallPercentFree     Float    @default(0.005)
 
   // Bank Details
   upiId                   String?
@@ -490,6 +491,7 @@ model MembershipPlan {
   referralLevel1  Float    @default(10.0) // L1 referral commission %
   referralLevel2  Float    @default(0.0)  // L2 referral commission %
   referralLevel3  Float    @default(0.0)  // L3 referral commission %
+  timeWallPercent Float    @default(0.005)
   withdrawalTime  String   @default("24-48 Hours")
   support         String   @default("Standard Email")
   features        String[] // Features list array

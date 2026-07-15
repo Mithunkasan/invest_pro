@@ -24,8 +24,13 @@ interface TimeWallSettingsFormProps {
     username: string
     password: string
     offerwallUrl: string
-    commissionPercent: number
     postbackSecret: string
+    timeWallPercentFree: number
+    plans: {
+      id: string
+      name: string
+      timeWallPercent: number
+    }[]
   }
 }
 
@@ -42,13 +47,32 @@ export function TimeWallSettingsForm({ initialSettings }: TimeWallSettingsFormPr
     }))
   }
 
+  const handlePlanPercentChange = (planId: string, value: string) => {
+    setSettings((current) => ({
+      ...current,
+      plans: current.plans.map((p) =>
+        p.id === planId ? { ...p, timeWallPercent: Number(value) } : p
+      ),
+    }))
+  }
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setLoading(true)
     setMessage(null)
 
     try {
-      const result = await updateTimeWallSettingsAction(settings)
+      const result = await updateTimeWallSettingsAction({
+        username: settings.username,
+        password: settings.password,
+        offerwallUrl: settings.offerwallUrl,
+        postbackSecret: settings.postbackSecret,
+        timeWallPercentFree: settings.timeWallPercentFree,
+        planPercentages: settings.plans.map(p => ({
+          id: p.id,
+          timeWallPercent: p.timeWallPercent
+        }))
+      })
       setMessage({ type: result.success ? 'success' : 'error', text: result.message })
     } catch {
       setMessage({ type: 'error', text: 'An unexpected error occurred.' })
@@ -62,7 +86,7 @@ export function TimeWallSettingsForm({ initialSettings }: TimeWallSettingsFormPr
       <div className="border-b pb-3 border-muted/50">
         <h2 className="text-lg font-bold text-white/90">TimeWall Integration</h2>
         <p className="text-xs text-muted-foreground mt-1">
-          Configure the TimeWall redirect and admin commission applied before Task Wallet credit.
+          Configure the TimeWall redirect and conversion percentages applied before Task Wallet credit.
         </p>
       </div>
 
@@ -119,16 +143,15 @@ export function TimeWallSettingsForm({ initialSettings }: TimeWallSettingsFormPr
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="commissionPercent">Admin Commission (%)</Label>
+          <Label htmlFor="timeWallPercentFree">Free Users Conversion Percentage (%)</Label>
           <div className="relative flex items-center">
             <Input
-              id="commissionPercent"
-              name="commissionPercent"
+              id="timeWallPercentFree"
+              name="timeWallPercentFree"
               type="number"
-              step="0.01"
+              step="0.00001"
               min="0"
-              max="100"
-              value={settings.commissionPercent}
+              value={settings.timeWallPercentFree}
               onChange={handleChange}
               disabled={loading}
               className="pr-8"
@@ -148,6 +171,31 @@ export function TimeWallSettingsForm({ initialSettings }: TimeWallSettingsFormPr
             onChange={handleChange}
             disabled={loading}
           />
+        </div>
+
+        <div className="md:col-span-2 border-t border-muted/50 pt-4 mt-2">
+          <h3 className="text-sm font-bold text-white/80 mb-4">Membership Plan Conversion Percentages</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {settings.plans.map((plan) => (
+              <div key={plan.id} className="space-y-2">
+                <Label htmlFor={`plan-${plan.id}`}>{plan.name} Conversion Percentage (%)</Label>
+                <div className="relative flex items-center">
+                  <Input
+                    id={`plan-${plan.id}`}
+                    type="number"
+                    step="0.00001"
+                    min="0"
+                    value={plan.timeWallPercent}
+                    onChange={(e) => handlePlanPercentChange(plan.id, e.target.value)}
+                    disabled={loading}
+                    className="pr-8"
+                    required
+                  />
+                  <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
