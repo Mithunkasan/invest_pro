@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { DashboardOverview } from '@/components/dashboard/DashboardOverview'
 import { KycApprovedFreeDashboard } from '@/components/dashboard/KycApprovedFreeDashboard'
-import { getTaskWalletBalance, TIMEWALL_REFERENCE_PREFIX } from '@/lib/timewall'
+import { TIMEWALL_REFERENCE_PREFIX } from '@/lib/timewall'
 
 export const metadata: Metadata = {
   title: 'Dashboard — VR Galaxy Networks',
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
   })
 
   const [taskWalletBalance, taskEarnedAggregate] = await Promise.all([
-    dbWallet ? getTaskWalletBalance(session.id, prisma, dbWallet.bonusBalance || 0) : 0,
+    dbWallet ? dbWallet.taskBalance || 0 : 0,
     prisma.transaction.aggregate({
       where: {
         userId: session.id,

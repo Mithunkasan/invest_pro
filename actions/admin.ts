@@ -592,16 +592,16 @@ export async function handleTimeWallTransaction(
           },
         })
 
-        // Increment wallet bonus balance
+        // Increment wallet task balance
         await tx.wallet.upsert({
           where: { userId: transaction.userId },
           update: {
-            bonusBalance: { increment: userAmount },
+            taskBalance: { increment: userAmount },
             totalEarned: { increment: userAmount },
           },
           create: {
             userId: transaction.userId,
-            bonusBalance: userAmount,
+            taskBalance: userAmount,
             totalEarned: userAmount,
           },
         })
@@ -610,8 +610,8 @@ export async function handleTimeWallTransaction(
         await tx.notification.create({
           data: {
             userId: transaction.userId,
-            title: 'TimeWall Reward Approved ✅',
-            message: `Your TimeWall reward of ₹${userAmount.toFixed(2)} has been approved by the admin and credited to your Task Wallet.`,
+            title: 'TimeWall Reward',
+            message: `TimeWall reward: ₹${userAmount.toFixed(2)}`,
             type: 'SUCCESS',
             link: '/dashboard/wallet',
           },

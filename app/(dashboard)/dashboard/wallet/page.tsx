@@ -6,7 +6,6 @@ import { formatCurrency, formatDateTime } from '@/utils/formatters'
 import { Wallet, TrendingUp, Users } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { getTaskWalletBalance } from '@/lib/timewall'
 
 export const metadata: Metadata = { title: 'Wallet — VR Galaxy Networks' }
 
@@ -27,7 +26,8 @@ export default async function WalletPage() {
       (wallet.referralBalance || 0) +
       (wallet.levelBalance || 0) +
       (wallet.shareBalance || 0) +
-      (wallet.bonusBalance || 0)
+      (wallet.bonusBalance || 0) +
+      (wallet.taskBalance || 0)
     
     if (wallet.mainBalance !== expectedMain) {
       wallet = await prisma.wallet.update({
@@ -42,9 +42,7 @@ export default async function WalletPage() {
     take: 5,
   })
 
-  const taskWalletBalance = wallet
-    ? await getTaskWalletBalance(session.id, prisma, wallet.bonusBalance || 0)
-    : 0
+  const taskWalletBalance = wallet?.taskBalance || 0
   const total = wallet?.mainBalance || 0
 
   return (
