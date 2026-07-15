@@ -54,7 +54,16 @@ async function handlePostback(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true },
+    select: {
+      id: true,
+      membershipPlanId: true,
+      membershipPlan: {
+        select: {
+          price: true,
+          timeWallPercent: true,
+        }
+      }
+    },
   })
   if (!user) {
     return Response.json({ success: false, message: 'User not found' }, { status: 404 })
@@ -67,9 +76,18 @@ async function handlePostback(request: NextRequest) {
     return Response.json({ success: true, message: 'Duplicate postback ignored' })
   }
 
-  const commissionPercent = Math.min(100, Math.max(0, config.commissionPercent))
-  const adminCommission = Number(((amount * commissionPercent) / 100).toFixed(2))
-  const userAmount = Number((amount - adminCommission).toFixed(2))
+  const systemSettings = await prisma.systemSettings.findUnique({
+    where: { id: 'default' },
+    select: { timeWallPercentFree: true }
+  })
+  const timeWallPercentFree = systemSettings?.timeWallPercentFree ?? 0.005
+
+  const isFree = !user.membershipPlan || user.membershipPlan.price === 0
+  const configuredPercentage = isFree
+    ? timeWallPercentFree
+    : (user.membershipPlan?.timeWallPercent ?? 0.005)
+
+  const userAmount = Number((amount * (configuredPercentage / 100)).toFixed(2))
 
   await prisma.$transaction(async (tx) => {
     await tx.transaction.create({
@@ -80,7 +98,7 @@ async function handlePostback(request: NextRequest) {
         status: 'PENDING',
         walletType: 'BONUS',
         reference,
-        description: `TimeWall task reward pending admin verification. Gross: Rs ${amount}, Admin commission: Rs ${adminCommission} (${commissionPercent}%).`,
+        description: `TimeWall task reward pending admin verification. Points: ${amount}, Conversion percentage: ${configuredPercentage}% (${isFree ? 'Free User' : 'Membership User'}).`,
       },
     })
 
@@ -88,7 +106,7 @@ async function handlePostback(request: NextRequest) {
       data: {
         userId,
         title: 'TimeWall Reward Pending ⏳',
-        message: `Your TimeWall reward of Rs ${userAmount.toLocaleString('en-IN')} has been detected and is pending admin verification.`,
+        message: `Your TimeWall reward of Rs ${userAmount.toFixed(2)} has been detected and is pending admin verification.`,
         type: 'INFO',
         link: '/dashboard/wallet',
       },
@@ -97,10 +115,10 @@ async function handlePostback(request: NextRequest) {
 
   return Response.json({
     success: true,
-    grossAmount: amount,
-    adminCommission,
+    points: amount,
     userAmount,
-    commissionPercent,
+    configuredPercentage,
+    isFree,
   })
 }
 

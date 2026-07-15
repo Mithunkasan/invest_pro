@@ -1147,6 +1147,7 @@ export async function upsertMembershipPlanAction(data: any): Promise<ApiResponse
       referralLevel1: Number(payload.referralLevel1 || 10.0),
       referralLevel2: Number(payload.referralLevel2 || 0.0),
       referralLevel3: Number(payload.referralLevel3 || 0.0),
+      timeWallPercent: Number(payload.timeWallPercent || 0.005),
       withdrawalTime: payload.withdrawalTime || '24-48 Hours',
       support: payload.support || 'Standard Email',
       features: Array.isArray(payload.features) ? payload.features : [],
