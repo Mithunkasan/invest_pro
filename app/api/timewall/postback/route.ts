@@ -44,12 +44,33 @@ async function handlePostback(request: NextRequest) {
   }
 
   const userId = firstValue(params, ['user_id', 'userid', 'userId', 'sub_id', 'subid', 'subId', 's1'])
-  const rawAmount = firstValue(params, ['points', 'amount', 'reward', 'payout', 'currency_amount', 'currencyAmount'])
+  
+  // Extract TimeWall points specifically. We must NOT calculate the reward using the USD payout.
+  let rawPoints = params.get('points')
+  if (!rawPoints && params.get('amount')) {
+    const amountVal = Number(params.get('amount'))
+    const payoutVal = params.get('payout') ? Number(params.get('payout')) : null
+    if (payoutVal !== null && amountVal !== payoutVal) {
+      rawPoints = params.get('amount')
+    } else if (amountVal >= 1) {
+      rawPoints = params.get('amount')
+    }
+  }
+  if (!rawPoints && params.get('reward')) {
+    const rewardVal = Number(params.get('reward'))
+    const payoutVal = params.get('payout') ? Number(params.get('payout')) : null
+    if (payoutVal !== null && rewardVal !== payoutVal) {
+      rawPoints = params.get('reward')
+    } else if (rewardVal >= 1) {
+      rawPoints = params.get('reward')
+    }
+  }
+
+  const points = Number(rawPoints)
   const externalTransactionId = firstValue(params, ['transaction_id', 'transactionId', 'txid', 'tx_id', 'id'])
 
-  const amount = Number(rawAmount)
-  if (!userId || !Number.isFinite(amount) || amount <= 0) {
-    return Response.json({ success: false, message: 'Invalid user or amount' }, { status: 400 })
+  if (!userId || !Number.isFinite(points) || points <= 0) {
+    return Response.json({ success: false, message: 'Invalid user or points' }, { status: 400 })
   }
 
   const user = await prisma.user.findUnique({
@@ -69,7 +90,7 @@ async function handlePostback(request: NextRequest) {
     return Response.json({ success: false, message: 'User not found' }, { status: 404 })
   }
 
-  const referenceId = externalTransactionId || `${userId}:${amount}:${Date.now()}`
+  const referenceId = externalTransactionId || `${userId}:${points}:${Date.now()}`
   const reference = `${TIMEWALL_REFERENCE_PREFIX}${referenceId}`
   const existing = await prisma.transaction.findFirst({ where: { reference } })
   if (existing) {
@@ -87,7 +108,8 @@ async function handlePostback(request: NextRequest) {
     ? timeWallPercentFree
     : (user.membershipPlan?.timeWallPercent ?? 0.005)
 
-  const userAmount = Number((amount * configuredMultiplier).toFixed(2))
+  // Exact calculated value (no rounding to integer)
+  const userAmount = points * configuredMultiplier
 
   await prisma.$transaction(async (tx) => {
     await tx.transaction.create({
@@ -98,7 +120,7 @@ async function handlePostback(request: NextRequest) {
         status: 'PENDING',
         walletType: 'TASK',
         reference,
-        description: `TimeWall task reward. Points: ${amount}, Multiplier: ${configuredMultiplier}`,
+        description: `TimeWall Reward: ₹${userAmount.toFixed(2)}`,
       },
     })
 
@@ -115,7 +137,7 @@ async function handlePostback(request: NextRequest) {
 
   return Response.json({
     success: true,
-    points: amount,
+    points,
     userAmount,
     configuredMultiplier,
     isFree,

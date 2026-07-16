@@ -104,7 +104,7 @@ type TransactionAggregateClient = Pick<PrismaClient, 'transaction'> | {
   }
 }
 
-export async function getTaskWalletBalance(userId: string, prismaClient: TransactionAggregateClient, bonusBalance = 0) {
+export async function getTaskWalletBalance(userId: string, prismaClient: TransactionAggregateClient) {
   const result = await prismaClient.transaction.aggregate({
     where: {
       userId,
@@ -118,6 +118,5 @@ export async function getTaskWalletBalance(userId: string, prismaClient: Transac
     },
   })
 
-  const totalTaskCredits = result._sum.amount || 0
-  return Math.max(0, Math.min(totalTaskCredits, bonusBalance))
+  return result._sum.amount || 0
 }
