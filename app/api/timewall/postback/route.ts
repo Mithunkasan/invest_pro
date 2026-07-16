@@ -40,13 +40,13 @@ async function handlePostback(request: NextRequest) {
 
   const providedSecret = firstValue(params, ['secret', 'key', 'api_key', 'token'])
   if (config.postbackSecret && providedSecret !== config.postbackSecret) {
-    return Response.json({ success: false, message: 'Invalid postback secret' }, { status: 401 })
+    return new Response('Invalid postback secret', { status: 401 })
   }
 
   const userId = firstValue(params, ['user_id', 'userid', 'userId', 'sub_id', 'subid', 'subId', 's1'])
   
   // Extract TimeWall points specifically. We must NOT calculate the reward using the USD payout.
-  let rawPoints = params.get('points')
+  let rawPoints = params.get('points') || params.get('currency_amount') || params.get('currencyAmount')
   if (!rawPoints && params.get('amount')) {
     const amountVal = Number(params.get('amount'))
     const payoutVal = params.get('payout') ? Number(params.get('payout')) : null
@@ -67,10 +67,18 @@ async function handlePostback(request: NextRequest) {
   }
 
   const points = Number(rawPoints)
-  const externalTransactionId = firstValue(params, ['transaction_id', 'transactionId', 'txid', 'tx_id', 'id'])
+  const externalTransactionId = firstValue(params, [
+    'transaction_id',
+    'transactionId',
+    'txid',
+    'tx_id',
+    'id',
+    'withdraw_id',
+    'withdrawId'
+  ])
 
   if (!userId || !Number.isFinite(points) || points <= 0) {
-    return Response.json({ success: false, message: 'Invalid user or points' }, { status: 400 })
+    return new Response('Invalid user or points', { status: 400 })
   }
 
   const user = await prisma.user.findUnique({
@@ -87,14 +95,17 @@ async function handlePostback(request: NextRequest) {
     },
   })
   if (!user) {
-    return Response.json({ success: false, message: 'User not found' }, { status: 404 })
+    return new Response('User not found', { status: 404 })
   }
 
   const referenceId = externalTransactionId || `${userId}:${points}:${Date.now()}`
   const reference = `${TIMEWALL_REFERENCE_PREFIX}${referenceId}`
   const existing = await prisma.transaction.findFirst({ where: { reference } })
   if (existing) {
-    return Response.json({ success: true, message: 'Duplicate postback ignored' })
+    return new Response('1', {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' }
+    })
   }
 
   const systemSettings = await prisma.systemSettings.findUnique({
@@ -135,12 +146,9 @@ async function handlePostback(request: NextRequest) {
     })
   })
 
-  return Response.json({
-    success: true,
-    points,
-    userAmount,
-    configuredMultiplier,
-    isFree,
+  return new Response('1', {
+    status: 200,
+    headers: { 'Content-Type': 'text/plain' }
   })
 }
 
