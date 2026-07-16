@@ -54,3 +54,57 @@
   }
 }
 
+{
+  "timestamp": "2026-07-16T16:16:43.248Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?user_id=cmqxe3vjs000cky04629byvc9&points=650&payout=0.055&secret=8b005804fe45684994ea8351431fca40&transaction_id=mock_txn_points_1784218603241",
+  "headers": {},
+  "params": {
+    "user_id": "cmqxe3vjs000cky04629byvc9",
+    "points": "650",
+    "payout": "0.055",
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "transaction_id": "mock_txn_points_1784218603241"
+  }
+}
+
+{
+  "timestamp": "2026-07-16T16:16:45.531Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?user_id=cmqxe3vjs000cky04629byvc9&currency_amount=3031&payout=0.3031&secret=8b005804fe45684994ea8351431fca40&withdraw_id=19421578_test_1784218605530",
+  "headers": {},
+  "params": {
+    "user_id": "cmqxe3vjs000cky04629byvc9",
+    "currency_amount": "3031",
+    "payout": "0.3031",
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "withdraw_id": "19421578_test_1784218605530"
+  }
+}
+
+{
+  "timestamp": "2026-07-16T16:16:46.164Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?secret=8b005804fe45684994ea8351431fca40&userid=cmqxe3vjs000cky04629byvc9&reward=0.3031&txid=wddc7a6a-133e-41b8-9f7e-test-1784218606163",
+  "headers": {},
+  "params": {
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "userid": "cmqxe3vjs000cky04629byvc9",
+    "reward": "0.3031",
+    "txid": "wddc7a6a-133e-41b8-9f7e-test-1784218606163"
+  }
+}
+
+{
+  "timestamp": "2026-07-16T16:16:46.827Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?secret=8b005804fe45684994ea8351431fca40&userid=cmqxe3vjs000cky04629byvc9&reward=0.3031&txid=wddc7a6a-133e-41b8-9f7e-test-1784218606163",
+  "headers": {},
+  "params": {
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "userid": "cmqxe3vjs000cky04629byvc9",
+    "reward": "0.3031",
+    "txid": "wddc7a6a-133e-41b8-9f7e-test-1784218606163"
+  }
+}
+

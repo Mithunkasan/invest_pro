@@ -68,10 +68,10 @@ async function test() {
     console.error('Test 2 Failed!')
   }
 
-  // --- TEST 3: Specific parameters from the screenshot (external_user_id & rate_points & withdraw_id) ---
-  console.log('\n--- TEST 3: Specific parameters from the screenshot (external_user_id & rate_points & withdraw_id) ---')
-  const mockWithdrawId3 = `19421578_sc_${Date.now()}`
-  const url3 = `http://localhost:3000/api/timewall/postback?external_user_id=${userId}&rate_points=3031&payout=0.3031&secret=${secret}&withdraw_id=${mockWithdrawId3}`
+  // --- TEST 3: Exact URL parameters from the user's third screenshot ---
+  console.log('\n--- TEST 3: Exact URL parameters from user screenshot (userid & reward & txid) ---')
+  const mockTxId3 = `wddc7a6a-133e-41b8-9f7e-test-${Date.now()}`
+  const url3 = `http://localhost:3000/api/timewall/postback?secret=${secret}&userid=${userId}&reward=0.3031&txid=${mockTxId3}`
   console.log(`Mocking request to: ${url3}`)
 
   const req3 = new NextRequest(url3)
@@ -81,13 +81,13 @@ async function test() {
   console.log('Response Body:', body3)
 
   const tx3 = await prisma.transaction.findFirst({
-    where: { reference: `TIMEWALL:${mockWithdrawId3}` }
+    where: { reference: `TIMEWALL:${mockTxId3}` }
   })
-  if (tx3 && body3 === '1') {
-    console.log('Test 3 Passed: Transaction created successfully with screenshot parameter keys.')
+  if (tx3 && body3 === '1' && tx3.amount > 19.0) {
+    console.log('Test 3 Passed: Transaction created successfully with screenshot parameters.')
     console.log(`Amount: ${tx3.amount}, Status: ${tx3.status}, WalletType: ${tx3.walletType}`)
   } else {
-    console.error('Test 3 Failed!')
+    console.error('Test 3 Failed!', tx3 ? `Amount was ${tx3.amount}` : 'No transaction found')
   }
 
   // --- TEST 4: Duplicate Request ---

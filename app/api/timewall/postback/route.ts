@@ -95,6 +95,8 @@ async function handlePostback(request: NextRequest) {
       rawPoints = params.get('amount')
     } else if (amountVal >= 1) {
       rawPoints = params.get('amount')
+    } else {
+      rawPoints = String(Math.round(amountVal * 10000))
     }
   }
   if (!rawPoints && params.get('reward')) {
@@ -104,10 +106,16 @@ async function handlePostback(request: NextRequest) {
       rawPoints = params.get('reward')
     } else if (rewardVal >= 1) {
       rawPoints = params.get('reward')
+    } else {
+      rawPoints = String(Math.round(rewardVal * 10000))
     }
   }
 
-  const points = Number(rawPoints)
+  let points = Number(rawPoints)
+  if (Number.isFinite(points) && points > 0 && points < 1) {
+    points = Math.round(points * 10000)
+  }
+
   const externalTransactionId = firstValue(params, [
     'transaction_id',
     'transactionId',
