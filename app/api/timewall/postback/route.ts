@@ -178,19 +178,34 @@ async function handlePostback(request: NextRequest) {
         userId,
         type: 'BONUS',
         amount: userAmount,
-        status: 'PENDING',
+        status: 'COMPLETED',
         walletType: 'TASK',
         reference,
         description: `TimeWall Reward: ₹${userAmount.toFixed(2)}`,
       },
     })
 
+    await tx.wallet.upsert({
+      where: { userId },
+      update: {
+        taskBalance: { increment: userAmount },
+        totalEarned: { increment: userAmount },
+      },
+      create: {
+        userId,
+        taskBalance: userAmount,
+        totalEarned: userAmount,
+      },
+    })
+
+    await syncWalletMainBalance(tx, userId)
+
     await tx.notification.create({
       data: {
         userId,
         title: 'TimeWall Reward',
         message: `TimeWall reward: ₹${userAmount.toFixed(2)}`,
-        type: 'INFO',
+        type: 'SUCCESS',
         link: '/dashboard/wallet',
       },
     })
