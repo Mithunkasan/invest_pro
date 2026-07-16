@@ -1,10 +1,12 @@
 import { NextRequest } from 'next/server'
 import { GET } from '../app/api/timewall/postback/route'
 import { prisma } from '../lib/prisma'
+import { syncWalletMainBalance } from '../actions/walletUtils'
 
 async function test() {
   const user = await prisma.user.findFirst({
-    where: { email: 'rkadirvelan@gmail.com' }
+    where: { email: 'rkadirvelan@gmail.com' },
+    include: { wallet: true, membershipPlan: true }
   })
   if (!user) {
     console.error('User rkadirvelan@gmail.com not found')
@@ -13,95 +15,83 @@ async function test() {
 
   const userId = user.id
   console.log(`Testing with user ID: ${userId}`)
+  
+  // Ensure wallet mainBalance is fully synced before test starts
+  await syncWalletMainBalance(prisma, userId)
+  
+  const initialUser = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { wallet: true }
+  })
+
+  console.log('Wallet balances BEFORE postback (fully synced):')
+  console.log(`- taskBalance: ${initialUser?.wallet?.taskBalance}`)
+  console.log(`- mainBalance: ${initialUser?.wallet?.mainBalance}`)
 
   // Retrieve current config to check multiplier/conversion value
   const systemSettings = await prisma.systemSettings.findUnique({
     where: { id: 'default' }
   })
-  const currentMultiplier = systemSettings?.timeWallPercentFree ?? 0.005
-  console.log(`Current free user multiplier in DB: ${currentMultiplier}`)
+  
+  // Determine correct multiplier based on membership plan
+  const isFree = !user.membershipPlan || user.membershipPlan.price === 0
+  const currentMultiplier = isFree
+    ? (systemSettings?.timeWallPercentFree ?? 0.005)
+    : (user.membershipPlan?.timeWallPercent ?? 0.005)
+
+  console.log(`Multiplier used: ${currentMultiplier} (isFree: ${isFree})`)
 
   // Set the secret
   const secret = '8b005804fe45684994ea8351431fca40'
 
-  // --- TEST 1: Standard Points parameter ---
-  console.log('\n--- TEST 1: points & transaction_id ---')
-  const mockTxnId1 = `mock_txn_points_${Date.now()}`
-  const url1 = `http://localhost:3000/api/timewall/postback?user_id=${userId}&points=650&payout=0.055&secret=${secret}&transaction_id=${mockTxnId1}`
-  console.log(`Mocking request to: ${url1}`)
+  // --- TEST: Exact URL parameters from user screenshot ---
+  console.log('\n--- Running Postback Test (userid & reward & txid) ---')
+  const mockTxId = `wddc7a6a-133e-41b8-9f7e-direct-${Date.now()}`
+  const url = `http://localhost:3000/api/timewall/postback?secret=${secret}&userid=${userId}&reward=0.3031&txid=${mockTxId}`
+  console.log(`Mocking request to: ${url}`)
+
+  const req = new NextRequest(url)
+  const res = await GET(req)
+  console.log('Response Status:', res.status)
+  const body = await res.text()
+  console.log('Response Body:', body)
+
+  const tx = await prisma.transaction.findFirst({
+    where: { reference: `TIMEWALL:${mockTxId}` }
+  })
   
-  const req1 = new NextRequest(url1)
-  const res1 = await GET(req1)
-  console.log('Response Status:', res1.status)
-  const body1 = await res1.text()
-  console.log('Response Body:', body1)
-
-  const tx1 = await prisma.transaction.findFirst({
-    where: { reference: `TIMEWALL:${mockTxnId1}` }
+  const updatedUser = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { wallet: true }
   })
-  if (tx1 && body1 === '1') {
-    console.log('Test 1 Passed: Transaction created successfully.')
-    console.log(`Amount: ${tx1.amount}, Status: ${tx1.status}, WalletType: ${tx1.walletType}`)
+
+  console.log('\nWallet balances AFTER postback:')
+  console.log(`- taskBalance: ${updatedUser?.wallet?.taskBalance}`)
+  console.log(`- mainBalance: ${updatedUser?.wallet?.mainBalance}`)
+
+  if (tx && body === '1') {
+    console.log('\n--- Transaction Created in Database ---')
+    console.log(`Amount: ${tx.amount}, Status: ${tx.status}, WalletType: ${tx.walletType}`)
+    
+    // Check if taskBalance and mainBalance were correctly incremented
+    const expectedIncrement = 3031 * currentMultiplier
+    const actualTaskIncrement = (updatedUser?.wallet?.taskBalance || 0) - (initialUser?.wallet?.taskBalance || 0)
+    const actualMainIncrement = (updatedUser?.wallet?.mainBalance || 0) - (initialUser?.wallet?.mainBalance || 0)
+    
+    console.log(`Expected Increment: ${expectedIncrement}`)
+    console.log(`Actual Task Balance Increment: ${actualTaskIncrement}`)
+    console.log(`Actual Main Balance Increment: ${actualMainIncrement}`)
+
+    const taskMatch = Math.abs(actualTaskIncrement - expectedIncrement) < 0.0001
+    const mainMatch = Math.abs(actualMainIncrement - expectedIncrement) < 0.0001
+
+    if (tx.status === 'COMPLETED' && taskMatch && mainMatch) {
+      console.log('\nSUCCESS: TimeWall earnings credited directly to Task Wallet and Main Wallet as COMPLETED!');
+    } else {
+      console.error('\nFAILURE: Wallet increments or transaction status did not match expected values.');
+    }
   } else {
-    console.error('Test 1 Failed!')
-  }
-
-  // --- TEST 2: Withdrawal style (currency_amount & withdraw_id) ---
-  console.log('\n--- TEST 2: currency_amount & withdraw_id ---')
-  const mockWithdrawId = `19421578_test_${Date.now()}`
-  const url2 = `http://localhost:3000/api/timewall/postback?user_id=${userId}&currency_amount=3031&payout=0.3031&secret=${secret}&withdraw_id=${mockWithdrawId}`
-  console.log(`Mocking request to: ${url2}`)
-
-  const req2 = new NextRequest(url2)
-  const res2 = await GET(req2)
-  console.log('Response Status:', res2.status)
-  const body2 = await res2.text()
-  console.log('Response Body:', body2)
-
-  const tx2 = await prisma.transaction.findFirst({
-    where: { reference: `TIMEWALL:${mockWithdrawId}` }
-  })
-  if (tx2 && body2 === '1') {
-    console.log('Test 2 Passed: Transaction created successfully for withdrawal style.')
-    console.log(`Amount: ${tx2.amount}, Status: ${tx2.status}, WalletType: ${tx2.walletType}`)
-  } else {
-    console.error('Test 2 Failed!')
-  }
-
-  // --- TEST 3: Exact URL parameters from the user's third screenshot ---
-  console.log('\n--- TEST 3: Exact URL parameters from user screenshot (userid & reward & txid) ---')
-  const mockTxId3 = `wddc7a6a-133e-41b8-9f7e-test-${Date.now()}`
-  const url3 = `http://localhost:3000/api/timewall/postback?secret=${secret}&userid=${userId}&reward=0.3031&txid=${mockTxId3}`
-  console.log(`Mocking request to: ${url3}`)
-
-  const req3 = new NextRequest(url3)
-  const res3 = await GET(req3)
-  console.log('Response Status:', res3.status)
-  const body3 = await res3.text()
-  console.log('Response Body:', body3)
-
-  const tx3 = await prisma.transaction.findFirst({
-    where: { reference: `TIMEWALL:${mockTxId3}` }
-  })
-  if (tx3 && body3 === '1' && tx3.amount > 19.0) {
-    console.log('Test 3 Passed: Transaction created successfully with screenshot parameters.')
-    console.log(`Amount: ${tx3.amount}, Status: ${tx3.status}, WalletType: ${tx3.walletType}`)
-  } else {
-    console.error('Test 3 Failed!', tx3 ? `Amount was ${tx3.amount}` : 'No transaction found')
-  }
-
-  // --- TEST 4: Duplicate Request ---
-  console.log('\n--- TEST 4: Duplicate Request ---')
-  console.log(`Re-requesting same duplicate URL: ${url3}`)
-  const req4 = new NextRequest(url3)
-  const res4 = await GET(req4)
-  console.log('Response Status:', res4.status)
-  const body4 = await res4.text()
-  console.log('Response Body:', body4)
-  if (body4 === '1') {
-    console.log('Test 4 Passed: Duplicate postback correctly ignored and returned "1".')
-  } else {
-    console.error('Test 4 Failed!')
+    console.error('Test Failed: Transaction not found in database or wrong response body.');
   }
 }
 

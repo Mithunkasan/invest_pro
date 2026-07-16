@@ -108,3 +108,42 @@
   }
 }
 
+{
+  "timestamp": "2026-07-16T16:43:41.759Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?secret=8b005804fe45684994ea8351431fca40&userid=cmqxe3vjs000cky04629byvc9&reward=0.3031&txid=wddc7a6a-133e-41b8-9f7e-direct-1784220221753",
+  "headers": {},
+  "params": {
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "userid": "cmqxe3vjs000cky04629byvc9",
+    "reward": "0.3031",
+    "txid": "wddc7a6a-133e-41b8-9f7e-direct-1784220221753"
+  }
+}
+
+{
+  "timestamp": "2026-07-16T16:49:38.178Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?secret=8b005804fe45684994ea8351431fca40&userid=cmqxe3vjs000cky04629byvc9&reward=0.3031&txid=wddc7a6a-133e-41b8-9f7e-direct-1784220578170",
+  "headers": {},
+  "params": {
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "userid": "cmqxe3vjs000cky04629byvc9",
+    "reward": "0.3031",
+    "txid": "wddc7a6a-133e-41b8-9f7e-direct-1784220578170"
+  }
+}
+
+{
+  "timestamp": "2026-07-16T16:50:36.481Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?secret=8b005804fe45684994ea8351431fca40&userid=cmqxe3vjs000cky04629byvc9&reward=0.3031&txid=wddc7a6a-133e-41b8-9f7e-direct-1784220636474",
+  "headers": {},
+  "params": {
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "userid": "cmqxe3vjs000cky04629byvc9",
+    "reward": "0.3031",
+    "txid": "wddc7a6a-133e-41b8-9f7e-direct-1784220636474"
+  }
+}
+
