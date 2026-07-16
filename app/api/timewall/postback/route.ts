@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTimeWallConfig, TIMEWALL_REFERENCE_PREFIX } from '@/lib/timewall'
 import { syncWalletMainBalance } from '@/actions/walletUtils'
+import { promises as fs } from 'fs'
+import path from 'path'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,15 +40,54 @@ async function handlePostback(request: NextRequest) {
   const params = await parseParams(request)
   const config = await getTimeWallConfig()
 
+  // Log request details to timewall_postback.log in the workspace root
+  try {
+    const logData = {
+      timestamp: new Date().toISOString(),
+      method: request.method,
+      url: request.url,
+      headers: Object.fromEntries(request.headers.entries()),
+      params: Object.fromEntries(params.entries()),
+    }
+    const logPath = path.join(process.cwd(), 'timewall_postback.log')
+    await fs.appendFile(logPath, JSON.stringify(logData, null, 2) + '\n\n', 'utf8')
+  } catch (err) {
+    console.error('Failed to log TimeWall postback request:', err)
+  }
+
   const providedSecret = firstValue(params, ['secret', 'key', 'api_key', 'token'])
   if (config.postbackSecret && providedSecret !== config.postbackSecret) {
     return new Response('Invalid postback secret', { status: 401 })
   }
 
-  const userId = firstValue(params, ['user_id', 'userid', 'userId', 'sub_id', 'subid', 'subId', 's1'])
+  const userId = firstValue(params, [
+    'user_id',
+    'userid',
+    'userId',
+    'external_user_id',
+    'externalUserId',
+    'externaluserid',
+    'sub_id',
+    'subid',
+    'subId',
+    's1',
+    'uid',
+    'custom',
+    'user'
+  ])
   
   // Extract TimeWall points specifically. We must NOT calculate the reward using the USD payout.
-  let rawPoints = params.get('points') || params.get('currency_amount') || params.get('currencyAmount')
+  let rawPoints = params.get('points') || 
+                  params.get('currency_amount') || 
+                  params.get('currencyAmount') ||
+                  params.get('currencyamount') ||
+                  params.get('placement_currency_amount') ||
+                  params.get('placementCurrencyAmount') ||
+                  params.get('placementcurrencyamount') ||
+                  params.get('rate_points') ||
+                  params.get('ratePoints') ||
+                  params.get('ratepoints')
+
   if (!rawPoints && params.get('amount')) {
     const amountVal = Number(params.get('amount'))
     const payoutVal = params.get('payout') ? Number(params.get('payout')) : null
@@ -74,7 +115,8 @@ async function handlePostback(request: NextRequest) {
     'tx_id',
     'id',
     'withdraw_id',
-    'withdrawId'
+    'withdrawId',
+    'withdrawid'
   ])
 
   if (!userId || !Number.isFinite(points) || points <= 0) {

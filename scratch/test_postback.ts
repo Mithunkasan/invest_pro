@@ -68,18 +68,40 @@ async function test() {
     console.error('Test 2 Failed!')
   }
 
-  // --- TEST 3: Duplicate Request ---
-  console.log('\n--- TEST 3: Duplicate Request ---')
-  console.log(`Re-requesting same duplicate URL: ${url2}`)
-  const req3 = new NextRequest(url2)
+  // --- TEST 3: Specific parameters from the screenshot (external_user_id & rate_points & withdraw_id) ---
+  console.log('\n--- TEST 3: Specific parameters from the screenshot (external_user_id & rate_points & withdraw_id) ---')
+  const mockWithdrawId3 = `19421578_sc_${Date.now()}`
+  const url3 = `http://localhost:3000/api/timewall/postback?external_user_id=${userId}&rate_points=3031&payout=0.3031&secret=${secret}&withdraw_id=${mockWithdrawId3}`
+  console.log(`Mocking request to: ${url3}`)
+
+  const req3 = new NextRequest(url3)
   const res3 = await GET(req3)
   console.log('Response Status:', res3.status)
   const body3 = await res3.text()
   console.log('Response Body:', body3)
-  if (body3 === '1') {
-    console.log('Test 3 Passed: Duplicate postback correctly ignored and returned "1".')
+
+  const tx3 = await prisma.transaction.findFirst({
+    where: { reference: `TIMEWALL:${mockWithdrawId3}` }
+  })
+  if (tx3 && body3 === '1') {
+    console.log('Test 3 Passed: Transaction created successfully with screenshot parameter keys.')
+    console.log(`Amount: ${tx3.amount}, Status: ${tx3.status}, WalletType: ${tx3.walletType}`)
   } else {
     console.error('Test 3 Failed!')
+  }
+
+  // --- TEST 4: Duplicate Request ---
+  console.log('\n--- TEST 4: Duplicate Request ---')
+  console.log(`Re-requesting same duplicate URL: ${url3}`)
+  const req4 = new NextRequest(url3)
+  const res4 = await GET(req4)
+  console.log('Response Status:', res4.status)
+  const body4 = await res4.text()
+  console.log('Response Body:', body4)
+  if (body4 === '1') {
+    console.log('Test 4 Passed: Duplicate postback correctly ignored and returned "1".')
+  } else {
+    console.error('Test 4 Failed!')
   }
 }
 
