@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-07-16T16:00:56.760Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?user_id=cmqxe3vjs000cky04629byvc9&points=650&payout=0.055&secret=8b005804fe45684994ea8351431fca40&transaction_id=mock_txn_points_1784217656753",
+  "headers": {},
+  "params": {
+    "user_id": "cmqxe3vjs000cky04629byvc9",
+    "points": "650",
+    "payout": "0.055",
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "transaction_id": "mock_txn_points_1784217656753"
+  }
+}
+
+{
+  "timestamp": "2026-07-16T16:00:59.497Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?user_id=cmqxe3vjs000cky04629byvc9&currency_amount=3031&payout=0.3031&secret=8b005804fe45684994ea8351431fca40&withdraw_id=19421578_test_1784217659496",
+  "headers": {},
+  "params": {
+    "user_id": "cmqxe3vjs000cky04629byvc9",
+    "currency_amount": "3031",
+    "payout": "0.3031",
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "withdraw_id": "19421578_test_1784217659496"
+  }
+}
+
+{
+  "timestamp": "2026-07-16T16:01:00.226Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?external_user_id=cmqxe3vjs000cky04629byvc9&rate_points=3031&payout=0.3031&secret=8b005804fe45684994ea8351431fca40&withdraw_id=19421578_sc_1784217660225",
+  "headers": {},
+  "params": {
+    "external_user_id": "cmqxe3vjs000cky04629byvc9",
+    "rate_points": "3031",
+    "payout": "0.3031",
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "withdraw_id": "19421578_sc_1784217660225"
+  }
+}
+
+{
+  "timestamp": "2026-07-16T16:01:00.873Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?external_user_id=cmqxe3vjs000cky04629byvc9&rate_points=3031&payout=0.3031&secret=8b005804fe45684994ea8351431fca40&withdraw_id=19421578_sc_1784217660225",
+  "headers": {},
+  "params": {
+    "external_user_id": "cmqxe3vjs000cky04629byvc9",
+    "rate_points": "3031",
+    "payout": "0.3031",
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "withdraw_id": "19421578_sc_1784217660225"
+  }
+}
+
