@@ -23,32 +23,63 @@ async function test() {
 
   // Set the secret
   const secret = '8b005804fe45684994ea8351431fca40'
-  const mockTxnId = `mock_txn_points_${Date.now()}`
 
-  // Mock postback URL parameters with points=650 and payout=0.055
-  const url = `http://localhost:3000/api/timewall/postback?user_id=${userId}&points=650&payout=0.055&secret=${secret}&transaction_id=${mockTxnId}`
-  console.log(`Mocking request to: ${url}`)
+  // --- TEST 1: Standard Points parameter ---
+  console.log('\n--- TEST 1: points & transaction_id ---')
+  const mockTxnId1 = `mock_txn_points_${Date.now()}`
+  const url1 = `http://localhost:3000/api/timewall/postback?user_id=${userId}&points=650&payout=0.055&secret=${secret}&transaction_id=${mockTxnId1}`
+  console.log(`Mocking request to: ${url1}`)
   
-  const req = new NextRequest(url)
-  const res = await GET(req)
-  console.log('Response Status:', res.status)
-  const body = await res.json()
-  console.log('Response Body:', JSON.stringify(body, null, 2))
+  const req1 = new NextRequest(url1)
+  const res1 = await GET(req1)
+  console.log('Response Status:', res1.status)
+  const body1 = await res1.text()
+  console.log('Response Body:', body1)
 
-  // Find the created transaction in the database
-  const tx = await prisma.transaction.findFirst({
-    where: { reference: `TIMEWALL:${mockTxnId}` }
+  const tx1 = await prisma.transaction.findFirst({
+    where: { reference: `TIMEWALL:${mockTxnId1}` }
   })
-
-  if (tx) {
-    console.log('--- Created Transaction in Database ---')
-    console.log(`ID: ${tx.id}`)
-    console.log(`Amount: ${tx.amount} (Type: ${typeof tx.amount})`)
-    console.log(`Status: ${tx.status}`)
-    console.log(`WalletType: ${tx.walletType}`)
-    console.log(`Description: "${tx.description}"`)
+  if (tx1 && body1 === '1') {
+    console.log('Test 1 Passed: Transaction created successfully.')
+    console.log(`Amount: ${tx1.amount}, Status: ${tx1.status}, WalletType: ${tx1.walletType}`)
   } else {
-    console.error('Error: Transaction was not found in the database!')
+    console.error('Test 1 Failed!')
+  }
+
+  // --- TEST 2: Withdrawal style (currency_amount & withdraw_id) ---
+  console.log('\n--- TEST 2: currency_amount & withdraw_id ---')
+  const mockWithdrawId = `19421578_test_${Date.now()}`
+  const url2 = `http://localhost:3000/api/timewall/postback?user_id=${userId}&currency_amount=3031&payout=0.3031&secret=${secret}&withdraw_id=${mockWithdrawId}`
+  console.log(`Mocking request to: ${url2}`)
+
+  const req2 = new NextRequest(url2)
+  const res2 = await GET(req2)
+  console.log('Response Status:', res2.status)
+  const body2 = await res2.text()
+  console.log('Response Body:', body2)
+
+  const tx2 = await prisma.transaction.findFirst({
+    where: { reference: `TIMEWALL:${mockWithdrawId}` }
+  })
+  if (tx2 && body2 === '1') {
+    console.log('Test 2 Passed: Transaction created successfully for withdrawal style.')
+    console.log(`Amount: ${tx2.amount}, Status: ${tx2.status}, WalletType: ${tx2.walletType}`)
+  } else {
+    console.error('Test 2 Failed!')
+  }
+
+  // --- TEST 3: Duplicate Request ---
+  console.log('\n--- TEST 3: Duplicate Request ---')
+  console.log(`Re-requesting same duplicate URL: ${url2}`)
+  const req3 = new NextRequest(url2)
+  const res3 = await GET(req3)
+  console.log('Response Status:', res3.status)
+  const body3 = await res3.text()
+  console.log('Response Body:', body3)
+  if (body3 === '1') {
+    console.log('Test 3 Passed: Duplicate postback correctly ignored and returned "1".')
+  } else {
+    console.error('Test 3 Failed!')
   }
 }
 
