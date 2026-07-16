@@ -31,7 +31,7 @@ async function testApproval() {
   const wallet = await prisma.wallet.findUnique({
     where: { userId: transaction.userId }
   })
-  console.log('Updated Wallet bonusBalance:', wallet?.bonusBalance, 'mainBalance:', wallet?.mainBalance)
+  console.log('Updated Wallet taskBalance:', wallet?.taskBalance, 'bonusBalance:', wallet?.bonusBalance, 'mainBalance:', wallet?.mainBalance)
 
   const notifications = await prisma.notification.findMany({
     where: { userId: transaction.userId },
