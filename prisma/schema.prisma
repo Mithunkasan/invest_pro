@@ -470,6 +470,14 @@ model SystemSettings {
   giftDepositAmount        Float    @default(0)
   timeWallPercentFree     Float    @default(0.005)
 
+  // TimeWall credential settings (stored in DB so they persist in serverless/Vercel)
+  timeWallUsername        String?
+  timeWallPassword        String?
+  timeWallPlacementId     String?
+  timeWallOfferwallUrl    String?
+  timeWallCommissionPct   Float?
+  timeWallPostbackSecret  String?
+
   // Bank Details
   upiId                   String?
   bankName                String?

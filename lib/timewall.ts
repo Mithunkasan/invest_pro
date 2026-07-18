@@ -1,6 +1,6 @@
-import { promises as fs } from 'fs'
-import path from 'path'
 import type { Prisma, PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
+
 
 export const TIMEWALL_REFERENCE_PREFIX = 'TIMEWALL:'
 
@@ -12,8 +12,6 @@ export interface TimeWallConfig {
   commissionPercent: number
   postbackSecret: string
 }
-
-const configPath = path.join(process.cwd(), '.timewall-settings.json')
 
 const defaultConfig: TimeWallConfig = {
   username: process.env.TIMEWALL_USERNAME || 'vrgalaxynetworksceo@gmail.com',
@@ -37,12 +35,28 @@ function normalizePercent(value: unknown, fallback = 20) {
 
 export async function getTimeWallConfig(): Promise<TimeWallConfig> {
   try {
-    const raw = await fs.readFile(configPath, 'utf8')
-    const parsed = JSON.parse(raw) as Partial<TimeWallConfig>
+    const row = await prisma.systemSettings.findUnique({
+      where: { id: 'default' },
+      select: {
+        timeWallUsername: true,
+        timeWallPassword: true,
+        timeWallPlacementId: true,
+        timeWallOfferwallUrl: true,
+        timeWallCommissionPct: true,
+        timeWallPostbackSecret: true,
+      },
+    })
+
     return {
-      ...defaultConfig,
-      ...parsed,
-      commissionPercent: normalizePercent(parsed.commissionPercent, defaultConfig.commissionPercent),
+      username: row?.timeWallUsername ?? defaultConfig.username,
+      password: row?.timeWallPassword ?? defaultConfig.password,
+      placementId: row?.timeWallPlacementId ?? defaultConfig.placementId,
+      offerwallUrl: normalizeOfferwallUrl(row?.timeWallOfferwallUrl ?? defaultConfig.offerwallUrl),
+      commissionPercent: normalizePercent(
+        row?.timeWallCommissionPct ?? defaultConfig.commissionPercent,
+        defaultConfig.commissionPercent,
+      ),
+      postbackSecret: row?.timeWallPostbackSecret ?? defaultConfig.postbackSecret,
     }
   } catch {
     return {
@@ -63,9 +77,30 @@ export async function updateTimeWallConfig(data: Partial<TimeWallConfig>) {
     postbackSecret: String(data.postbackSecret ?? current.postbackSecret).trim(),
   }
 
-  await fs.writeFile(configPath, `${JSON.stringify(next, null, 2)}\n`, 'utf8')
+  await prisma.systemSettings.upsert({
+    where: { id: 'default' },
+    update: {
+      timeWallUsername: next.username,
+      timeWallPassword: next.password,
+      timeWallPlacementId: next.placementId,
+      timeWallOfferwallUrl: next.offerwallUrl,
+      timeWallCommissionPct: next.commissionPercent,
+      timeWallPostbackSecret: next.postbackSecret,
+    },
+    create: {
+      id: 'default',
+      timeWallUsername: next.username,
+      timeWallPassword: next.password,
+      timeWallPlacementId: next.placementId,
+      timeWallOfferwallUrl: next.offerwallUrl,
+      timeWallCommissionPct: next.commissionPercent,
+      timeWallPostbackSecret: next.postbackSecret,
+    },
+  })
+
   return next
 }
+
 
 export function buildTimeWallUrl(config: TimeWallConfig, user: { id: string; email: string; name: string }) {
   const encodedUserId = encodeURIComponent(user.id)
