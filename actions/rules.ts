@@ -410,3 +410,148 @@ export async function distributeReferralAndLevelCommissions(
 
   return creditedReferrerIds
 }
+
+// ── Distribute TimeWall Referral Commissions ──────────────────────────────────
+export async function distributeTimeWallReferralCommission(
+  tx: any,
+  purchaserId: string,
+  userAmount: number,
+  timeWallTransactionId: string,
+  purchaserName: string
+): Promise<string[]> {
+  if (!Number.isFinite(userAmount) || userAmount <= 0) return []
+
+  const settings = await tx.systemSettings.findUnique({ where: { id: 'default' } })
+  if (!settings) return []
+
+  const levelPercentages = (settings.timeWallReferralCommissionStructure || '10,5,3')
+    .split(',')
+    .map((percentage: string) => Number(percentage.trim()))
+    .map((percentage: number) => Number.isFinite(percentage) && percentage > 0 ? percentage : 0)
+
+  const credited = new Set<string>()
+  const visitedUserIds = new Set<string>([purchaserId])
+  
+  // Fetch purchaser upline info
+  const purchaser = await tx.user.findUnique({
+    where: { id: purchaserId },
+    select: { referredById: true },
+  })
+  if (!purchaser?.referredById) return []
+
+  let currentReferrerId: string | null = purchaser.referredById
+
+  for (let index = 0; index < levelPercentages.length && currentReferrerId; index++) {
+    const level = index + 1
+    const percentage = levelPercentages[index]
+    const referrer = await tx.user.findUnique({
+      where: { id: currentReferrerId },
+      select: { id: true, referredById: true },
+    })
+    if (!referrer || visitedUserIds.has(referrer.id)) break
+
+    visitedUserIds.add(referrer.id)
+    currentReferrerId = referrer.referredById
+    if (percentage === 0) continue
+
+    let activatedDirectReferralCount = 0
+    if (level > 1) {
+      activatedDirectReferralCount = await tx.user.count({
+        where: {
+          referredById: referrer.id,
+          OR: [
+            {
+              membershipPlanActivatedAt: { not: null },
+              membershipPlan: { price: { gt: 0 } },
+            },
+            {
+              basicMembershipActivatedAt: { not: null },
+              basicMembershipAmount: { gt: 0 },
+            },
+          ],
+        },
+      })
+    }
+    if (!isUplineEligibleForLevel(level, activatedDirectReferralCount)) continue
+
+    const commissionAmount = Number(((userAmount * percentage) / 100).toFixed(2))
+    if (commissionAmount <= 0) continue
+
+    const reference = `REFERRAL_COMMISSION:TIMEWALL:${timeWallTransactionId}:L${level}`
+
+    // Check if already credited
+    const alreadyCredited = await tx.transaction.findFirst({
+      where: {
+        userId: referrer.id,
+        type: 'REFERRAL_BONUS',
+        walletType: 'REFERRAL',
+        reference,
+      },
+      select: { id: true },
+    })
+    if (alreadyCredited) {
+      credited.add(referrer.id)
+      continue
+    }
+
+    await tx.wallet.upsert({
+      where: { userId: referrer.id },
+      update: {
+        mainBalance: { increment: commissionAmount },
+        referralBalance: { increment: commissionAmount },
+        totalEarned: { increment: commissionAmount },
+      },
+      create: {
+        userId: referrer.id,
+        mainBalance: commissionAmount,
+        referralBalance: commissionAmount,
+        totalEarned: commissionAmount,
+      },
+    })
+
+    await tx.transaction.create({
+      data: {
+        userId: referrer.id,
+        type: 'REFERRAL_BONUS',
+        amount: commissionAmount,
+        status: 'COMPLETED',
+        reference,
+        description: `Upline Level ${level} (${percentage}%) commission from ${purchaserName}'s TimeWall earnings`,
+        walletType: 'REFERRAL',
+      },
+    })
+
+    await tx.notification.create({
+      data: {
+        userId: referrer.id,
+        title: `TimeWall Referral Commission Received`,
+        message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} (${percentage}%) from ${purchaserName}'s TimeWall earnings. It was credited to your Referral Wallet.`,
+        type: 'SUCCESS',
+      },
+    })
+
+    const referralRecord = await tx.referral.findFirst({
+      where: { referrerId: referrer.id, referredId: purchaserId },
+      select: { id: true },
+    })
+    if (referralRecord) {
+      await tx.referral.update({
+        where: { id: referralRecord.id },
+        data: { commission: { increment: commissionAmount }, level },
+      })
+    } else {
+      await tx.referral.create({
+        data: {
+          referrerId: referrer.id,
+          referredId: purchaserId,
+          commission: commissionAmount,
+          level,
+        },
+      })
+    }
+
+    credited.add(referrer.id)
+  }
+
+  return [...credited]
+}

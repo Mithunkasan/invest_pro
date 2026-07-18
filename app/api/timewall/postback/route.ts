@@ -2,6 +2,11 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTimeWallConfig, TIMEWALL_REFERENCE_PREFIX } from '@/lib/timewall'
 import { syncWalletMainBalance } from '@/actions/walletUtils'
+import {
+  distributeTimeWallReferralCommission,
+  checkAndApplyPerformanceBadges,
+  checkAndApplyTLRank
+} from '@/actions/rules'
 import { promises as fs } from 'fs'
 import path from 'path'
 
@@ -135,6 +140,7 @@ async function handlePostback(request: NextRequest) {
     where: { id: userId },
     select: {
       id: true,
+      name: true,
       membershipPlanId: true,
       membershipPlan: {
         select: {
@@ -172,8 +178,8 @@ async function handlePostback(request: NextRequest) {
   // Exact calculated value (no rounding to integer)
   const userAmount = points * configuredMultiplier
 
-  await prisma.$transaction(async (tx) => {
-    await tx.transaction.create({
+  const creditedReferrerIds = await prisma.$transaction(async (tx) => {
+    const timeWallTx = await tx.transaction.create({
       data: {
         userId,
         type: 'BONUS',
@@ -198,6 +204,14 @@ async function handlePostback(request: NextRequest) {
       },
     })
 
+    const referrerIds = await distributeTimeWallReferralCommission(
+      tx,
+      userId,
+      userAmount,
+      timeWallTx.id,
+      user.name
+    )
+
     await syncWalletMainBalance(tx, userId)
 
     await tx.notification.create({
@@ -209,7 +223,14 @@ async function handlePostback(request: NextRequest) {
         link: '/dashboard/wallet',
       },
     })
+
+    return referrerIds
   })
+
+  for (const referrerId of creditedReferrerIds) {
+    await checkAndApplyPerformanceBadges(referrerId)
+    await checkAndApplyTLRank(referrerId)
+  }
 
   return new Response('1', {
     status: 200,
