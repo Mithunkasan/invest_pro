@@ -7,7 +7,12 @@ import type { ApiResponse } from '@/types'
 import { syncWalletMainBalance, deductFromWallets, refundWithdrawalToWallets } from './walletUtils'
 import { BASIC_MEMBERSHIP_AMOUNT, findBasicMembershipPlan, getBasicMembershipExpiry } from '@/lib/basicMembership'
 import { creditAllDueMembershipYields } from '@/lib/depositYield'
-import { distributeReferralAndLevelCommissions } from './rules'
+import {
+  distributeReferralAndLevelCommissions,
+  distributeTimeWallReferralCommission,
+  checkAndApplyPerformanceBadges,
+  checkAndApplyTLRank
+} from './rules'
 import { TIMEWALL_REFERENCE_PREFIX } from '@/lib/timewall'
 
 // ── User Management ───────────────────────────────────────────────────────────
@@ -582,7 +587,7 @@ export async function handleTimeWallTransaction(
 
     if (action === 'APPROVE') {
       const userAmount = transaction.amount
-      await prisma.$transaction(async (tx) => {
+      const creditedReferrerIds = await prisma.$transaction(async (tx) => {
         // Update transaction status
         await tx.transaction.update({
           where: { id: transactionId },
@@ -606,6 +611,14 @@ export async function handleTimeWallTransaction(
           },
         })
 
+        const referrerIds = await distributeTimeWallReferralCommission(
+          tx,
+          transaction.userId,
+          userAmount,
+          transactionId,
+          transaction.user.name
+        )
+
         // Create notification for user
         await tx.notification.create({
           data: {
@@ -619,7 +632,14 @@ export async function handleTimeWallTransaction(
 
         // Sync main balance
         await syncWalletMainBalance(tx, transaction.userId)
+
+        return referrerIds
       })
+
+      for (const referrerId of creditedReferrerIds) {
+        await checkAndApplyPerformanceBadges(referrerId)
+        await checkAndApplyTLRank(referrerId)
+      }
 
       revalidatePath('/admin/dashboard/timewall')
       revalidatePath('/dashboard/wallet')

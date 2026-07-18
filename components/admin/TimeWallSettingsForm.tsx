@@ -26,6 +26,7 @@ interface TimeWallSettingsFormProps {
     offerwallUrl: string
     postbackSecret: string
     timeWallPercentFree: number
+    timeWallReferralCommissionStructure?: string
     plans: {
       id: string
       name: string
@@ -38,6 +39,19 @@ export function TimeWallSettingsForm({ initialSettings }: TimeWallSettingsFormPr
   const [settings, setSettings] = useState(initialSettings)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  // Initialize commission levels state
+  const getInitialLevels = () => {
+    if (initialSettings.timeWallReferralCommissionStructure) {
+      return initialSettings.timeWallReferralCommissionStructure
+        .split(',')
+        .map((p) => Number(p.trim()))
+        .filter((p) => !isNaN(p))
+    }
+    return [10, 5, 3]
+  }
+
+  const [commissionLevels, setCommissionLevels] = useState<number[]>(getInitialLevels())
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = event.target
@@ -68,6 +82,7 @@ export function TimeWallSettingsForm({ initialSettings }: TimeWallSettingsFormPr
         offerwallUrl: settings.offerwallUrl,
         postbackSecret: settings.postbackSecret,
         timeWallPercentFree: settings.timeWallPercentFree,
+        timeWallReferralCommissionStructure: commissionLevels.join(','),
         planPercentages: settings.plans.map(p => ({
           id: p.id,
           timeWallPercent: p.timeWallPercent
@@ -192,6 +207,82 @@ export function TimeWallSettingsForm({ initialSettings }: TimeWallSettingsFormPr
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* ── Section: TimeWall Referral Level Commissions ────────────────── */}
+      <div className="border-t border-muted/50 pt-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-4 border-muted/50">
+          <div>
+            <h3 className="text-sm font-bold text-white/80">TimeWall Referral Level Commissions</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Configure the referral commission percentage distributed to each upline level for TimeWall earnings.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (commissionLevels.length > 1) {
+                  setCommissionLevels(commissionLevels.slice(0, -1))
+                }
+              }}
+              disabled={loading || commissionLevels.length <= 1}
+              className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-50 transition-all text-xs"
+            >
+              - Remove Level
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setCommissionLevels([...commissionLevels, 0])
+              }}
+              disabled={loading}
+              className="border-primary/30 text-primary hover:bg-primary/10 hover:text-primary-foreground transition-all text-xs"
+            >
+              + Add Level
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 pt-2">
+          {commissionLevels.map((pct, idx) => (
+            <div key={idx} className="space-y-2 premium-card p-4 bg-background/30 border border-muted/40 relative overflow-hidden group rounded-xl">
+              <div className="absolute top-2 right-3 text-[10px] font-bold text-primary/30 group-hover:text-primary/50 transition-colors uppercase tracking-wider">
+                Level {idx + 1}
+              </div>
+              <Label htmlFor={`timewall-level-${idx}`} className="text-xs font-semibold text-white/70">
+                Upline Level {idx + 1} (%)
+              </Label>
+              <div className="relative flex items-center">
+                <Input
+                  id={`timewall-level-${idx}`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={pct}
+                  onChange={(e) => {
+                    const newLevels = [...commissionLevels]
+                    newLevels[idx] = e.target.value === '' ? 0 : Number(e.target.value)
+                    setCommissionLevels(newLevels)
+                  }}
+                  disabled={loading}
+                  className="pr-8 bg-background/50 font-medium text-white"
+                />
+                <span className="absolute right-3 text-sm text-muted-foreground font-bold pointer-events-none">%</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-normal">
+                {idx === 0 
+                  ? "Direct Referrer (e.g. User A refers User B)"
+                  : `Level ${idx + 1} Uplines in the referral tree`}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 

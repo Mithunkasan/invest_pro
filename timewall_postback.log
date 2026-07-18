@@ -147,3 +147,16 @@
   }
 }
 
+{
+  "timestamp": "2026-07-18T03:50:17.550Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/timewall/postback?secret=8b005804fe45684994ea8351431fca40&userid=cmrptwg280003vh6cxwnpnilp&points=1000&txid=test_txn_1784346617504",
+  "headers": {},
+  "params": {
+    "secret": "8b005804fe45684994ea8351431fca40",
+    "userid": "cmrptwg280003vh6cxwnpnilp",
+    "points": "1000",
+    "txid": "test_txn_1784346617504"
+  }
+}
+

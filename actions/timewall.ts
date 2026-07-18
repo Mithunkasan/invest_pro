@@ -14,7 +14,7 @@ export async function getTimeWallSettingsAction() {
   
   const systemSettings = await prisma.systemSettings.findUnique({
     where: { id: 'default' },
-    select: { timeWallPercentFree: true }
+    select: { timeWallPercentFree: true, timeWallReferralCommissionStructure: true }
   })
   
   const plans = await prisma.membershipPlan.findMany({
@@ -27,6 +27,7 @@ export async function getTimeWallSettingsAction() {
     offerwallUrl: config.offerwallUrl,
     postbackSecret: config.postbackSecret,
     timeWallPercentFree: systemSettings?.timeWallPercentFree ?? 0.005,
+    timeWallReferralCommissionStructure: systemSettings?.timeWallReferralCommissionStructure ?? '10,5,3',
     plans: plans.map(p => ({
       id: p.id,
       name: p.name,
@@ -42,6 +43,7 @@ export async function updateTimeWallSettingsAction(data: {
   offerwallUrl: string
   postbackSecret?: string
   timeWallPercentFree: number
+  timeWallReferralCommissionStructure?: string
   planPercentages?: { id: string; timeWallPercent: number }[]
 }): Promise<ApiResponse> {
   const admin = await getAdminSession()
@@ -72,8 +74,15 @@ export async function updateTimeWallSettingsAction(data: {
 
     await prisma.systemSettings.upsert({
       where: { id: 'default' },
-      update: { timeWallPercentFree },
-      create: { id: 'default', timeWallPercentFree }
+      update: { 
+        timeWallPercentFree,
+        timeWallReferralCommissionStructure: data.timeWallReferralCommissionStructure ?? '10,5,3'
+      },
+      create: { 
+        id: 'default', 
+        timeWallPercentFree,
+        timeWallReferralCommissionStructure: data.timeWallReferralCommissionStructure ?? '10,5,3'
+      }
     })
 
     if (data.planPercentages && Array.isArray(data.planPercentages)) {
