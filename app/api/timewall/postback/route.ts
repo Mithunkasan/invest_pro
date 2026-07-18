@@ -1,14 +1,167 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTimeWallConfig, TIMEWALL_REFERENCE_PREFIX } from '@/lib/timewall'
-import { syncWalletMainBalance } from '@/actions/walletUtils'
+import { isUplineEligibleForLevel } from '@/lib/referralEligibility'
 import {
-  distributeTimeWallReferralCommission,
   checkAndApplyPerformanceBadges,
-  checkAndApplyTLRank
+  checkAndApplyTLRank,
 } from '@/actions/rules'
 
 export const dynamic = 'force-dynamic'
+
+// ── Local helpers (not Server Actions — tx must stay in-process) ────────────
+// NOTE: syncWalletMainBalance and distributeTimeWallReferralCommission are
+// intentionally duplicated here from their 'use server' action files.
+// Passing a Prisma transaction object (tx) across a 'use server' boundary
+// causes argument serialization to fail at runtime → HTTP 500.
+// By declaring them as plain local functions in this Route Handler,
+// the tx is passed by reference within the same process.
+
+async function syncWalletMainBalance(tx: any, userId: string) {
+  const wallet = await tx.wallet.findUnique({ where: { userId } })
+  if (!wallet) return
+  const newMainBalance =
+    (wallet.rewardBalance || 0) +
+    (wallet.referralBalance || 0) +
+    (wallet.levelBalance || 0) +
+    (wallet.shareBalance || 0) +
+    (wallet.bonusBalance || 0) +
+    (wallet.taskBalance || 0)
+  await tx.wallet.update({ where: { userId }, data: { mainBalance: newMainBalance } })
+}
+
+async function distributeTimeWallReferralCommission(
+  tx: any,
+  purchaserId: string,
+  userAmount: number,
+  timeWallTransactionId: string,
+  purchaserName: string
+): Promise<string[]> {
+  if (!Number.isFinite(userAmount) || userAmount <= 0) return []
+
+  const settings = await tx.systemSettings.findUnique({ where: { id: 'default' } })
+  if (!settings) return []
+
+  const levelPercentages = (settings.timeWallReferralCommissionStructure || '10,5,3')
+    .split(',')
+    .map((p: string) => Number(p.trim()))
+    .map((p: number) => (Number.isFinite(p) && p > 0 ? p : 0))
+
+  const credited = new Set<string>()
+  const visitedUserIds = new Set<string>([purchaserId])
+
+  const purchaser = await tx.user.findUnique({
+    where: { id: purchaserId },
+    select: { referredById: true },
+  })
+  if (!purchaser?.referredById) return []
+
+  let currentReferrerId: string | null = purchaser.referredById
+
+  for (let index = 0; index < levelPercentages.length && currentReferrerId; index++) {
+    const level = index + 1
+    const percentage = levelPercentages[index]
+    const referrer = await tx.user.findUnique({
+      where: { id: currentReferrerId },
+      select: { id: true, referredById: true },
+    })
+    if (!referrer || visitedUserIds.has(referrer.id)) break
+
+    visitedUserIds.add(referrer.id)
+    currentReferrerId = referrer.referredById
+    if (percentage === 0) continue
+
+    let activatedDirectReferralCount = 0
+    if (level > 1) {
+      activatedDirectReferralCount = await tx.user.count({
+        where: {
+          referredById: referrer.id,
+          OR: [
+            { membershipPlanActivatedAt: { not: null }, membershipPlan: { price: { gt: 0 } } },
+            { basicMembershipActivatedAt: { not: null }, basicMembershipAmount: { gt: 0 } },
+          ],
+        },
+      })
+    }
+    if (!isUplineEligibleForLevel(level, activatedDirectReferralCount)) continue
+
+    const commissionAmount = Number(((userAmount * percentage) / 100).toFixed(2))
+    if (commissionAmount <= 0) continue
+
+    const reference = `REFERRAL_COMMISSION:TIMEWALL:${timeWallTransactionId}:L${level}`
+
+    const alreadyCredited = await tx.transaction.findFirst({
+      where: { userId: referrer.id, type: 'REFERRAL_BONUS', walletType: 'REFERRAL', reference },
+      select: { id: true },
+    })
+    if (alreadyCredited) {
+      credited.add(referrer.id)
+      continue
+    }
+
+    await tx.wallet.upsert({
+      where: { userId: referrer.id },
+      update: {
+        mainBalance: { increment: commissionAmount },
+        referralBalance: { increment: commissionAmount },
+        totalEarned: { increment: commissionAmount },
+      },
+      create: {
+        userId: referrer.id,
+        mainBalance: commissionAmount,
+        referralBalance: commissionAmount,
+        totalEarned: commissionAmount,
+      },
+    })
+
+    await tx.transaction.create({
+      data: {
+        userId: referrer.id,
+        type: 'REFERRAL_BONUS',
+        amount: commissionAmount,
+        status: 'COMPLETED',
+        reference,
+        description: `Upline Level ${level} (${percentage}%) commission from ${purchaserName}'s TimeWall earnings`,
+        walletType: 'REFERRAL',
+      },
+    })
+
+    await tx.notification.create({
+      data: {
+        userId: referrer.id,
+        title: `TimeWall Referral Commission Received`,
+        message: `You earned ₹${commissionAmount.toLocaleString('en-IN')} (${percentage}%) from ${purchaserName}'s TimeWall earnings. It was credited to your Referral Wallet.`,
+        type: 'SUCCESS',
+      },
+    })
+
+    const referralRecord = await tx.referral.findFirst({
+      where: { referrerId: referrer.id, referredId: purchaserId },
+      select: { id: true },
+    })
+    if (referralRecord) {
+      await tx.referral.update({
+        where: { id: referralRecord.id },
+        data: { commission: { increment: commissionAmount }, level },
+      })
+    } else {
+      await tx.referral.create({
+        data: {
+          referrerId: referrer.id,
+          referredId: purchaserId,
+          commission: commissionAmount,
+          level,
+        },
+      })
+    }
+
+    credited.add(referrer.id)
+  }
+
+  return [...credited]
+}
+
+// ── Param helpers ───────────────────────────────────────────────────────────
 
 function firstValue(params: URLSearchParams, keys: string[]) {
   for (const key of keys) {
@@ -39,6 +192,8 @@ async function parseParams(request: NextRequest) {
   return params
 }
 
+// ── Main handler ────────────────────────────────────────────────────────────
+
 async function handlePostback(request: NextRequest) {
   const params = await parseParams(request)
   const config = await getTimeWallConfig()
@@ -49,32 +204,24 @@ async function handlePostback(request: NextRequest) {
   }
 
   const userId = firstValue(params, [
-    'user_id',
-    'userid',
-    'userId',
-    'external_user_id',
-    'externalUserId',
-    'externaluserid',
-    'sub_id',
-    'subid',
-    'subId',
-    's1',
-    'uid',
-    'custom',
-    'user'
+    'user_id', 'userid', 'userId',
+    'external_user_id', 'externalUserId', 'externaluserid',
+    'sub_id', 'subid', 'subId',
+    's1', 'uid', 'custom', 'user',
   ])
-  
-  // Extract TimeWall points specifically. We must NOT calculate the reward using the USD payout.
-  let rawPoints = params.get('points') || 
-                  params.get('currency_amount') || 
-                  params.get('currencyAmount') ||
-                  params.get('currencyamount') ||
-                  params.get('placement_currency_amount') ||
-                  params.get('placementCurrencyAmount') ||
-                  params.get('placementcurrencyamount') ||
-                  params.get('rate_points') ||
-                  params.get('ratePoints') ||
-                  params.get('ratepoints')
+
+  // Extract TimeWall points. We must NOT calculate the reward using the USD payout.
+  let rawPoints =
+    params.get('points') ||
+    params.get('currency_amount') ||
+    params.get('currencyAmount') ||
+    params.get('currencyamount') ||
+    params.get('placement_currency_amount') ||
+    params.get('placementCurrencyAmount') ||
+    params.get('placementcurrencyamount') ||
+    params.get('rate_points') ||
+    params.get('ratePoints') ||
+    params.get('ratepoints')
 
   if (!rawPoints && params.get('amount')) {
     const amountVal = Number(params.get('amount'))
@@ -105,14 +252,8 @@ async function handlePostback(request: NextRequest) {
   }
 
   const externalTransactionId = firstValue(params, [
-    'transaction_id',
-    'transactionId',
-    'txid',
-    'tx_id',
-    'id',
-    'withdraw_id',
-    'withdrawId',
-    'withdrawid'
+    'transaction_id', 'transactionId', 'txid', 'tx_id',
+    'id', 'withdraw_id', 'withdrawId', 'withdrawid',
   ])
 
   if (!userId || !Number.isFinite(points) || points <= 0) {
@@ -125,12 +266,7 @@ async function handlePostback(request: NextRequest) {
       id: true,
       name: true,
       membershipPlanId: true,
-      membershipPlan: {
-        select: {
-          price: true,
-          timeWallPercent: true,
-        }
-      }
+      membershipPlan: { select: { price: true, timeWallPercent: true } },
     },
   })
   if (!user) {
@@ -141,15 +277,12 @@ async function handlePostback(request: NextRequest) {
   const reference = `${TIMEWALL_REFERENCE_PREFIX}${referenceId}`
   const existing = await prisma.transaction.findFirst({ where: { reference } })
   if (existing) {
-    return new Response('1', {
-      status: 200,
-      headers: { 'Content-Type': 'text/plain' }
-    })
+    return new Response('1', { status: 200, headers: { 'Content-Type': 'text/plain' } })
   }
 
   const systemSettings = await prisma.systemSettings.findUnique({
     where: { id: 'default' },
-    select: { timeWallPercentFree: true }
+    select: { timeWallPercentFree: true },
   })
   const timeWallPercentFree = systemSettings?.timeWallPercentFree ?? 0.005
 
@@ -158,7 +291,6 @@ async function handlePostback(request: NextRequest) {
     ? timeWallPercentFree
     : (user.membershipPlan?.timeWallPercent ?? 0.005)
 
-  // Exact calculated value (no rounding to integer)
   const userAmount = points * configuredMultiplier
 
   const creditedReferrerIds = await prisma.$transaction(async (tx) => {
@@ -215,10 +347,7 @@ async function handlePostback(request: NextRequest) {
     await checkAndApplyTLRank(referrerId)
   }
 
-  return new Response('1', {
-    status: 200,
-    headers: { 'Content-Type': 'text/plain' }
-  })
+  return new Response('1', { status: 200, headers: { 'Content-Type': 'text/plain' } })
 }
 
 export async function GET(request: NextRequest) {
