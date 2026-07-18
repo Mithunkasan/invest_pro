@@ -1,11 +1,8 @@
 import { NextRequest } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getTimeWallConfig, TIMEWALL_REFERENCE_PREFIX } from '@/lib/timewall'
 import { isUplineEligibleForLevel } from '@/lib/referralEligibility'
-import {
-  checkAndApplyPerformanceBadges,
-  checkAndApplyTLRank,
-} from '@/actions/rules'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +14,7 @@ export const dynamic = 'force-dynamic'
 // By declaring them as plain local functions in this Route Handler,
 // the tx is passed by reference within the same process.
 
-async function syncWalletMainBalance(tx: any, userId: string) {
+async function syncWalletMainBalance(tx: Prisma.TransactionClient, userId: string) {
   const wallet = await tx.wallet.findUnique({ where: { userId } })
   if (!wallet) return
   const newMainBalance =
@@ -31,7 +28,7 @@ async function syncWalletMainBalance(tx: any, userId: string) {
 }
 
 async function distributeTimeWallReferralCommission(
-  tx: any,
+  tx: Prisma.TransactionClient,
   purchaserId: string,
   userAmount: number,
   timeWallTransactionId: string,
@@ -61,7 +58,7 @@ async function distributeTimeWallReferralCommission(
   for (let index = 0; index < levelPercentages.length && currentReferrerId; index++) {
     const level = index + 1
     const percentage = levelPercentages[index]
-    const referrer = await tx.user.findUnique({
+    const referrer: { id: string; referredById: string | null } | null = await tx.user.findUnique({
       where: { id: currentReferrerId },
       select: { id: true, referredById: true },
     })
@@ -162,6 +159,154 @@ async function distributeTimeWallReferralCommission(
 }
 
 // ── Param helpers ───────────────────────────────────────────────────────────
+
+async function checkAndApplyPerformanceBadges(userId: string) {
+  try {
+    const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
+    if (!settings) return
+
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) return
+
+    const referralIncome = await prisma.referral.aggregate({
+      where: { referrerId: userId },
+      _sum: { commission: true },
+    })
+    const totalCommission = referralIncome._sum.commission || 0
+
+    if (settings.starPerformerEnabled && totalCommission >= settings.starPerformerThreshold && !user.starPerformer) {
+      await prisma.user.update({ where: { id: userId }, data: { starPerformer: true } })
+      await prisma.notification.create({
+        data: {
+          userId,
+          title: 'Star Performer Badge!',
+          message: `Congratulations! Your referral earnings have reached Rs. ${totalCommission.toLocaleString('en-IN')}, and you have been awarded the Star Performer status.`,
+          type: 'SUCCESS',
+        },
+      })
+    }
+
+    if (settings.doubleStarEnabled && totalCommission >= settings.doubleStarThreshold && !user.doubleStarPerformer) {
+      await prisma.user.update({ where: { id: userId }, data: { doubleStarPerformer: true } })
+      await prisma.notification.create({
+        data: {
+          userId,
+          title: 'Double Star Performer!',
+          message: `Congratulations! Your referral earnings have reached Rs. ${totalCommission.toLocaleString('en-IN')}, and you have been awarded the Double Star Performer status.`,
+          type: 'SUCCESS',
+        },
+      })
+    }
+
+    if (settings.eliteEnabled && totalCommission >= settings.eliteThreshold && !user.elitePerformer) {
+      await prisma.user.update({ where: { id: userId }, data: { elitePerformer: true } })
+      await prisma.notification.create({
+        data: {
+          userId,
+          title: 'Elite Performer Badge!',
+          message: `Congratulations! Your referral earnings have reached Rs. ${totalCommission.toLocaleString('en-IN')}, and you have been awarded the Elite Performer status.`,
+          type: 'SUCCESS',
+        },
+      })
+    }
+  } catch (error) {
+    console.error('Error checking TimeWall Performance Badges status:', error)
+  }
+}
+
+async function checkAndApplyTLRank(userId: string) {
+  try {
+    const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
+    if (!settings || !settings.tlRankEnabled) return
+
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user || user.tlRank) return
+
+    const activeReferralsCount = await prisma.user.count({
+      where: {
+        referredById: userId,
+        investments: { some: { status: 'ACTIVE' } },
+      },
+    })
+
+    const referralIncome = await prisma.referral.aggregate({
+      where: { referrerId: userId },
+      _sum: { commission: true },
+    })
+    const totalCommission = referralIncome._sum.commission || 0
+
+    if (activeReferralsCount >= settings.tlRankRequiredReferrals && totalCommission >= settings.tlRankRequiredCommission) {
+      const tlShareholdersCount = await prisma.user.count({ where: { tlShareholder: true } })
+      const isEligibleShareholder = tlShareholdersCount < settings.tlRankMaxUsers
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          tlRank: true,
+          tlRankEarnedAt: new Date(),
+          tlShareholder: isEligibleShareholder,
+        },
+      })
+
+      await prisma.notification.create({
+        data: {
+          userId,
+          title: 'Promoted to TL Rank!',
+          message: `Congratulations! You have referred ${activeReferralsCount} active members and earned Rs. ${totalCommission.toLocaleString('en-IN')} in commissions. You are promoted to TL Rank!${isEligibleShareholder ? ' You are also selected as a 1% Business Shareholder!' : ''}`,
+          type: 'SUCCESS',
+        },
+      })
+
+      if (user.referredById) {
+        await checkAndApplyDirectorRank(user.referredById)
+      }
+    }
+  } catch (error) {
+    console.error('Error checking TimeWall TL Rank status:', error)
+  }
+}
+
+async function checkAndApplyDirectorRank(userId: string) {
+  try {
+    const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } })
+    if (!settings || !settings.directorRankEnabled) return
+
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user || user.directorRank) return
+
+    const tlReferralsCount = await prisma.user.count({
+      where: {
+        referredById: userId,
+        tlRank: true,
+      },
+    })
+
+    if (tlReferralsCount >= settings.directorRankRequiredTLs) {
+      const directorShareholdersCount = await prisma.user.count({ where: { directorShareholder: true } })
+      const isEligibleShareholder = directorShareholdersCount < settings.directorRankMaxUsers
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          directorRank: true,
+          directorRankEarnedAt: new Date(),
+          directorShareholder: isEligibleShareholder,
+        },
+      })
+
+      await prisma.notification.create({
+        data: {
+          userId,
+          title: 'Promoted to Director Rank!',
+          message: `Congratulations! You have successfully referred ${tlReferralsCount} Team Leaders and are promoted to Director Rank!${isEligibleShareholder ? ' You are also selected as a 1% Business Shareholder!' : ''}`,
+          type: 'SUCCESS',
+        },
+      })
+    }
+  } catch (error) {
+    console.error('Error checking TimeWall Director Rank status:', error)
+  }
+}
 
 function firstValue(params: URLSearchParams, keys: string[]) {
   for (const key of keys) {
