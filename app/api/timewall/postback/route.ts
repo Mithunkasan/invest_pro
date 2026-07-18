@@ -7,8 +7,6 @@ import {
   checkAndApplyPerformanceBadges,
   checkAndApplyTLRank
 } from '@/actions/rules'
-import { promises as fs } from 'fs'
-import path from 'path'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,21 +42,6 @@ async function parseParams(request: NextRequest) {
 async function handlePostback(request: NextRequest) {
   const params = await parseParams(request)
   const config = await getTimeWallConfig()
-
-  // Log request details to timewall_postback.log in the workspace root
-  try {
-    const logData = {
-      timestamp: new Date().toISOString(),
-      method: request.method,
-      url: request.url,
-      headers: Object.fromEntries(request.headers.entries()),
-      params: Object.fromEntries(params.entries()),
-    }
-    const logPath = path.join(process.cwd(), 'timewall_postback.log')
-    await fs.appendFile(logPath, JSON.stringify(logData, null, 2) + '\n\n', 'utf8')
-  } catch (err) {
-    console.error('Failed to log TimeWall postback request:', err)
-  }
 
   const providedSecret = firstValue(params, ['secret', 'key', 'api_key', 'token'])
   if (config.postbackSecret && providedSecret !== config.postbackSecret) {
