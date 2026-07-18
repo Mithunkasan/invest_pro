@@ -1,10 +1,19 @@
 import { NextRequest } from 'next/server'
-import type { Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getTimeWallConfig, TIMEWALL_REFERENCE_PREFIX } from '@/lib/timewall'
 import { isUplineEligibleForLevel } from '@/lib/referralEligibility'
 
 export const dynamic = 'force-dynamic'
+
+const TIMEWALL_TRANSACTION_ATTEMPTS = 3
+const TIMEWALL_TRANSACTION_MAX_WAIT_MS = 10_000
+const TIMEWALL_TRANSACTION_TIMEOUT_MS = 30_000
+
+function isRetryableTimeWallTransactionError(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError
+    && (error.code === 'P2028' || error.code === 'P2034')
+}
 
 // ── Local helpers (not Server Actions — tx must stay in-process) ────────────
 // NOTE: syncWalletMainBalance and distributeTimeWallReferralCommission are
@@ -308,6 +317,78 @@ async function checkAndApplyDirectorRank(userId: string) {
   }
 }
 
+async function runTimeWallCreditTransaction(
+  userId: string,
+  userName: string,
+  userAmount: number,
+  reference: string
+) {
+  let lastError: unknown
+
+  for (let attempt = 1; attempt <= TIMEWALL_TRANSACTION_ATTEMPTS; attempt++) {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const timeWallTx = await tx.transaction.create({
+          data: {
+            userId,
+            type: 'BONUS',
+            amount: userAmount,
+            status: 'COMPLETED',
+            walletType: 'TASK',
+            reference,
+            description: `TimeWall Reward: ₹${userAmount.toFixed(2)}`,
+          },
+        })
+
+        await tx.wallet.upsert({
+          where: { userId },
+          update: {
+            taskBalance: { increment: userAmount },
+            totalEarned: { increment: userAmount },
+          },
+          create: {
+            userId,
+            taskBalance: userAmount,
+            totalEarned: userAmount,
+          },
+        })
+
+        const referrerIds = await distributeTimeWallReferralCommission(
+          tx,
+          userId,
+          userAmount,
+          timeWallTx.id,
+          userName
+        )
+
+        await syncWalletMainBalance(tx, userId)
+
+        await tx.notification.create({
+          data: {
+            userId,
+            title: 'TimeWall Reward',
+            message: `TimeWall reward: ₹${userAmount.toFixed(2)}`,
+            type: 'SUCCESS',
+            link: '/dashboard/wallet',
+          },
+        })
+
+        return referrerIds
+      }, {
+        maxWait: TIMEWALL_TRANSACTION_MAX_WAIT_MS,
+        timeout: TIMEWALL_TRANSACTION_TIMEOUT_MS,
+      })
+    } catch (error) {
+      lastError = error
+      if (!isRetryableTimeWallTransactionError(error) || attempt === TIMEWALL_TRANSACTION_ATTEMPTS) {
+        break
+      }
+    }
+  }
+
+  throw lastError
+}
+
 function firstValue(params: URLSearchParams, keys: string[]) {
   for (const key of keys) {
     const value = params.get(key)
@@ -438,54 +519,12 @@ async function handlePostback(request: NextRequest) {
 
   const userAmount = points * configuredMultiplier
 
-  const creditedReferrerIds = await prisma.$transaction(async (tx) => {
-    const timeWallTx = await tx.transaction.create({
-      data: {
-        userId,
-        type: 'BONUS',
-        amount: userAmount,
-        status: 'COMPLETED',
-        walletType: 'TASK',
-        reference,
-        description: `TimeWall Reward: ₹${userAmount.toFixed(2)}`,
-      },
-    })
-
-    await tx.wallet.upsert({
-      where: { userId },
-      update: {
-        taskBalance: { increment: userAmount },
-        totalEarned: { increment: userAmount },
-      },
-      create: {
-        userId,
-        taskBalance: userAmount,
-        totalEarned: userAmount,
-      },
-    })
-
-    const referrerIds = await distributeTimeWallReferralCommission(
-      tx,
-      userId,
-      userAmount,
-      timeWallTx.id,
-      user.name
-    )
-
-    await syncWalletMainBalance(tx, userId)
-
-    await tx.notification.create({
-      data: {
-        userId,
-        title: 'TimeWall Reward',
-        message: `TimeWall reward: ₹${userAmount.toFixed(2)}`,
-        type: 'SUCCESS',
-        link: '/dashboard/wallet',
-      },
-    })
-
-    return referrerIds
-  })
+  const creditedReferrerIds = await runTimeWallCreditTransaction(
+    userId,
+    user.name,
+    userAmount,
+    reference
+  )
 
   for (const referrerId of creditedReferrerIds) {
     await checkAndApplyPerformanceBadges(referrerId)
