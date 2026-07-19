@@ -16,6 +16,7 @@ export default async function AdminWalletPage() {
       rewardBalance: true,
       levelBalance: true,
       shareBalance: true,
+      taskBalance: true,
     }
   })
 
@@ -24,7 +25,8 @@ export default async function AdminWalletPage() {
     (totals._sum.referralBalance || 0) + 
     (totals._sum.levelBalance || 0) + 
     (totals._sum.shareBalance || 0) + 
-    (totals._sum.bonusBalance || 0)
+    (totals._sum.bonusBalance || 0) +
+    (totals._sum.taskBalance || 0)
 
   const processedWallets = wallets.map(w => ({
     ...w,
@@ -33,7 +35,8 @@ export default async function AdminWalletPage() {
       (w.referralBalance || 0) + 
       (w.levelBalance || 0) + 
       (w.shareBalance || 0) + 
-      (w.bonusBalance || 0)
+      (w.bonusBalance || 0) +
+      (w.taskBalance || 0)
   }))
 
   return (

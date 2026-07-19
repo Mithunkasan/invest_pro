@@ -69,7 +69,8 @@ export default async function DashboardPage() {
       (dbWallet.referralBalance || 0) +
       (dbWallet.levelBalance || 0) +
       (dbWallet.shareBalance || 0) +
-      (dbWallet.bonusBalance || 0)
+      (dbWallet.bonusBalance || 0) +
+      (dbWallet.taskBalance || 0)
     
     if (dbWallet.mainBalance !== expectedMain) {
       dbWallet = await prisma.wallet.update({

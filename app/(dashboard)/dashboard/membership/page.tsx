@@ -42,7 +42,8 @@ export default async function UserMembershipPage() {
       (wallet.referralBalance || 0) +
       (wallet.levelBalance || 0) +
       (wallet.shareBalance || 0) +
-      (wallet.bonusBalance || 0)
+      (wallet.bonusBalance || 0) +
+      (wallet.taskBalance || 0)
     
     if (wallet.mainBalance !== expectedMain) {
       wallet = await prisma.wallet.update({

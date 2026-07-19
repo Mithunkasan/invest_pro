@@ -12,6 +12,7 @@ export default async function AdminUsersPage() {
           levelBalance: true,
           shareBalance: true,
           bonusBalance: true,
+          taskBalance: true,
         } 
       },
       membershipPlan: { select: { name: true, color: true } },
@@ -34,7 +35,8 @@ export default async function AdminUsersPage() {
           (u.wallet.referralBalance || 0) + 
           (u.wallet.levelBalance || 0) + 
           (u.wallet.shareBalance || 0) + 
-          (u.wallet.bonusBalance || 0)
+          (u.wallet.bonusBalance || 0) +
+          (u.wallet.taskBalance || 0)
       }
     }
   })
