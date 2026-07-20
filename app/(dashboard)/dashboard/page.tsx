@@ -117,6 +117,36 @@ export default async function DashboardPage() {
   ])
   totalTaskEarned = taskEarnedAggregate._sum.amount || 0
 
+  const timeWallEarnings = await prisma.transaction.findMany({
+    where: {
+      userId: session.id,
+      status: 'COMPLETED',
+      reference: {
+        startsWith: TIMEWALL_REFERENCE_PREFIX,
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      amount: true,
+      type: true,
+      description: true,
+      createdAt: true,
+    },
+  })
+
+  const timeWallEarningRows = timeWallEarnings.map((txn) => ({
+    id: txn.id,
+    name: txn.description?.split(':')[0]?.trim() || 'TimeWall Reward',
+    points: null,
+    amount: txn.amount,
+    payout: null,
+    type: txn.type,
+    ip: null,
+    country: null,
+    createdAt: txn.createdAt.toISOString(),
+  }))
+
   // Calculate monthly profit/Smart Hybrid Digital Earning for chart
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const currentMonthIndex = new Date().getMonth()
@@ -215,6 +245,8 @@ export default async function DashboardPage() {
         mainBalance={dbWallet?.mainBalance || 0}
         depositBalance={dbWallet?.depositBalance || 0}
         taskWalletBalance={taskWalletBalance}
+        timeWallEarnings={timeWallEarningRows}
+        totalTimeWallEarnings={totalTaskEarned}
       />
     )
   }
@@ -239,6 +271,8 @@ export default async function DashboardPage() {
       transactions={JSON.parse(JSON.stringify(transactions))}
       chartData={chartData}
       adminBonuses={adminBonuses}
+      timeWallEarnings={timeWallEarningRows}
+      totalTimeWallEarnings={totalTaskEarned}
     />
   )
 }

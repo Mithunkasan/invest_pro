@@ -601,13 +601,11 @@ export async function handleTimeWallTransaction(
         await tx.wallet.upsert({
           where: { userId: transaction.userId },
           update: {
-            mainBalance: { increment: userAmount },
             taskBalance: { increment: userAmount },
             totalEarned: { increment: userAmount },
           },
           create: {
             userId: transaction.userId,
-            mainBalance: userAmount,
             taskBalance: userAmount,
             totalEarned: userAmount,
           },

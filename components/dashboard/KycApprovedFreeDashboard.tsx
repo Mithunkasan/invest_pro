@@ -3,15 +3,28 @@
 import { motion } from 'framer-motion'
 import { Crown, Wallet, ShieldCheck } from 'lucide-react'
 import { formatCurrency } from '@/utils/formatters'
+import { TimeWallEarningsModal, type TimeWallEarningRow } from './TimeWallEarningsModal'
+import { useState } from 'react'
 
 interface KycApprovedFreeDashboardProps {
   userName: string
   mainBalance: number
   depositBalance: number
   taskWalletBalance: number
+  timeWallEarnings: TimeWallEarningRow[]
+  totalTimeWallEarnings: number
 }
 
-export function KycApprovedFreeDashboard({ userName, mainBalance, depositBalance, taskWalletBalance }: KycApprovedFreeDashboardProps) {
+export function KycApprovedFreeDashboard({
+  userName,
+  mainBalance,
+  depositBalance,
+  taskWalletBalance,
+  timeWallEarnings,
+  totalTimeWallEarnings,
+}: KycApprovedFreeDashboardProps) {
+  const [showTimeWallModal, setShowTimeWallModal] = useState(false)
+
   return (
     <div className="space-y-6">
       {/* Welcome heading */}
@@ -89,7 +102,16 @@ export function KycApprovedFreeDashboard({ userName, mainBalance, depositBalance
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.23 }}
-          className="premium-card p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/50 shadow-lg"
+          className="premium-card p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/50 shadow-lg cursor-pointer select-none hover:border-lime-500/40 transition-colors"
+          onClick={() => setShowTimeWallModal(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              setShowTimeWallModal(true)
+            }
+          }}
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -143,6 +165,14 @@ export function KycApprovedFreeDashboard({ userName, mainBalance, depositBalance
           Profile Verified — Your profile has been successfully verified.
         </p>
       </motion.div>
+
+      {showTimeWallModal && (
+        <TimeWallEarningsModal
+          rows={timeWallEarnings}
+          total={totalTimeWallEarnings}
+          onClose={() => setShowTimeWallModal(false)}
+        />
+      )}
     </div>
   )
 }

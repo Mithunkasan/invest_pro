@@ -14,6 +14,7 @@ import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/ut
 import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 import type { UserTokenPayload } from '@/lib/auth'
 import { ModalPortal } from '@/components/common/ModalPortal'
+import { TimeWallEarningsModal, type TimeWallEarningRow } from './TimeWallEarningsModal'
 
 interface DashboardOverviewProps {
   user: UserTokenPayload & {
@@ -65,6 +66,8 @@ interface DashboardOverviewProps {
     remark: string
     sentBy: string
   }>
+  timeWallEarnings: TimeWallEarningRow[]
+  totalTimeWallEarnings: number
 }
 
 const transactionColumns = [
@@ -94,8 +97,17 @@ const transactionColumns = [
   )},
 ]
 
-export function DashboardOverview({ user, stats, transactions, chartData, adminBonuses }: DashboardOverviewProps) {
+export function DashboardOverview({
+  user,
+  stats,
+  transactions,
+  chartData,
+  adminBonuses,
+  timeWallEarnings,
+  totalTimeWallEarnings,
+}: DashboardOverviewProps) {
   const [showTotalModal, setShowTotalModal] = useState(false)
+  const [showTimeWallModal, setShowTimeWallModal] = useState(false)
 
   const formatDDMMYYYY = (date: Date | string) => {
     const d = new Date(date)
@@ -288,6 +300,8 @@ export function DashboardOverview({ user, stats, transactions, chartData, adminB
           }
           iconBg="bg-lime-500/10"
           delay={0.22}
+          onClick={() => setShowTimeWallModal(true)}
+          className="border-lime-500/30 hover:border-lime-400"
         />
         <StatsCard
           title="Share Wallet"
@@ -406,6 +420,14 @@ export function DashboardOverview({ user, stats, transactions, chartData, adminB
             </div>
           </div>
         </ModalPortal>
+      )}
+
+      {showTimeWallModal && (
+        <TimeWallEarningsModal
+          rows={timeWallEarnings}
+          total={totalTimeWallEarnings}
+          onClose={() => setShowTimeWallModal(false)}
+        />
       )}
 
       {/* Portfolio Chart */}
