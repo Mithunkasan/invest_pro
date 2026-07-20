@@ -343,13 +343,11 @@ async function runTimeWallCreditTransaction(
         await tx.wallet.upsert({
           where: { userId },
           update: {
-            mainBalance: { increment: userAmount },
             taskBalance: { increment: userAmount },
             totalEarned: { increment: userAmount },
           },
           create: {
             userId,
-            mainBalance: userAmount,
             taskBalance: userAmount,
             totalEarned: userAmount,
           },
