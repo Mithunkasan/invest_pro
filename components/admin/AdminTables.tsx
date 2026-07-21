@@ -973,6 +973,7 @@ export function WalletsTable({ data }: TableProps) {
                     disabled={isPending}
                   >
                     <option value="MAIN">Main Wallet</option>
+                    <option value="DEPOSIT">Deposit Wallet</option>
                     <option value="REWARD">Reward Wallet</option>
                     <option value="REFERRAL">Referral Income</option>
                     <option value="LEVEL">Level Income</option>
