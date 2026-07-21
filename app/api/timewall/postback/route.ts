@@ -15,6 +15,11 @@ function isRetryableTimeWallTransactionError(error: unknown) {
     && (error.code === 'P2028' || error.code === 'P2034')
 }
 
+function isDuplicateTimeWallReferenceError(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError
+    && error.code === 'P2002'
+}
+
 // ── Local helpers (not Server Actions — tx must stay in-process) ────────────
 // NOTE: syncWalletMainBalance and distributeTimeWallReferralCommission are
 // intentionally duplicated here from their 'use server' action files.
@@ -328,6 +333,12 @@ async function runTimeWallCreditTransaction(
   for (let attempt = 1; attempt <= TIMEWALL_TRANSACTION_ATTEMPTS; attempt++) {
     try {
       return await prisma.$transaction(async (tx) => {
+        const existing = await tx.transaction.findFirst({
+          where: { reference },
+          select: { id: true },
+        })
+        if (existing) return []
+
         const timeWallTx = await tx.transaction.create({
           data: {
             userId,
@@ -379,6 +390,9 @@ async function runTimeWallCreditTransaction(
         timeout: TIMEWALL_TRANSACTION_TIMEOUT_MS,
       })
     } catch (error) {
+      if (isDuplicateTimeWallReferenceError(error)) {
+        return []
+      }
       lastError = error
       if (!isRetryableTimeWallTransactionError(error) || attempt === TIMEWALL_TRANSACTION_ATTEMPTS) {
         break

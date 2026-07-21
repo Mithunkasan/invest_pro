@@ -946,7 +946,7 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
 // ── Admin: Manual Adjust Wallet Balance ───────────────────────────────────────
 export async function adjustUserBalanceAction(
   userId: string,
-  walletType: 'MAIN' | 'BONUS' | 'REFERRAL' | 'LEVEL' | 'REWARD' | 'SHARE',
+  walletType: 'MAIN' | 'DEPOSIT' | 'BONUS' | 'REFERRAL' | 'LEVEL' | 'REWARD' | 'SHARE',
   amount: number,
   operation: 'ADD' | 'SUBTRACT'
 ): Promise<ApiResponse> {
@@ -1021,6 +1021,10 @@ export async function adjustUserBalanceAction(
       let txType: any = 'BONUS'
 
       switch (walletType) {
+        case 'DEPOSIT':
+          field = 'depositBalance'
+          txType = 'DEPOSIT'
+          break
         case 'BONUS':
           field = 'bonusBalance'
           txType = 'BONUS'
@@ -1058,7 +1062,7 @@ export async function adjustUserBalanceAction(
           data: {
             [field]: { increment: delta },
             // Only credit totalEarned on ADD (never on subtract)
-            ...(operation === 'ADD' ? { totalEarned: { increment: amount } } : {}),
+            ...(operation === 'ADD' && walletType !== 'DEPOSIT' ? { totalEarned: { increment: amount } } : {}),
           },
         }),
         prisma.transaction.create({
