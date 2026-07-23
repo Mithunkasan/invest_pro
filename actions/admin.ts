@@ -102,6 +102,7 @@ export async function updateUserAction(
     membershipPlanId?: string | null
     membershipPlanActivatedAt?: string | null
     membershipPlanExpiresAt?: string | null
+    membershipUpgradePaymentType?: 'FREE' | 'PAID'
     basicMembershipAmount?: number
     basicMembershipActivatedAt?: string | null
     basicMembershipExpiresAt?: string | null
@@ -214,13 +215,14 @@ export async function updateUserAction(
     if (data.directorShareholder !== undefined) updateData.directorShareholder = Boolean(data.directorShareholder)
 
     const membershipChanged = data.membershipPlanId !== undefined && user.membershipPlanId !== data.membershipPlanId
+    const membershipUpgradePaymentType = data.membershipUpgradePaymentType === 'FREE' ? 'FREE' : 'PAID'
     let membershipActivationTransactionId: string | null = null
 
     await prisma.$transaction(async (tx) => {
       if (membershipChanged) {
         const plan = selectedMembershipPlan
 
-        if (plan && plan.price > 0) {
+        if (plan && plan.price > 0 && membershipUpgradePaymentType === 'PAID') {
           const wallet = await tx.wallet.findUnique({ where: { userId } })
           if (!wallet) throw new Error('User wallet not found')
 

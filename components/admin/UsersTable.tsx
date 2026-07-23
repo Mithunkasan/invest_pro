@@ -143,6 +143,7 @@ function EditUserModal({ user, plans, onClose }: EditUserModalProps) {
     basicMembershipActivatedAt: user.basicMembershipActivatedAt ? new Date(user.basicMembershipActivatedAt).toISOString().slice(0, 16) : '',
     basicMembershipExpiresAt: user.basicMembershipExpiresAt ? new Date(user.basicMembershipExpiresAt).toISOString().split('T')[0] : '',
     lastDailyYieldAt: user.lastDailyYieldAt ? new Date(user.lastDailyYieldAt).toISOString().split('T')[0] : '',
+    membershipUpgradePaymentType: '' as '' | 'FREE' | 'PAID',
     // Ranks/Badges
     starPerformer: !!user.starPerformer,
     doubleStarPerformer: !!user.doubleStarPerformer,
@@ -169,7 +170,7 @@ function EditUserModal({ user, plans, onClose }: EditUserModalProps) {
     const selectedPlan = plans.find(p => p.id === planId)
     
     setForm(prev => {
-      const next = { ...prev, membershipPlanId: planId }
+      const next = { ...prev, membershipPlanId: planId, membershipUpgradePaymentType: '' as '' | 'FREE' | 'PAID' }
       if (selectedPlan) {
         next.basicMembershipAmount = selectedPlan.price
         if (selectedPlan.name === 'Free Membership') {
@@ -193,6 +194,7 @@ function EditUserModal({ user, plans, onClose }: EditUserModalProps) {
       payload.dateOfBirth = form.dateOfBirth || null
       payload.referredById = form.referredById || null
       payload.membershipPlanId = form.membershipPlanId || null
+      payload.membershipUpgradePaymentType = upgradePaymentTypeRequired ? form.membershipUpgradePaymentType : undefined
       payload.basicMembershipActivatedAt = form.basicMembershipActivatedAt || null
       payload.basicMembershipExpiresAt = form.basicMembershipExpiresAt || null
       payload.lastDailyYieldAt = form.lastDailyYieldAt || null
@@ -215,6 +217,10 @@ function EditUserModal({ user, plans, onClose }: EditUserModalProps) {
     { id: 'account', label: '🔒 Account & Ranks' },
     { id: 'membership', label: '👑 Membership' },
   ] as const
+
+  const selectedPlan = plans.find(p => p.id === form.membershipPlanId)
+  const upgradePaymentTypeRequired = Boolean(selectedPlan && selectedPlan.price > 0 && user.membershipPlanId !== form.membershipPlanId)
+  const canSave = !isPending && (!upgradePaymentTypeRequired || Boolean(form.membershipUpgradePaymentType))
 
   return (
     <ModalPortal>
@@ -593,6 +599,30 @@ function EditUserModal({ user, plans, onClose }: EditUserModalProps) {
                     <option value="PREMIUM">PREMIUM</option>
                   </select>
                 </div>
+                {upgradePaymentTypeRequired && (
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-brand-200 mb-1">Upgrade Type</label>
+                    <div className="grid grid-cols-2 gap-2 rounded-lg border border-brand-800/60 bg-background p-1">
+                      {(['FREE', 'PAID'] as const).map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          disabled={isPending}
+                          onClick={() => setForm(prev => ({ ...prev, membershipUpgradePaymentType: type }))}
+                          className={`h-9 rounded-md text-xs font-bold transition-colors ${
+                            form.membershipUpgradePaymentType === type
+                              ? type === 'PAID'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-amber-500 text-white'
+                              : 'text-muted-foreground hover:bg-brand-900/70 hover:text-white'
+                          }`}
+                        >
+                          {type === 'PAID' ? 'Paid Upgrade' : 'Free Upgrade'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-semibold text-brand-200 mb-1">Active Membership Plan</label>
                   <select
@@ -671,7 +701,7 @@ function EditUserModal({ user, plans, onClose }: EditUserModalProps) {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={isPending}
+              disabled={!canSave}
               className="px-5 font-extrabold text-xs h-9.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl shadow-md transition-all active:scale-95"
             >
               {isPending ? 'Saving Details...' : 'Save Changes'}
@@ -1545,6 +1575,7 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
     basicMembershipActivatedAt: user.basicMembershipActivatedAt ? new Date(user.basicMembershipActivatedAt).toISOString().slice(0, 16) : '',
     basicMembershipExpiresAt: user.basicMembershipExpiresAt ? new Date(user.basicMembershipExpiresAt).toISOString().split('T')[0] : '',
     lastDailyYieldAt: user.lastDailyYieldAt ? new Date(user.lastDailyYieldAt).toISOString().split('T')[0] : '',
+    membershipUpgradePaymentType: '' as '' | 'FREE' | 'PAID',
   })
 
   const handlePlanChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -1552,7 +1583,7 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
     const selectedPlan = plans.find((p) => p.id === planId)
 
     setForm((prev) => {
-      const next = { ...prev, membershipPlanId: planId }
+      const next = { ...prev, membershipPlanId: planId, membershipUpgradePaymentType: '' as '' | 'FREE' | 'PAID' }
       if (selectedPlan) {
         next.basicMembershipAmount = selectedPlan.price
         if (selectedPlan.name === 'Basic Membership') {
@@ -1588,6 +1619,7 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
       const payload = {
         memberType: form.memberType as 'FREE' | 'BASIC' | 'PREMIUM',
         membershipPlanId: form.membershipPlanId || null,
+        membershipUpgradePaymentType: upgradePaymentTypeRequired ? form.membershipUpgradePaymentType as 'FREE' | 'PAID' : undefined,
         basicMembershipAmount: Number(form.basicMembershipAmount) || 0,
         basicMembershipActivatedAt: form.basicMembershipActivatedAt || null,
         basicMembershipExpiresAt: form.basicMembershipExpiresAt || null,
@@ -1603,6 +1635,10 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
       }
     })
   }
+
+  const selectedPlan = plans.find(p => p.id === form.membershipPlanId)
+  const upgradePaymentTypeRequired = Boolean(selectedPlan && selectedPlan.price > 0 && user.membershipPlanId !== form.membershipPlanId)
+  const canSave = !isPending && (!upgradePaymentTypeRequired || Boolean(form.membershipUpgradePaymentType))
 
   return (
     <ModalPortal>
@@ -1664,6 +1700,31 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
                 ))}
               </select>
             </div>
+
+            {upgradePaymentTypeRequired && (
+              <div>
+                <label className="block text-xs font-semibold text-brand-200 mb-1">Upgrade Type</label>
+                <div className="grid grid-cols-2 gap-2 rounded-lg border border-brand-800/60 bg-background p-1">
+                  {(['FREE', 'PAID'] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => setForm((prev) => ({ ...prev, membershipUpgradePaymentType: type }))}
+                      className={`h-9 rounded-md text-xs font-bold transition-colors ${
+                        form.membershipUpgradePaymentType === type
+                          ? type === 'PAID'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-amber-500 text-white'
+                          : 'text-muted-foreground hover:bg-brand-900/70 hover:text-white'
+                      }`}
+                    >
+                      {type === 'PAID' ? 'Paid Upgrade' : 'Free Upgrade'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -1747,7 +1808,7 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
               </Button>
               <Button
                 type="submit"
-                disabled={isPending}
+                disabled={!canSave}
                 className="px-5 font-extrabold text-xs h-9.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl shadow-md transition-all active:scale-95"
               >
                 {isPending ? 'Saving...' : 'Save Plan'}
