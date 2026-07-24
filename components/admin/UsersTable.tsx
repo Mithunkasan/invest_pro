@@ -1200,6 +1200,16 @@ export function UsersTable({ users, plans = [] }: UsersTableProps) {
     }},
     { key: 'status', label: 'Status', sortable: true, render: (v: unknown) => <span className={`status-badge ${getStatusColor(String(v))}`}>{String(v)}</span> },
     { key: 'createdAt', label: 'Joined', sortable: true, render: (v: unknown) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span> },
+    { key: 'membershipPlanExpiresAt', label: 'End Date', sortable: true, render: (v: unknown, row: Record<string, unknown>) => {
+      const expiryDate = v ? new Date(String(v)) : null
+      const hasActiveMembership = Boolean(row.membershipPlanId && row.membershipPlanActivatedAt && expiryDate && expiryDate >= new Date())
+
+      return (
+        <span className="text-xs text-muted-foreground">
+          {hasActiveMembership ? formatDate(String(v)) : '—'}
+        </span>
+      )
+    }},
     { key: 'id', label: 'Actions', render: (id: string, row: any) => (
       <div className="flex flex-wrap gap-1">
         {/* Edit Button */}

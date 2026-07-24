@@ -18,6 +18,8 @@ export default async function AdminMembershipsPage() {
       memberType: true,
       membershipPlanId: true,
       membershipPlan: { select: { name: true, color: true } },
+      membershipPlanActivatedAt: true,
+      membershipPlanExpiresAt: true,
       basicMembershipAmount: true,
       basicMembershipActivatedAt: true,
       basicMembershipExpiresAt: true,

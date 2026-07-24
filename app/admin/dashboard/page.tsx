@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { Users, TrendingUp, DollarSign, Clock, Shield } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 import { AdminCharts } from '@/components/admin/AdminCharts'
+import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 
 export default async function AdminDashboard() {
   const [
@@ -12,7 +13,8 @@ export default async function AdminDashboard() {
     pendingKYC, 
     recentUsers, 
     planDistributionRaw,
-    transactionsRaw
+    transactionsRaw,
+    usersWithoutPlan
   ] = await Promise.all([
     prisma.user.count(),
     prisma.investment.aggregate({ _sum: { amount: true } }),
@@ -30,7 +32,8 @@ export default async function AdminDashboard() {
         createdAt: { gte: new Date(new Date().getFullYear(), 0, 1) } // This year
       },
       select: { type: true, amount: true, createdAt: true }
-    })
+    }),
+    prisma.user.count({ where: { membershipPlanId: null } })
   ])
 
   // Calculate real monthly data from transactions
@@ -55,10 +58,16 @@ export default async function AdminDashboard() {
     take: 5,
   })
 
-  const planDistribution = planDistributionRaw.map(p => ({
-    name: p.name,
-    value: p._count.users
-  }))
+  const planDistributionMap = new Map<string, number>()
+  planDistributionRaw.forEach((p) => {
+    const name = getMembershipDisplayName(p.name)
+    planDistributionMap.set(name, (planDistributionMap.get(name) || 0) + p._count.users)
+  })
+  if (usersWithoutPlan > 0) {
+    const standardName = getMembershipDisplayName(null)
+    planDistributionMap.set(standardName, (planDistributionMap.get(standardName) || 0) + usersWithoutPlan)
+  }
+  const planDistribution = Array.from(planDistributionMap, ([name, value]) => ({ name, value }))
 
   const kpiCards = [
     { title: 'Total Users', value: totalUsers, icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10', suffix: '' },
