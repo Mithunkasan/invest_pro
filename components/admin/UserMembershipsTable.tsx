@@ -28,13 +28,21 @@ function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps)
 
   // Find user's current database membership plan to synchronize details
   const initialPlan = plans.find(p => p.id === user.membershipPlanId)
+  const membershipExpiresAt = user.membershipPlanExpiresAt ? new Date(user.membershipPlanExpiresAt) : null
+  const hasActiveCurrentPlan = Boolean(
+    user.membershipPlanId &&
+    user.membershipPlanActivatedAt &&
+    (!membershipExpiresAt || membershipExpiresAt >= new Date())
+  )
+  const activatedAt = hasActiveCurrentPlan ? user.membershipPlanActivatedAt : user.basicMembershipActivatedAt
+  const expiresAt = hasActiveCurrentPlan ? user.membershipPlanExpiresAt : user.basicMembershipExpiresAt
 
   const [form, setForm] = useState({
     memberType: initialPlan ? (initialPlan.name === 'Free Membership' ? 'FREE' : initialPlan.name === 'Basic Membership' ? 'BASIC' : 'PREMIUM') : 'FREE',
     membershipPlanId: initialPlan ? initialPlan.id : '',
     basicMembershipAmount: initialPlan ? initialPlan.price : 0,
-    basicMembershipActivatedAt: user.basicMembershipActivatedAt ? new Date(user.basicMembershipActivatedAt).toISOString().slice(0, 16) : '',
-    basicMembershipExpiresAt: user.basicMembershipExpiresAt ? new Date(user.basicMembershipExpiresAt).toISOString().split('T')[0] : '',
+    basicMembershipActivatedAt: activatedAt ? new Date(activatedAt).toISOString().slice(0, 16) : '',
+    basicMembershipExpiresAt: expiresAt ? new Date(expiresAt).toISOString().split('T')[0] : '',
     lastDailyYieldAt: user.lastDailyYieldAt ? new Date(user.lastDailyYieldAt).toISOString().split('T')[0] : '',
     membershipUpgradePaymentType: '' as '' | 'FREE' | 'PAID',
   })
@@ -84,6 +92,8 @@ function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps)
       const payload = {
         memberType: form.memberType as 'FREE' | 'BASIC' | 'PREMIUM',
         membershipPlanId: form.membershipPlanId || null,
+        membershipPlanActivatedAt: form.membershipPlanId ? form.basicMembershipActivatedAt || null : null,
+        membershipPlanExpiresAt: form.membershipPlanId ? form.basicMembershipExpiresAt || null : null,
         membershipUpgradePaymentType: upgradePaymentTypeRequired ? form.membershipUpgradePaymentType as 'FREE' | 'PAID' : undefined,
         basicMembershipAmount: Number(form.basicMembershipAmount) || 0,
         basicMembershipActivatedAt: form.basicMembershipActivatedAt || null,
@@ -382,6 +392,16 @@ export function UserMembershipsTable({ users, plans }: UserMembershipsTableProps
       label: 'Date Joined',
       sortable: true,
       render: (v: any) => <span className="text-xs text-muted-foreground">{formatDate(String(v))}</span>,
+    },
+    {
+      key: 'membershipPlanExpiresAt',
+      label: 'Membership End Date',
+      sortable: true,
+      render: (v: unknown, row: Record<string, unknown>) => (
+        <span className="text-xs text-muted-foreground">
+          {row.membershipPlanActivatedAt && v ? formatDate(String(v)) : '—'}
+        </span>
+      ),
     },
     {
       key: 'id',
