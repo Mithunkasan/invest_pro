@@ -24,6 +24,11 @@ export default async function ReferralPage() {
     where: { referredById: session.id },
     include: {
       wallet: true,
+      membershipPlan: {
+        select: {
+          name: true
+        }
+      },
       transactions: {
         where: {
           status: 'COMPLETED',
@@ -43,7 +48,8 @@ export default async function ReferralPage() {
     level: 1,
     totalEarning: u.transactions.reduce((sum, tx) => sum + tx.amount, 0),
     walletBalance: u.wallet?.mainBalance ?? 0,
-    rank: getUserRank(u)
+    rank: getUserRank(u),
+    membership: u.membershipPlan?.name || 'Standard'
   }))
 
   // 2. Fetch Indirect Referrals (Level 2 and Below)
@@ -63,6 +69,11 @@ export default async function ReferralPage() {
         elitePerformer: true,
         tlRank: true,
         directorRank: true,
+        membershipPlan: {
+          select: {
+            name: true
+          }
+        }
       }
     })
 
@@ -76,7 +87,8 @@ export default async function ReferralPage() {
         level: currentLevel,
         totalEarning: 0,
         walletBalance: 0,
-        rank: getUserRank(u)
+        rank: getUserRank(u),
+        membership: u.membershipPlan?.name || 'Standard'
       })
     }
 

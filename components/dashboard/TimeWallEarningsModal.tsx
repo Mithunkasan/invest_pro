@@ -59,17 +59,14 @@ export function TimeWallEarningsModal({ rows, total, onClose }: TimeWallEarnings
                   <th className="px-4 py-4">Name</th>
                   <th className="px-4 py-4">Points</th>
                   <th className="px-4 py-4">Amount</th>
-                  <th className="px-4 py-4">Payout</th>
                   <th className="px-4 py-4">Type</th>
-                  <th className="px-4 py-4">Ip</th>
-                  <th className="px-4 py-4">Country</th>
                   <th className="px-4 py-4">Created at</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-sm">
                 {rows.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={8}>
+                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={5}>
                       No TimeWall earnings found.
                     </td>
                   </tr>
@@ -79,10 +76,7 @@ export function TimeWallEarningsModal({ rows, total, onClose }: TimeWallEarnings
                       <td className="px-4 py-3 font-medium text-white">{row.name}</td>
                       <td className="px-4 py-3 text-muted-foreground">{emptyValue(row.points)}</td>
                       <td className="px-4 py-3 font-bold text-lime-400">{formatCurrency(row.amount)}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{emptyValue(row.payout)}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{row.type.replace(/_/g, ' ')}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{emptyValue(row.ip)}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{emptyValue(row.country)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{row.type === 'BONUS' ? 'Task Income' : row.type.replace(/_/g, ' ')}</td>
                       <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDateTime(row.createdAt)}</td>
                     </tr>
                   ))

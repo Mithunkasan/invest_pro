@@ -132,20 +132,79 @@ export default async function DashboardPage() {
       type: true,
       description: true,
       createdAt: true,
+      reference: true,
     },
   })
 
-  const timeWallEarningRows = timeWallEarnings.map((txn) => ({
-    id: txn.id,
-    name: txn.description?.split(':')[0]?.trim() || 'TimeWall Reward',
-    points: null,
-    amount: txn.amount,
-    payout: null,
-    type: txn.type,
-    ip: null,
-    country: null,
-    createdAt: txn.createdAt.toISOString(),
-  }))
+  const systemSettingsForTimeWall = await prisma.systemSettings.findUnique({
+    where: { id: 'default' },
+    select: { timeWallPercentFree: true },
+  })
+  const dbUserForTimeWall = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: {
+      membershipPlan: {
+        select: {
+          price: true,
+          timeWallPercent: true,
+        }
+      }
+    }
+  })
+  const isFree = !dbUserForTimeWall?.membershipPlan || dbUserForTimeWall.membershipPlan.price === 0
+  const userMultiplier = isFree
+    ? (systemSettingsForTimeWall?.timeWallPercentFree ?? 0.005)
+    : (dbUserForTimeWall?.membershipPlan?.timeWallPercent ?? 0.005)
+
+  const timeWallEarningRows = timeWallEarnings.map((txn) => {
+    // 1. Try to extract from description
+    const pointsMatch = txn.description?.match(/Points:\s*([\d.]+)/i)
+    let pointsVal: string | null = null
+    if (pointsMatch) {
+      pointsVal = pointsMatch[1]
+    }
+
+    // 2. Try to extract from reference if it is of the form: TIMEWALL:userId:points:timestamp
+    if (!pointsVal && txn.reference?.startsWith('TIMEWALL:')) {
+      const refId = txn.reference.substring(9)
+      const parts = refId.split(':')
+      if (parts.length >= 2) {
+        const p = parseInt(parts[1], 10)
+        if (!isNaN(p)) {
+          pointsVal = String(p)
+        }
+      }
+    }
+
+    // 3. Reverse calculate using the multiplier at that time, or fallback to current multiplier
+    if (!pointsVal) {
+      const multMatch = txn.description?.match(/(?:Multiplier|Conversion percentage):\s*([\d.%]+)/i)
+      let mult = userMultiplier
+      if (multMatch) {
+        let rawMult = multMatch[1]
+        if (rawMult.endsWith('%')) {
+          mult = parseFloat(rawMult) / 100
+        } else {
+          mult = parseFloat(rawMult)
+        }
+      }
+      if (mult > 0) {
+        pointsVal = String(Math.round(txn.amount / mult))
+      }
+    }
+
+    return {
+      id: txn.id,
+      name: txn.description?.split(':')[0]?.trim() || 'TimeWall Reward',
+      points: pointsVal,
+      amount: txn.amount,
+      payout: null,
+      type: txn.type,
+      ip: null,
+      country: null,
+      createdAt: txn.createdAt.toISOString(),
+    }
+  })
 
   // Calculate monthly profit/Smart Hybrid Digital Earning for chart
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
