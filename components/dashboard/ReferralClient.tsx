@@ -14,6 +14,7 @@ interface TeamMember {
   totalEarning: number
   walletBalance: number
   rank: string
+  membership?: string
 }
 
 interface ReferralClientProps {
@@ -50,6 +51,14 @@ const cols = [
     label: 'Mobile No', 
     render: (v: unknown, row: any) => (
       <span className="font-mono text-xs text-white/80">{row.level === 1 ? String(v || '—') : '—'}</span>
+    )
+  },
+  { 
+    key: 'membership', 
+    label: 'Membership', 
+    sortable: true, 
+    render: (v: unknown) => (
+      <span className="text-xs text-white/80 font-medium">{String(v || 'Standard')}</span>
     )
   },
   { 
