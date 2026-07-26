@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Crown, Wallet, ShieldCheck } from 'lucide-react'
 import { formatCurrency } from '@/utils/formatters'
 import { TimeWallEarningsModal, type TimeWallEarningRow } from './TimeWallEarningsModal'
+import { WalletTransactionsModal } from './WalletTransactionsModal'
 import { useState } from 'react'
 
 interface KycApprovedFreeDashboardProps {
@@ -13,6 +14,7 @@ interface KycApprovedFreeDashboardProps {
   taskWalletBalance: number
   timeWallEarnings: TimeWallEarningRow[]
   totalTimeWallEarnings: number
+  transactions: any[]
 }
 
 export function KycApprovedFreeDashboard({
@@ -22,8 +24,10 @@ export function KycApprovedFreeDashboard({
   taskWalletBalance,
   timeWallEarnings,
   totalTimeWallEarnings,
+  transactions,
 }: KycApprovedFreeDashboardProps) {
   const [showTimeWallModal, setShowTimeWallModal] = useState(false)
+  const [activeModalWallet, setActiveModalWallet] = useState<'MAIN' | 'DEPOSIT' | null>(null)
 
   return (
     <div className="space-y-6">
@@ -79,7 +83,16 @@ export function KycApprovedFreeDashboard({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="premium-card p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/50 shadow-lg"
+          className="premium-card p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/50 shadow-lg cursor-pointer select-none hover:border-blue-500/40 transition-colors"
+          onClick={() => setActiveModalWallet('MAIN')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              setActiveModalWallet('MAIN')
+            }
+          }}
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -134,7 +147,16 @@ export function KycApprovedFreeDashboard({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="premium-card p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/50 shadow-lg"
+          className="premium-card p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/50 shadow-lg cursor-pointer select-none hover:border-indigo-500/40 transition-colors"
+          onClick={() => setActiveModalWallet('DEPOSIT')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              setActiveModalWallet('DEPOSIT')
+            }
+          }}
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -171,6 +193,19 @@ export function KycApprovedFreeDashboard({
           rows={timeWallEarnings}
           total={totalTimeWallEarnings}
           onClose={() => setShowTimeWallModal(false)}
+        />
+      )}
+
+      {activeModalWallet && (
+        <WalletTransactionsModal
+          isOpen={activeModalWallet !== null}
+          onClose={() => setActiveModalWallet(null)}
+          walletName={
+            activeModalWallet === 'MAIN' ? 'Main Wallet' :
+            activeModalWallet === 'DEPOSIT' ? 'Deposit Wallet' : ''
+          }
+          transactions={transactions.filter(t => t.walletType === activeModalWallet)}
+          balance={activeModalWallet === 'MAIN' ? mainBalance : depositBalance}
         />
       )}
     </div>

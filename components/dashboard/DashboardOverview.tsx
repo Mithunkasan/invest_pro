@@ -15,6 +15,7 @@ import { getMembershipDisplayName } from '@/utils/membershipDisplay'
 import type { UserTokenPayload } from '@/lib/auth'
 import { ModalPortal } from '@/components/common/ModalPortal'
 import { TimeWallEarningsModal, type TimeWallEarningRow } from './TimeWallEarningsModal'
+import { WalletTransactionsModal } from './WalletTransactionsModal'
 
 interface DashboardOverviewProps {
   user: UserTokenPayload & {
@@ -56,7 +57,7 @@ interface DashboardOverviewProps {
     totalTaskEarned: number
   }
   investments: Array<{ id: string; amount: number; profit: number; status: string; startDate: string; endDate: string; plan: { name: string; roiPercent: number } }>
-  transactions: Array<{ id: string; type: string; amount: number; status: string; description: string | null; createdAt: string }>
+  transactions: Array<{ id: string; type: string; amount: number; status: string; description: string | null; createdAt: string; walletType: string; reference?: string | null }>
   chartData: Array<{ name: string; profit: number; investment: number }>
   adminBonuses: Array<{
     id: string
@@ -108,6 +109,7 @@ export function DashboardOverview({
 }: DashboardOverviewProps) {
   const [showTotalModal, setShowTotalModal] = useState(false)
   const [showTimeWallModal, setShowTimeWallModal] = useState(false)
+  const [activeModalWallet, setActiveModalWallet] = useState<'MAIN' | 'DEPOSIT' | 'REWARD' | 'REFERRAL' | 'SHARE' | 'BONUS' | null>(null)
 
   const formatDDMMYYYY = (date: Date | string) => {
     const d = new Date(date)
@@ -238,6 +240,8 @@ export function DashboardOverview({
           }
           iconBg="bg-blue-500/10"
           delay={0}
+          onClick={() => setActiveModalWallet('MAIN')}
+          className="border-blue-500/30 hover:border-blue-400"
         />
         <StatsCard
           title="Deposit"
@@ -250,6 +254,8 @@ export function DashboardOverview({
           }
           iconBg="bg-indigo-500/10"
           delay={0.05}
+          onClick={() => setActiveModalWallet('DEPOSIT')}
+          className="border-indigo-500/30 hover:border-indigo-400"
         />
         <StatsCard
           title="Reward"
@@ -262,6 +268,8 @@ export function DashboardOverview({
           }
           iconBg="bg-amber-500/10"
           delay={0.1}
+          onClick={() => setActiveModalWallet('REWARD')}
+          className="border-amber-500/30 hover:border-amber-400"
         />
         <StatsCard
           title="Referral Income"
@@ -274,6 +282,8 @@ export function DashboardOverview({
           }
           iconBg="bg-purple-500/10"
           delay={0.15}
+          onClick={() => setActiveModalWallet('REFERRAL')}
+          className="border-purple-500/30 hover:border-purple-400"
         />
         <StatsCard
           title="Total Wallet"
@@ -326,6 +336,8 @@ export function DashboardOverview({
           }
           iconBg="bg-cyan-500/15"
           delay={0.25}
+          onClick={() => setActiveModalWallet('SHARE')}
+          className="border-cyan-500/30 hover:border-cyan-400"
         />
         <StatsCard
           title="Bonus Wallet"
@@ -338,6 +350,8 @@ export function DashboardOverview({
           }
           iconBg="bg-orange-500/10"
           delay={0.3}
+          onClick={() => setActiveModalWallet('BONUS')}
+          className="border-orange-500/30 hover:border-orange-400"
         />
       </div>
 
@@ -430,6 +444,35 @@ export function DashboardOverview({
         />
       )}
 
+      {activeModalWallet && (
+        <WalletTransactionsModal
+          isOpen={activeModalWallet !== null}
+          onClose={() => setActiveModalWallet(null)}
+          walletName={
+            activeModalWallet === 'MAIN' ? 'Main Wallet' :
+            activeModalWallet === 'DEPOSIT' ? 'Deposit Wallet' :
+            activeModalWallet === 'REWARD' ? 'Reward Wallet' :
+            activeModalWallet === 'REFERRAL' ? 'Referral Income Wallet' :
+            activeModalWallet === 'SHARE' ? 'Share Wallet' :
+            activeModalWallet === 'BONUS' ? 'Bonus Wallet' : ''
+          }
+          transactions={transactions.filter(t => {
+            if (activeModalWallet === 'REFERRAL') {
+              return t.walletType === 'REFERRAL' || t.walletType === 'LEVEL'
+            }
+            return t.walletType === activeModalWallet
+          })}
+          balance={
+            activeModalWallet === 'MAIN' ? stats.wallet.mainBalance :
+            activeModalWallet === 'DEPOSIT' ? stats.wallet.depositBalance :
+            activeModalWallet === 'REWARD' ? stats.wallet.rewardBalance :
+            activeModalWallet === 'REFERRAL' ? (stats.wallet.referralBalance || 0) + (stats.wallet.levelBalance || 0) :
+            activeModalWallet === 'SHARE' ? stats.wallet.shareBalance :
+            activeModalWallet === 'BONUS' ? stats.wallet.bonusBalance : 0
+          }
+        />
+      )}
+
       {/* Portfolio Chart */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -500,7 +543,7 @@ export function DashboardOverview({
       >
         <h2 className="font-semibold text-base mb-4">Recent Transactions</h2>
         <DataTable
-          data={transactions as Record<string, unknown>[]}
+          data={transactions.slice(0, 10) as Record<string, unknown>[]}
           columns={transactionColumns as Parameters<typeof DataTable>[0]['columns']}
           rowKey="id"
           searchable={false}

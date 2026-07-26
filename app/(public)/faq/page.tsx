@@ -1,5 +1,6 @@
 import { createPageMetadata, serializeJsonLd } from '@/lib/seo'
 import FAQClient from './FAQClient'
+import FAQHero from './FAQHero'
 
 export const metadata = createPageMetadata({
   title: 'Frequently Asked Questions',
@@ -156,21 +157,13 @@ export default function FAQPage() {
   }
 
   return (
-    <div className="min-h-screen pt-28 pb-16 bg-background">
+    <div className="min-h-screen pb-16 bg-[#02040a]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
       />
       
-      {/* Cosmic Header */}
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-10">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6 tracking-tight">
-          Frequently Asked <span className="bg-gradient-to-r from-primary via-purple-400 to-blue-400 bg-clip-text text-transparent">Questions</span>
-        </h1>
-        <p className="text-muted-foreground text-base sm:text-lg lg:text-xl max-w-2xl mx-auto leading-relaxed">
-          Learn everything you need to know about VR Galaxy Networks, our community-based earning opportunities, policies, and how to maximize your networking potential.
-        </p>
-      </div>
+      <FAQHero />
 
       <FAQClient />
     </div>

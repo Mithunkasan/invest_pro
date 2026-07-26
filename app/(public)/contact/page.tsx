@@ -43,7 +43,7 @@ export default function ContactPage() {
             {[
               { icon: Mail, label: 'Email', value: 'vrgalaxynetworksceo@gmail.com', desc: 'We reply within 24 hours' },
               { icon: Send, label: 'Telegram', value: 'https://t.me/vrgalaxyceo', desc: '', href: 'https://t.me/vrgalaxyceo' },
-              { icon: MapPin, label: 'Address', value: 'Chennai, Tamil Nadu, India', desc: '' },
+              { icon: MapPin, label: 'Address', value: 'Nagercoil, Tamil Nadu, India', desc: '' },
               { icon: Clock, label: 'Support Hours', value: '16/7 Online Support', desc: 'Via email and Telegram' },
             ].map((item) => (
               <div key={item.label} className="flex items-start gap-4 premium-card p-4">

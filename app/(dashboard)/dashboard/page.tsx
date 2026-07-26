@@ -25,7 +25,6 @@ export default async function DashboardPage() {
     prisma.transaction.findMany({
       where: { userId: session.id },
       orderBy: { createdAt: 'desc' },
-      take: 10,
     }),
     prisma.notification.findMany({
       where: { userId: session.id, isRead: false },
@@ -306,6 +305,7 @@ export default async function DashboardPage() {
         taskWalletBalance={taskWalletBalance}
         timeWallEarnings={timeWallEarningRows}
         totalTimeWallEarnings={totalTaskEarned}
+        transactions={JSON.parse(JSON.stringify(transactions))}
       />
     )
   }
