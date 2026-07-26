@@ -12,7 +12,12 @@ import {
   Award, 
   Sparkles,
   ArrowRight,
-  X
+  X,
+  Globe,
+  Crown,
+  Shield,
+  User,
+  Headphones
 } from 'lucide-react'
 import {
   Accordion,
@@ -24,12 +29,78 @@ import { faqs, FAQ_CATEGORIES } from '@/lib/faq-data'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
+
+const CATEGORY_CARDS = [
+  {
+    id: 'general',
+    title: 'General',
+    desc: 'About VR Galaxy\nNetworks',
+    icon: Globe,
+    glow: 'rgba(59, 130, 246, 0.65)',
+    textColor: 'text-blue-500',
+    borderColor: 'hover:border-blue-500/30'
+  },
+  {
+    id: 'membership',
+    title: 'Membership',
+    desc: 'Plans, benefits\nand access',
+    icon: Crown,
+    glow: 'rgba(236, 72, 153, 0.65)',
+    textColor: 'text-fuchsia-500',
+    borderColor: 'hover:border-fuchsia-500/30'
+  },
+  {
+    id: 'earnings',
+    title: 'Earnings & Rewards',
+    desc: 'How you earn\nand get rewarded',
+    icon: Coins,
+    glow: 'rgba(168, 85, 247, 0.65)',
+    textColor: 'text-purple-500',
+    borderColor: 'hover:border-purple-500/30'
+  },
+  {
+    id: 'security',
+    title: 'Security',
+    desc: 'Safety, privacy\nand protection',
+    icon: Shield,
+    glow: 'rgba(59, 130, 246, 0.65)',
+    textColor: 'text-blue-500',
+    borderColor: 'hover:border-blue-500/30'
+  },
+  {
+    id: 'account',
+    title: 'Account',
+    desc: 'Manage your\naccount',
+    icon: User,
+    glow: 'rgba(99, 102, 241, 0.65)',
+    textColor: 'text-indigo-500',
+    borderColor: 'hover:border-indigo-500/30'
+  },
+  {
+    id: 'support',
+    title: 'Support',
+    desc: 'Help and\nassistance',
+    icon: Headphones,
+    glow: 'rgba(168, 85, 247, 0.65)',
+    textColor: 'text-purple-500',
+    borderColor: 'hover:border-purple-500/30'
+  }
+]
+
 export default function FAQClient() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
 
   // Clear query helper
   const handleClearSearch = () => setSearchQuery('')
+
+  const handleSupportClick = () => {
+    setSelectedCategory('all')
+    const ctaSection = document.getElementById('support-cta')
+    if (ctaSection) {
+      ctaSection.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
 
   // Filter FAQs based on category and search query
   const filteredFaqs = useMemo(() => {
@@ -62,6 +133,63 @@ export default function FAQClient() {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute top-1/2 right-10 w-[300px] h-[300px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-10 left-10 w-[350px] h-[350px] bg-blue-600/10 rounded-full blur-[110px] pointer-events-none" />
+
+      {/* Category Cards Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12 relative z-30">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
+          {CATEGORY_CARDS.map((card) => {
+            const Icon = card.icon
+            const isActive = selectedCategory === card.id || 
+              (card.id === 'security' && selectedCategory === 'general') ||
+              (card.id === 'account' && selectedCategory === 'general')
+
+            return (
+              <div
+                key={card.title}
+                onClick={() => {
+                  if (card.id === 'support') {
+                    handleSupportClick()
+                  } else if (card.id === 'security' || card.id === 'account') {
+                    setSelectedCategory('general')
+                  } else {
+                    setSelectedCategory(card.id)
+                  }
+                }}
+                className={`group flex flex-col items-center text-center p-6 sm:p-8 rounded-2xl border transition-all duration-300 cursor-pointer select-none min-h-[200px] justify-center ${
+                  isActive
+                    ? 'bg-[#101216]/90 border-primary/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]'
+                    : 'bg-[#0a0c10]/60 hover:bg-[#101216]/80 border-white/5 hover:border-white/10 hover:shadow-xl'
+                } ${card.borderColor}`}
+              >
+                {/* Glowing Icon Wrapper */}
+                <div 
+                  className="w-16 h-16 rounded-full flex items-center justify-center bg-white/5 border border-white/5 mb-5 transition-all duration-300 group-hover:scale-110"
+                  style={{
+                    boxShadow: isActive ? `0 0 15px ${card.glow}` : 'none'
+                  }}
+                >
+                  <Icon 
+                    className={`w-7 h-7 ${card.textColor} transition-all duration-300`}
+                    style={{
+                      filter: `drop-shadow(0 0 8px ${card.glow})`
+                    }}
+                  />
+                </div>
+
+                {/* Card Title */}
+                <h3 className="font-extrabold text-white text-sm sm:text-base tracking-tight leading-snug">
+                  {card.title}
+                </h3>
+
+                {/* Card Description */}
+                <p className="text-slate-400 text-xs sm:text-sm mt-2 leading-tight whitespace-pre-line">
+                  {card.desc}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+      </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Search & Stats Control panel */}
@@ -223,6 +351,7 @@ export default function FAQClient() {
 
         {/* Premium CTA Box */}
         <motion.div
+          id="support-cta"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
