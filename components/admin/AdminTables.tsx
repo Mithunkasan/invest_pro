@@ -979,6 +979,7 @@ export function WalletsTable({ data }: TableProps) {
                     <option value="LEVEL">Level Income</option>
                     <option value="SHARE">Share Wallet</option>
                     <option value="BONUS">Bonus Wallet</option>
+                    <option value="TASK">Task Wallet</option>
                   </select>
                 </div>
 

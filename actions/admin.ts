@@ -948,7 +948,7 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
 // ── Admin: Manual Adjust Wallet Balance ───────────────────────────────────────
 export async function adjustUserBalanceAction(
   userId: string,
-  walletType: 'MAIN' | 'DEPOSIT' | 'BONUS' | 'REFERRAL' | 'LEVEL' | 'REWARD' | 'SHARE',
+  walletType: 'MAIN' | 'DEPOSIT' | 'BONUS' | 'REFERRAL' | 'LEVEL' | 'REWARD' | 'SHARE' | 'TASK',
   amount: number,
   operation: 'ADD' | 'SUBTRACT'
 ): Promise<ApiResponse> {
@@ -1047,6 +1047,10 @@ export async function adjustUserBalanceAction(
           field = 'shareBalance'
           txType = 'SHARE_BONUS'
           break
+        case 'TASK':
+          field = 'taskBalance'
+          txType = 'BONUS'
+          break
         default:
           return { success: false, message: 'Invalid wallet type' }
       }
@@ -1096,9 +1100,13 @@ export async function adjustUserBalanceAction(
       await checkAndApplyTLRank(userId)
     }
 
-    revalidatePath('/admin/dashboard/wallet')
-    revalidatePath('/dashboard/wallet')
-    revalidatePath('/dashboard')
+    try {
+      revalidatePath('/admin/dashboard/wallet')
+      revalidatePath('/dashboard/wallet')
+      revalidatePath('/dashboard')
+    } catch (e) {
+      // Ignored: running outside of Next.js server context (e.g. testing)
+    }
     return { success: true, message: `Manually adjusted balance successfully` }
   } catch (error) {
     console.error('Error adjusting wallet balance:', error)
