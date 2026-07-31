@@ -468,8 +468,6 @@ async function handlePostback(request: NextRequest) {
     const payoutVal = params.get('payout') ? Number(params.get('payout')) : null
     if (payoutVal !== null && amountVal !== payoutVal) {
       rawPoints = params.get('amount')
-    } else if (amountVal >= 1) {
-      rawPoints = params.get('amount')
     } else {
       rawPoints = String(Math.round(amountVal * 10000))
     }
@@ -478,8 +476,6 @@ async function handlePostback(request: NextRequest) {
     const rewardVal = Number(params.get('reward'))
     const payoutVal = params.get('payout') ? Number(params.get('payout')) : null
     if (payoutVal !== null && rewardVal !== payoutVal) {
-      rawPoints = params.get('reward')
-    } else if (rewardVal >= 1) {
       rawPoints = params.get('reward')
     } else {
       rawPoints = String(Math.round(rewardVal * 10000))
