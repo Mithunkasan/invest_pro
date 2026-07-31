@@ -156,6 +156,18 @@ export default async function DashboardPage() {
     : (dbUserForTimeWall?.membershipPlan?.timeWallPercent ?? 0.005)
 
   const timeWallEarningRows = timeWallEarnings.map((txn) => {
+    // Determine the multiplier at the time of the transaction, or fallback to current
+    const multMatch = txn.description?.match(/(?:Multiplier|Conversion percentage):\s*([\d.%]+)/i)
+    let mult = userMultiplier
+    if (multMatch) {
+      let rawMult = multMatch[1]
+      if (rawMult.endsWith('%')) {
+        mult = parseFloat(rawMult) / 100
+      } else {
+        mult = parseFloat(rawMult)
+      }
+    }
+
     // 1. Try to extract from description
     const pointsMatch = txn.description?.match(/Points:\s*([\d.]+)/i)
     let pointsVal: string | null = null
@@ -175,28 +187,27 @@ export default async function DashboardPage() {
       }
     }
 
-    // 3. Reverse calculate using the multiplier at that time, or fallback to current multiplier
+    // 3. Reverse calculate using the multiplier
     if (!pointsVal) {
-      const multMatch = txn.description?.match(/(?:Multiplier|Conversion percentage):\s*([\d.%]+)/i)
-      let mult = userMultiplier
-      if (multMatch) {
-        let rawMult = multMatch[1]
-        if (rawMult.endsWith('%')) {
-          mult = parseFloat(rawMult) / 100
-        } else {
-          mult = parseFloat(rawMult)
-        }
-      }
       if (mult > 0) {
-        pointsVal = String(Math.round(txn.amount / mult))
+        let calculated = txn.amount / mult
+        if (calculated > 0 && calculated < 100) {
+          calculated = calculated * 10000
+        }
+        pointsVal = String(Math.round(calculated))
       }
     }
+
+    // Calculate the displayed amount from the points and multiplier to ensure correctness
+    const displayedAmount = (pointsVal && mult > 0)
+      ? Number(pointsVal) * mult
+      : txn.amount
 
     return {
       id: txn.id,
       name: txn.description?.split(':')[0]?.trim() || 'TimeWall Reward',
       points: pointsVal,
-      amount: txn.amount,
+      amount: displayedAmount,
       payout: null,
       type: txn.type,
       ip: null,
