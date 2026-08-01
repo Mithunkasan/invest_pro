@@ -1603,9 +1603,21 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
         } else {
           next.memberType = 'PREMIUM'
         }
+
+        // Automatically set Activation and Expiration Date
+        const now = new Date()
+        next.basicMembershipActivatedAt = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+
+        const expDate = new Date(now)
+        expDate.setDate(expDate.getDate() + 1000)
+        next.basicMembershipExpiresAt = expDate.toISOString().split('T')[0]
+        next.lastDailyYieldAt = ''
       } else {
         next.basicMembershipAmount = 0
         next.memberType = 'FREE'
+        next.basicMembershipActivatedAt = ''
+        next.basicMembershipExpiresAt = ''
+        next.lastDailyYieldAt = ''
       }
       return next
     })
@@ -1619,7 +1631,7 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
       ...prev,
       basicMembershipActivatedAt: activatedAt,
       basicMembershipExpiresAt: endDate,
-      lastDailyYieldAt: endDate,
+      lastDailyYieldAt: '',
     }))
   }
 
