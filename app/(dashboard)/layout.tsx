@@ -40,8 +40,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     }
   })
 
-  await creditDueBasicDailyYield(session.id)
-  await creditDueDepositYields(session.id)
+  const systemSettings = await prisma.systemSettings.findUnique({
+    where: { id: 'default' },
+    select: { dailyTaskEnabled: true }
+  })
+  const dailyTaskEnabled = systemSettings?.dailyTaskEnabled ?? false
+
+  if (!dailyTaskEnabled) {
+    await creditDueBasicDailyYield(session.id)
+    await creditDueDepositYields(session.id)
+  }
   await checkAndExpireMembership(session.id)
 
   const isMembershipActivated = Boolean(
@@ -83,6 +91,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <DashboardLayoutClient
       user={{ 
+        id: session.id,
         name: session.name, 
         email: session.email, 
         memberType: dbUser?.memberType || 'PREMIUM',
@@ -101,4 +110,3 @@ export default async function DashboardLayout({ children }: { children: React.Re
     </DashboardLayoutClient>
   )
 }
-

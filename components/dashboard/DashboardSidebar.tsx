@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Wallet, ArrowDownToLine, ArrowUpFromLine,
-  History, Users, Bell, ShieldCheck, Settings, X, ChevronRight, Crown, Gift, ClipboardList, Gamepad2, MessageSquare,
+  History, Users, Bell, ShieldCheck, Settings, X, ChevronRight, Crown, Gift, ClipboardList, MessageSquare,
   Send, Timer
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -25,7 +25,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { href: '/dashboard', label: 'Game Section', icon: Gamepad2 },
+  { href: '/dashboard/daily-task', label: 'Daily Task', icon: ClipboardList },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
   { href: '/dashboard/membership', label: 'Membership', icon: Crown },
   { href: '/dashboard/tasks', label: 'Tasks', icon: ClipboardList },
@@ -84,6 +84,11 @@ export function DashboardSidebar({
     let baseItems = [...navItems]
     const isFree = user?.memberType === 'FREE'
 
+    // Show Daily Task ONLY if they are active members and NOT FREE
+    if (!isMembershipActivated || isFree) {
+      baseItems = baseItems.filter((item) => item.label !== 'Daily Task')
+    }
+
     if (isFree) {
       // KYC-approved FREE users: Overview, KYC, Profile, Deposit and Withdraw
       // If they have deposited, they can also see Membership to upgrade
@@ -92,7 +97,6 @@ export function DashboardSidebar({
 
       baseItems = baseItems.filter((item) => allowedLabels.includes(item.label))
     } else {
-      baseItems = baseItems.filter((item) => item.label !== 'Game Section')
       // Premium users see the Gift Section ONLY if membership is activated
       if (isMembershipActivated) {
         const membershipIndex = baseItems.findIndex((item) => item.label === 'Membership')
@@ -116,7 +120,7 @@ export function DashboardSidebar({
 
     let filteredItems = baseItems
     if (isMembershipActivated && !isKycApproved) {
-      filteredItems = baseItems.filter((item) => ['KYC', 'Wallet', 'TimeWall'].includes(item.label))
+      filteredItems = baseItems.filter((item) => ['KYC', 'Wallet', 'TimeWall', 'Daily Task'].includes(item.label))
     } else if (!user?.profileCompleted) {
       filteredItems = baseItems.filter((item) => item.label === 'Profile')
     } else {
@@ -126,25 +130,24 @@ export function DashboardSidebar({
         if (isFree) {
           filteredItems = baseItems.filter(item => item.label !== 'KYC')
         } else {
-          const allowedLabelsStrict = ['Overview', 'Wallet', 'TimeWall', 'Deposit', 'Membership', 'Withdraw', 'Profile', 'Transactions', 'Notifications']
+          const allowedLabelsStrict = ['Overview', 'Daily Task', 'Wallet', 'TimeWall', 'Deposit', 'Membership', 'Withdraw', 'Profile', 'Transactions', 'Notifications']
           if (isMembershipActivated) allowedLabelsStrict.push('Gift Section')
           filteredItems = baseItems.filter(item => allowedLabelsStrict.includes(item.label))
         }
       } else {
         if (!isKycApproved) {
-          filteredItems = baseItems.filter((item) => ['KYC', 'Profile', 'Wallet', 'TimeWall'].includes(item.label))
+          filteredItems = baseItems.filter((item) => ['KYC', 'Profile', 'Wallet', 'TimeWall', 'Daily Task'].includes(item.label))
         } else if (isFree) {
           filteredItems = baseItems
         } else if (user?.isMembershipExpired) {
           filteredItems = baseItems.filter((item) => ['Membership', 'Withdraw', 'Wallet', 'TimeWall'].includes(item.label))
         } else if (!isFullAccess) {
           filteredItems = baseItems.filter((item) =>
-            ['Overview', 'Wallet', 'TimeWall', 'Deposit', 'Membership', 'Transactions', 'Notifications', 'KYC', 'Profile'].includes(item.label)
+            ['Overview', 'Daily Task', 'Wallet', 'TimeWall', 'Deposit', 'Membership', 'Transactions', 'Notifications', 'KYC', 'Profile'].includes(item.label)
           )
         }
       }
     }
-
 
     return (
       <div className="flex flex-col h-full">
@@ -159,107 +162,107 @@ export function DashboardSidebar({
         {/* Nav Items */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto no-scrollbar">
           {filteredItems.map((item) => {
-          const Icon = item.icon
+            const Icon = item.icon
 
-          // Render collapsible section
-          if (item.subItems) {
-            const isExpanded = !!expandedItems[item.label]
-            const hasActiveChild = item.subItems.some((sub) => pathname === sub.href)
+            // Render collapsible section
+            if (item.subItems) {
+              const isExpanded = !!expandedItems[item.label]
+              const hasActiveChild = item.subItems.some((sub) => pathname === sub.href)
+
+              return (
+                <div key={item.label} className="space-y-0.5">
+                  <button
+                    onClick={() => toggleExpand(item.label)}
+                    className={cn(
+                      'sidebar-link w-full text-left justify-between cursor-pointer focus:outline-none',
+                      (isExpanded || hasActiveChild) && 'text-sidebar-foreground bg-sidebar-accent/50'
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-4 h-4 shrink-0 text-amber-400 filter drop-shadow-[0_0_4px_rgba(245,158,11,0.3)]" />
+                      <span>{item.label}</span>
+                    </div>
+                    <ChevronRight
+                      className={cn(
+                        'ml-auto w-3 h-3 text-sidebar-foreground/50 transition-transform duration-200',
+                        isExpanded && 'rotate-90 text-primary'
+                      )}
+                    />
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        className="overflow-hidden pl-7 space-y-0.5"
+                      >
+                        {item.subItems.map((sub) => {
+                          const isSubActive = pathname === sub.href
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              onClick={onClose}
+                              className={cn(
+                                'flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60',
+                                isSubActive && 'text-primary bg-primary/10 font-bold'
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'w-1.5 h-1.5 rounded-full bg-sidebar-foreground/20 transition-colors',
+                                  isSubActive && 'bg-primary scale-125 shadow-[0_0_6px_rgba(59,130,246,0.5)]'
+                                )}
+                              />
+                              <span>{sub.label}</span>
+                            </Link>
+                          )
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )
+            }
+
+            // Render standard link
+            const href = item.href || '/dashboard'
+            const isActive = href === '/dashboard'
+              ? pathname === '/dashboard'
+              : pathname.startsWith(href)
+            const linkClassName = cn(
+              'sidebar-link',
+              isActive && 'active text-primary bg-primary/10 font-semibold'
+            )
 
             return (
-              <div key={item.label} className="space-y-0.5">
-                <button
-                  onClick={() => toggleExpand(item.label)}
-                  className={cn(
-                    'sidebar-link w-full text-left justify-between cursor-pointer focus:outline-none',
-                    (isExpanded || hasActiveChild) && 'text-sidebar-foreground bg-sidebar-accent/50'
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-4 h-4 shrink-0 text-amber-400 filter drop-shadow-[0_0_4px_rgba(245,158,11,0.3)]" />
-                    <span>{item.label}</span>
-                  </div>
-                  <ChevronRight
-                    className={cn(
-                      'ml-auto w-3 h-3 text-sidebar-foreground/50 transition-transform duration-200',
-                      isExpanded && 'rotate-90 text-primary'
-                    )}
-                  />
-                </button>
-
-                <AnimatePresence initial={false}>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: 'easeInOut' }}
-                      className="overflow-hidden pl-7 space-y-0.5"
-                    >
-                      {item.subItems.map((sub) => {
-                        const isSubActive = pathname === sub.href
-                        return (
-                          <Link
-                            key={sub.href}
-                            href={sub.href}
-                            onClick={onClose}
-                            className={cn(
-                              'flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60',
-                              isSubActive && 'text-primary bg-primary/10 font-bold'
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                'w-1.5 h-1.5 rounded-full bg-sidebar-foreground/20 transition-colors',
-                                isSubActive && 'bg-primary scale-125 shadow-[0_0_6px_rgba(59,130,246,0.5)]'
-                              )}
-                            />
-                            <span>{sub.label}</span>
-                          </Link>
-                        )
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <Link
+                key={href}
+                href={href}
+                onClick={onClose}
+                className={linkClassName}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span>{item.label}</span>
+                {isActive && <ChevronRight className="ml-auto w-3 h-3 text-primary" />}
+              </Link>
             )
-          }
+          })}
+        </nav>
 
-          // Render standard link
-          const href = item.href || '/dashboard'
-          const isActive = href === '/dashboard'
-            ? pathname === '/dashboard'
-            : pathname.startsWith(href)
-          const linkClassName = cn(
-            'sidebar-link',
-            isActive && 'active text-primary bg-primary/10 font-semibold'
-          )
-
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              className={linkClassName}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span>{item.label}</span>
-              {isActive && <ChevronRight className="ml-auto w-3 h-3 text-primary" />}
-            </Link>
-          )
-        })}
-      </nav>
-
-      {/* Footer */}
-      <div className="px-4 py-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-2 text-xs text-sidebar-foreground/40">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <span>VR Galaxy Networks v1.0.0</span>
+        {/* Footer */}
+        <div className="px-4 py-4 border-t border-sidebar-border">
+          <div className="flex items-center gap-2 text-xs text-sidebar-foreground/40">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span>VR Galaxy Networks v1.0.0</span>
+          </div>
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
 
   return (
     <>

@@ -470,6 +470,13 @@ model SystemSettings {
   giftDepositAmount        Float    @default(0)
   timeWallPercentFree     Float    @default(0.005)
 
+  // Daily Task Settings
+  dailyTaskEnabled        Boolean  @default(false)
+  dailyTaskMediaUrl       String?
+  dailyTaskMediaType      String   @default("IMAGE") // "IMAGE" or "VIDEO"
+  dailyTaskDuration       Int      @default(30)
+  dailyTaskMessage        String   @default("You must watch this image/video for the full duration set by the admin to qualify for today's daily yield reward.")
+
   // TimeWall credential settings (stored in DB so they persist in serverless/Vercel)
   timeWallUsername        String?
   timeWallPassword        String?
