@@ -34,6 +34,7 @@ const adminNavItems: {
   { href: '/admin/dashboard/memberships',       label: 'Manage Membership',   icon: Crown,           badgeKey: 'memberships' },
   { href: '/admin/dashboard/gifts',             label: 'Gifts Management',    icon: Gift,            badgeKey: 'gifts' },
   { href: '/admin/dashboard/kyc',               label: 'KYC Management',      icon: ShieldCheck,     badgeKey: 'kyc' },
+  { href: '/admin/dashboard/daily-task',        label: 'Daily Task Settings', icon: ClipboardList },
   { href: '/admin/dashboard/settings',          label: 'System Settings',     icon: Settings },
   { href: '/admin/dashboard/wallet',            label: 'Wallet Management',   icon: Wallet },
   { href: '/admin/dashboard/notifications',     label: 'Notifications',       icon: Bell },

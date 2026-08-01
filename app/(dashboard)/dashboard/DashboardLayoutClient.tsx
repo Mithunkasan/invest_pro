@@ -8,10 +8,12 @@ import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
 import { DashboardNavbar } from '@/components/dashboard/DashboardNavbar'
 import { MoneyBackground } from '@/components/dashboard/MoneyBackground'
 import { Button } from '@/components/ui/button'
+import { DailyTaskPopup } from '@/components/dashboard/DailyTaskPopup'
 
 interface DashboardLayoutClientProps {
   children: React.ReactNode
   user: {
+    id: string
     name: string
     email: string
     memberType?: 'FREE' | 'BASIC' | 'PREMIUM'
@@ -51,7 +53,7 @@ export function DashboardLayoutClient({
     }
 
     if (requiresKyc) {
-      const allowedRoutes = ['/dashboard/kyc', '/dashboard/wallet', '/dashboard/timewall']
+      const allowedRoutes = ['/dashboard/kyc', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/daily-task']
       const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
 
       if (!isAllowed) {
@@ -79,7 +81,7 @@ export function DashboardLayoutClient({
             ? ['/dashboard', '/dashboard/profile', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/deposit', '/dashboard/membership', '/dashboard/transactions', '/dashboard/notifications']
             : ['/dashboard', '/dashboard/profile', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/deposit', '/dashboard/transactions', '/dashboard/notifications'])
         : isMembershipActivated
-          ? ['/dashboard', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/deposit', '/dashboard/gift', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile', '/dashboard/transactions', '/dashboard/notifications']
+          ? ['/dashboard', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/deposit', '/dashboard/gift', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile', '/dashboard/transactions', '/dashboard/notifications', '/dashboard/daily-task']
           : ['/dashboard', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/deposit', '/dashboard/membership', '/dashboard/withdraw', '/dashboard/profile', '/dashboard/transactions', '/dashboard/notifications']
 
       const isAllowed = allowedRoutes.some((route) => {
@@ -94,7 +96,7 @@ export function DashboardLayoutClient({
     }
 
     if (!isKycApproved) {
-      const allowedRoutes = ['/dashboard/kyc', '/dashboard/profile', '/dashboard/wallet', '/dashboard/timewall']
+      const allowedRoutes = ['/dashboard/kyc', '/dashboard/profile', '/dashboard/wallet', '/dashboard/timewall', '/dashboard/daily-task']
       const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
 
       if (!isAllowed) {
@@ -122,6 +124,7 @@ export function DashboardLayoutClient({
             '/dashboard/notifications',
             '/dashboard/kyc',
             '/dashboard/profile',
+            '/dashboard/daily-task',
           ]
 
       const isAllowed = allowedRoutes.some((route) => pathname === route || pathname.startsWith(route))
@@ -176,6 +179,7 @@ export function DashboardLayoutClient({
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
           <MoneyBackground />
+          <DailyTaskPopup userId={user.id} />
           <div className="relative z-10">{children}</div>
         </main>
       </div>
