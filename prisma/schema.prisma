@@ -51,6 +51,7 @@ model User {
   assignedTasks OfflineTask[]
   tickets       Ticket[]
   ticketNotifications TicketNotification[]
+  dailyTaskCompletions DailyTaskCompletion[]
 
   // Badges & Rank
   starPerformer       Boolean   @default(false)
@@ -767,4 +768,38 @@ enum UserPayStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+// ============================================================
+// DAILY TASK MODELS
+// ============================================================
+model DailyTask {
+  id          String   @id @default(cuid())
+  mediaUrl    String
+  mediaType   String   @default("IMAGE") // "IMAGE" or "VIDEO"
+  duration    Int      @default(30)
+  message     String?  @default("You must watch this image/video for the full duration set by the admin to qualify for today's daily yield reward.")
+  startDate   String   // e.g. "2026-08-03"
+  startTime   String   // e.g. "10:00"
+  expiryDate  String   // e.g. "2026-08-04"
+  expiryTime  String   // e.g. "10:00"
+  startAt     DateTime
+  expireAt    DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  completions DailyTaskCompletion[]
+}
+
+model DailyTaskCompletion {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskId      String
+  task        DailyTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  completedAt DateTime  @default(now())
+
+  @@unique([userId, taskId])
+  @@index([userId])
+  @@index([taskId])
 }

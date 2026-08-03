@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getDailyTaskSettingsAction } from '@/actions/dailyTask'
+import { getDailyTaskSettingsAction, getDailyTasksAction } from '@/actions/dailyTask'
 import { DailyTaskSettingsForm } from '@/components/admin/DailyTaskSettingsForm'
 
 export const metadata: Metadata = {
@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 
 export default async function AdminDailyTaskPage() {
   const settings = await getDailyTaskSettingsAction()
+  const tasks = await getDailyTasksAction()
 
   return (
     <div className="space-y-6">
@@ -18,7 +19,7 @@ export default async function AdminDailyTaskPage() {
         </p>
       </div>
 
-      <DailyTaskSettingsForm initialSettings={settings} />
+      <DailyTaskSettingsForm initialSettings={settings} initialTasks={tasks} />
     </div>
   )
 }

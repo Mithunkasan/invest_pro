@@ -132,6 +132,14 @@ export async function creditDueDepositYields(userId: string) {
 }
 
 export async function creditAllDueMembershipYields(membershipPlanId?: string) {
+  const settings = await prisma.systemSettings.findUnique({
+    where: { id: 'default' },
+    select: { dailyTaskEnabled: true }
+  })
+  if (settings?.dailyTaskEnabled) {
+    return { processed: 0, succeeded: 0, failed: 0 }
+  }
+
   const now = new Date()
   const users = await prisma.user.findMany({
     where: {
