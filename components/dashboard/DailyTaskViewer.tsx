@@ -13,16 +13,15 @@ interface DailyTaskViewerProps {
     dailyTaskMediaType: string
     dailyTaskDuration: number
     dailyTaskMessage: string
+    activeTaskId?: string
   }
   onComplete?: () => void
   isPopup?: boolean
 }
 
 export function DailyTaskViewer({ userId, settings, onComplete, isPopup = false }: DailyTaskViewerProps) {
-  const { dailyTaskMediaUrl, dailyTaskMediaType, dailyTaskDuration, dailyTaskMessage } = settings
+  const { dailyTaskMediaUrl, dailyTaskMediaType, dailyTaskDuration, dailyTaskMessage, activeTaskId } = settings
   const duration = dailyTaskDuration || 30
-  
-  const progressKey = `dailyTaskProgress_${userId}_${encodeURIComponent(dailyTaskMediaUrl || 'default')}`
   
   const [progress, setProgress] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
@@ -41,23 +40,9 @@ export function DailyTaskViewer({ userId, settings, onComplete, isPopup = false 
 
   const ytId = dailyTaskMediaType === 'VIDEO' ? getYouTubeId(dailyTaskMediaUrl) : null
 
-  // 1. Initialize progress from localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(progressKey)
-      if (saved) {
-        const val = parseInt(saved, 10)
-        if (val >= duration) {
-          setProgress(duration)
-          setCompleted(true)
-        } else {
-          setProgress(val)
-        }
-      }
-    }
-  }, [progressKey, duration])
 
-  // 2. Timer Loop
+
+  // 1. Timer Loop
   useEffect(() => {
     if (completed) return
 
@@ -65,9 +50,6 @@ export function DailyTaskViewer({ userId, settings, onComplete, isPopup = false 
       timerRef.current = setInterval(() => {
         setProgress((prev) => {
           const next = prev + 1
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(progressKey, String(next))
-          }
           if (next >= duration) {
             setCompleted(true)
             if (timerRef.current) clearInterval(timerRef.current)
@@ -87,18 +69,15 @@ export function DailyTaskViewer({ userId, settings, onComplete, isPopup = false 
         clearInterval(timerRef.current)
       }
     }
-  }, [isPlaying, completed, progressKey, duration])
+  }, [isPlaying, completed, duration])
 
   // 3. Claim Yield Action
   const handleClaim = async () => {
     setClaiming(true)
     try {
-      const res = await claimDailyYieldAction()
+      const res = await claimDailyYieldAction(activeTaskId)
       if (res.success) {
         toast({ title: 'Yield Credited', description: res.message })
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(progressKey)
-        }
         if (onComplete) {
           onComplete()
         } else {
