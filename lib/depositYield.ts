@@ -136,11 +136,24 @@ export async function creditAllDueMembershipYields(membershipPlanId?: string) {
     where: { id: 'default' },
     select: { dailyTaskEnabled: true }
   })
-  if (settings?.dailyTaskEnabled) {
+
+  const now = new Date()
+  const activeTask = settings?.dailyTaskEnabled
+    ? await prisma.dailyTask.findFirst({
+        where: {
+          startAt: { lte: now },
+          expireAt: { gte: now },
+        },
+        orderBy: { startAt: 'desc' }
+      })
+    : null
+
+  const isDailyTaskActive = settings?.dailyTaskEnabled && !!activeTask
+
+  if (isDailyTaskActive) {
     return { processed: 0, succeeded: 0, failed: 0 }
   }
 
-  const now = new Date()
   const users = await prisma.user.findMany({
     where: {
       status: 'ACTIVE',

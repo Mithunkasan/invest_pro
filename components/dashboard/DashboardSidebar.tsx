@@ -238,6 +238,22 @@ export function DashboardSidebar({
               isActive && 'active text-primary bg-primary/10 font-semibold'
             )
 
+            if (item.label === 'TimeWall') {
+              return (
+                <a
+                  key={timeWallUrl}
+                  href={timeWallUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={onClose}
+                  className={linkClassName}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{item.label}</span>
+                </a>
+              )
+            }
+
             return (
               <Link
                 key={href}

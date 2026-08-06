@@ -799,7 +799,6 @@ model DailyTaskCompletion {
   task        DailyTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
   completedAt DateTime  @default(now())
 
-  @@unique([userId, taskId])
   @@index([userId])
   @@index([taskId])
 }

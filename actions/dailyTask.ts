@@ -18,6 +18,15 @@ function get10AMIST(d: Date): Date {
   return new Date(Date.UTC(year, month, dateVal, 4, 30, 0, 0))
 }
 
+function getMostRecent10AMIST(d: Date): Date {
+  const today10AM = get10AMIST(d)
+  if (d.getTime() >= today10AM.getTime()) {
+    return today10AM
+  } else {
+    return new Date(today10AM.getTime() - ONE_DAY_MS)
+  }
+}
+
 // Helper to handle image upload safely (Cloudinary fallback to local/dataUrl)
 async function handleImageUpload(imageFile: File): Promise<string> {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.replace(/['"]/g, '')
@@ -360,12 +369,15 @@ export async function checkUserDailyTaskEligibilityAction() {
         return { eligible: false, hasDueYield, settings: null }
       }
 
-      // Check if user completed this active task
-      const completion = await prisma.dailyTaskCompletion.findUnique({
+      const mostRecent10AM = getMostRecent10AMIST(now)
+
+      // Check if user completed this active task since the most recent 10:00 AM IST
+      const completion = await prisma.dailyTaskCompletion.findFirst({
         where: {
-          userId_taskId: {
-            userId: session.id,
-            taskId: activeTask.id
+          userId: session.id,
+          taskId: activeTask.id,
+          completedAt: {
+            gte: mostRecent10AM
           }
         }
       })
@@ -443,12 +455,15 @@ export async function claimDailyYieldAction(taskId?: string) {
       return { success: false, message: 'This task is not currently active.' }
     }
 
-    // Check if user already completed this task
-    const existingCompletion = await prisma.dailyTaskCompletion.findUnique({
+    const mostRecent10AM = getMostRecent10AMIST(now)
+
+    // Check if user already completed this task since the most recent 10:00 AM IST
+    const existingCompletion = await prisma.dailyTaskCompletion.findFirst({
       where: {
-        userId_taskId: {
-          userId: session.id,
-          taskId: activeTaskId
+        userId: session.id,
+        taskId: activeTaskId,
+        completedAt: {
+          gte: mostRecent10AM
         }
       }
     })
@@ -480,21 +495,21 @@ export async function claimDailyYieldAction(taskId?: string) {
       return { success: false, message: 'You have already received your daily yield for today.' }
     }
 
-    // Record Completion
-    await prisma.dailyTaskCompletion.create({
-      data: {
-        userId: session.id,
-        taskId: activeTaskId
-      }
-    })
-
     // Credit exactly 1 Day of daily yield
     const totalCreditAmount = Number(((membershipAmount * yieldPercent) / 100).toFixed(2))
 
-    if (totalCreditAmount > 0) {
-      const { syncWalletMainBalance } = await import('@/actions/walletUtils')
-      
-      await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx) => {
+      // Record Completion
+      await tx.dailyTaskCompletion.create({
+        data: {
+          userId: session.id,
+          taskId: activeTaskId
+        }
+      })
+
+      if (totalCreditAmount > 0) {
+        const { syncWalletMainBalance } = await import('@/actions/walletUtils')
+
         // Advance user's lastDailyYieldAt to today's 10:00 AM IST.
         // This marks today's yield as claimed and skips/forfeits any previous unclaimed days.
         await tx.user.update({
@@ -531,8 +546,8 @@ export async function claimDailyYieldAction(taskId?: string) {
 
         // Sync user's main wallet balance
         await syncWalletMainBalance(tx, session.id)
-      })
-    }
+      }
+    })
 
     revalidatePath('/dashboard')
     return { success: true, message: 'Daily task completed and yield reward successfully credited to your Reward Wallet.' }
