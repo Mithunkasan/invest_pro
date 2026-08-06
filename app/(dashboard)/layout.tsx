@@ -46,7 +46,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
   })
   const dailyTaskEnabled = systemSettings?.dailyTaskEnabled ?? false
 
-  if (!dailyTaskEnabled) {
+  const now = new Date()
+  const activeTask = dailyTaskEnabled
+    ? await prisma.dailyTask.findFirst({
+        where: {
+          startAt: { lte: now },
+          expireAt: { gte: now },
+        },
+        orderBy: { startAt: 'desc' }
+      })
+    : null
+
+  const isDailyTaskActive = dailyTaskEnabled && !!activeTask
+
+  if (!isDailyTaskActive) {
     await creditDueBasicDailyYield(session.id)
     await creditDueDepositYields(session.id)
   }

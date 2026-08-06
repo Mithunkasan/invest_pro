@@ -120,9 +120,10 @@ export function DailyTaskViewer({ userId, settings, onComplete, isPopup = false 
             ytId ? (
               <iframe
                 src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&playlist=${ytId}&loop=1&controls=0&modestbranding=1&rel=0`}
-                className="w-full h-full border-0"
+                className="w-full h-full border-0 pointer-events-none select-none"
                 allow="autoplay; encrypted-media"
                 allowFullScreen
+                tabIndex={-1}
               />
             ) : (
               <video
@@ -131,28 +132,13 @@ export function DailyTaskViewer({ userId, settings, onComplete, isPopup = false 
                 muted
                 loop
                 playsInline
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain pointer-events-none select-none"
+                tabIndex={-1}
               />
             )
           ) : (
             <div className="text-sm text-muted-foreground">No video configured.</div>
           )
-        )}
-
-        {/* Play/Pause overlay for timer */}
-        {!completed && (
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="absolute bottom-4 right-4 z-10 p-2.5 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm border border-white/10 transition-all cursor-pointer"
-          >
-            {isPlaying ? (
-              <span className="text-xs font-bold px-1">Pause Timer</span>
-            ) : (
-              <span className="text-xs font-bold px-1 flex items-center gap-1">
-                <Play className="w-3 h-3 fill-current" /> Resume Timer
-              </span>
-            )}
-          </button>
         )}
       </div>
 
