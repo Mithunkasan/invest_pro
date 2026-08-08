@@ -15,6 +15,8 @@ import {
   adjustUserBalanceAction,
   upsertMembershipPlanAction,
   deleteMembershipPlanAction,
+  toggleMembershipWithdrawAction,
+  toggleMembershipSendMoneyAction,
   handleTimeWallTransaction
 } from '@/actions/admin'
 import { toast } from '@/hooks/use-toast'
@@ -1249,7 +1251,9 @@ export function MembershipsTable({ data }: TableProps) {
     withdrawalTime: '24-48 Hours',
     support: 'Standard Email',
     color: '#3B82F6',
-    isActive: true
+    isActive: true,
+    withdrawEnabled: true,
+    sendMoneyEnabled: true
   })
 
   const [featuresList, setFeaturesList] = useState<string[]>([])
@@ -1269,7 +1273,9 @@ export function MembershipsTable({ data }: TableProps) {
       withdrawalTime: plan.withdrawalTime,
       support: plan.support,
       color: plan.color,
-      isActive: plan.isActive
+      isActive: plan.isActive,
+      withdrawEnabled: plan.withdrawEnabled !== false,
+      sendMoneyEnabled: plan.sendMoneyEnabled !== false
     })
     setFeaturesList(plan.features || [])
     setNewFeatureText('')
@@ -1290,7 +1296,9 @@ export function MembershipsTable({ data }: TableProps) {
       withdrawalTime: '24-48 Hours',
       support: 'Standard Email',
       color: '#3B82F6',
-      isActive: true
+      isActive: true,
+      withdrawEnabled: true,
+      sendMoneyEnabled: true
     })
     setFeaturesList([])
     setNewFeatureText('')
@@ -1324,7 +1332,9 @@ export function MembershipsTable({ data }: TableProps) {
         support: formData.support,
         features: featuresList,
         color: formData.color,
-        isActive: formData.isActive
+        isActive: formData.isActive,
+        withdrawEnabled: formData.withdrawEnabled,
+        sendMoneyEnabled: formData.sendMoneyEnabled
       })
 
       if (res.success) {
@@ -1340,6 +1350,28 @@ export function MembershipsTable({ data }: TableProps) {
     if (!confirm('Are you sure you want to delete this membership plan? This action cannot be undone.')) return
     startTransition(async () => {
       const res = await deleteMembershipPlanAction(id)
+      if (res.success) {
+        toast({ title: 'Success', description: res.message })
+      } else {
+        toast({ title: 'Error', description: res.message, variant: 'destructive' })
+      }
+    })
+  }
+
+  const handleToggleWithdraw = (planId: string) => {
+    startTransition(async () => {
+      const res = await toggleMembershipWithdrawAction(planId)
+      if (res.success) {
+        toast({ title: 'Success', description: res.message })
+      } else {
+        toast({ title: 'Error', description: res.message, variant: 'destructive' })
+      }
+    })
+  }
+
+  const handleToggleSendMoney = (planId: string) => {
+    startTransition(async () => {
+      const res = await toggleMembershipSendMoneyAction(planId)
       if (res.success) {
         toast({ title: 'Success', description: res.message })
       } else {
@@ -1425,6 +1457,44 @@ export function MembershipsTable({ data }: TableProps) {
         </Button>
       </div>
     )},
+    { key: 'withdrawEnabled', label: 'Withdraw', render: (v: any, row: any) => {
+      const isWithdrawEnabled = row.withdrawEnabled !== false
+      return (
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={() => handleToggleWithdraw(row.id)}
+            disabled={isPending}
+            className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
+            style={{ backgroundColor: isWithdrawEnabled ? '#10B981' : '#374151' }}
+          >
+            <span
+              className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+              style={{ transform: isWithdrawEnabled ? 'translateX(20px)' : 'translateX(0px)' }}
+            />
+          </button>
+        </div>
+      )
+    }},
+    { key: 'sendMoneyEnabled', label: 'Send Money', render: (v: any, row: any) => {
+      const isSendMoneyEnabled = row.sendMoneyEnabled !== false
+      return (
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={() => handleToggleSendMoney(row.id)}
+            disabled={isPending}
+            className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
+            style={{ backgroundColor: isSendMoneyEnabled ? '#10B981' : '#374151' }}
+          >
+            <span
+              className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+              style={{ transform: isSendMoneyEnabled ? 'translateX(20px)' : 'translateX(0px)' }}
+            />
+          </button>
+        </div>
+      )
+    }},
   ]
 
   const filteredPlans = useMemo(() => {
@@ -1650,7 +1720,7 @@ export function MembershipsTable({ data }: TableProps) {
                 </div>
 
                 {/* Styling & Features row */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-start">
                   <div className="space-y-1 sm:col-span-1">
                     <label className="text-xs font-semibold text-muted-foreground">Accent Hex Color</label>
                     <div className="flex gap-2">
@@ -1673,7 +1743,7 @@ export function MembershipsTable({ data }: TableProps) {
                     </div>
                   </div>
 
-                  <div className="sm:col-span-2 space-y-2">
+                  <div className="sm:col-span-1 space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground">Plan Status</label>
                     <div className="flex items-center gap-3 h-10 pl-1">
                       <label className="relative flex items-center cursor-pointer">
@@ -1685,7 +1755,41 @@ export function MembershipsTable({ data }: TableProps) {
                           disabled={isPending}
                         />
                         <div className="w-11 h-6 bg-brand-900 border border-brand-800 rounded-full peer peer-focus:ring-1 peer-focus:ring-primary peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-brand-300 after:border-brand-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-white peer-checked:after:border-white"></div>
-                        <span className="ml-3 text-sm font-medium text-brand-200">This plan is active and public</span>
+                        <span className="ml-3 text-sm font-medium text-brand-200">Active & Public</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-1 space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground">Withdraw Status</label>
+                    <div className="flex items-center gap-3 h-10 pl-1">
+                      <label className="relative flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.withdrawEnabled}
+                          onChange={(e) => setFormData(prev => ({ ...prev, withdrawEnabled: e.target.checked }))}
+                          disabled={isPending}
+                        />
+                        <div className="w-11 h-6 bg-brand-900 border border-brand-800 rounded-full peer peer-focus:ring-1 peer-focus:ring-primary peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-brand-300 after:border-brand-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-white peer-checked:after:border-white"></div>
+                        <span className="ml-3 text-sm font-medium text-brand-200">Withdraw Enabled</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-1 space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground">Send Money Status</label>
+                    <div className="flex items-center gap-3 h-10 pl-1">
+                      <label className="relative flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.sendMoneyEnabled}
+                          onChange={(e) => setFormData(prev => ({ ...prev, sendMoneyEnabled: e.target.checked }))}
+                          disabled={isPending}
+                        />
+                        <div className="w-11 h-6 bg-brand-900 border border-brand-800 rounded-full peer peer-focus:ring-1 peer-focus:ring-primary peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-brand-300 after:border-brand-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-white peer-checked:after:border-white"></div>
+                        <span className="ml-3 text-sm font-medium text-brand-200">Send Enabled</span>
                       </label>
                     </div>
                   </div>

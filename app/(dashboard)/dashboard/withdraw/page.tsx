@@ -7,11 +7,25 @@ export default async function WithdrawPage() {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const [wallet, withdrawals, settings] = await Promise.all([
+  const [wallet, withdrawals, settings, user] = await Promise.all([
     prisma.wallet.findUnique({ where: { userId: session.id } }),
     prisma.withdrawal.findMany({ where: { userId: session.id }, orderBy: { createdAt: 'desc' } }),
     prisma.systemSettings.findUnique({ where: { id: 'default' } }),
+    prisma.user.findUnique({
+      where: { id: session.id },
+      select: {
+        membershipPlan: {
+          select: {
+            withdrawEnabled: true
+          }
+        }
+      }
+    })
   ])
+
+  if (user?.membershipPlan?.withdrawEnabled === false) {
+    redirect('/dashboard/wallet')
+  }
 
   const deductionPercent = settings?.withdrawalDeductionPercent ?? 20.0
 

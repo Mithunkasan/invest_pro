@@ -516,6 +516,8 @@ model MembershipPlan {
   features        String[] // Features list array
   color           String   @default("#3B82F6") // UI accent hex color
   isActive        Boolean  @default(true)
+  withdrawEnabled Boolean  @default(true)
+  sendMoneyEnabled Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

@@ -137,9 +137,21 @@ export async function submitUserPayRequestAction(data: {
   try {
     const sender = await prisma.user.findUnique({
       where: { id: session.id },
-      select: { name: true, email: true }
+      select: { 
+        name: true, 
+        email: true,
+        membershipPlan: {
+          select: {
+            sendMoneyEnabled: true
+          }
+        }
+      }
     })
     if (!sender) return { success: false, message: 'Sender account not found.' }
+
+    if (isUserToUserTransfer && sender.membershipPlan?.sendMoneyEnabled === false) {
+      return { success: false, message: 'Send Money is currently disabled for your membership tier.' }
+    }
 
     const recipient = isUserToUserTransfer
       ? await prisma.user.findUnique({

@@ -15,9 +15,17 @@ export default async function WalletPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.id },
-    select: { memberType: true }
+    select: { 
+      memberType: true,
+      membershipPlan: {
+        select: {
+          withdrawEnabled: true
+        }
+      }
+    }
   })
   const isFree = user?.memberType === 'FREE'
+  const withdrawEnabled = user?.membershipPlan?.withdrawEnabled !== false
 
   let wallet = await prisma.wallet.findUnique({ where: { userId: session.id } })
   if (wallet) {
@@ -59,7 +67,7 @@ export default async function WalletPage() {
         
         <div className="flex gap-3 mt-4">
           {!isFree && <Link href="/dashboard/deposit"><Button size="sm" variant="glass">+ Deposit</Button></Link>}
-          <Link href="/dashboard/withdraw"><Button size="sm" variant="glass">↑ Withdraw</Button></Link>
+          {withdrawEnabled && <Link href="/dashboard/withdraw"><Button size="sm" variant="glass">↑ Withdraw</Button></Link>}
         </div>
 
         {/* Sub-wallets breakdown list below the balance */}

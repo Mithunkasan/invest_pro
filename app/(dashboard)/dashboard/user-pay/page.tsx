@@ -26,7 +26,12 @@ export default async function UserPayPage() {
       name: true,
       email: true,
       memberType: true,
-      kyc: { select: { status: true } }
+      kyc: { select: { status: true } },
+      membershipPlan: {
+        select: {
+          sendMoneyEnabled: true
+        }
+      }
     }
   })
 
@@ -65,6 +70,7 @@ export default async function UserPayPage() {
         userId={session.id}
         mainWalletBalance={mainWalletBalance}
         depositWalletBalance={depositWalletBalance}
+        sendMoneyEnabled={user?.membershipPlan?.sendMoneyEnabled !== false}
         transferSettings={{
           MAIN_TO_DEPOSIT: {
             deductionPercent: settings?.userPayMainToDepositPercent ?? fallbackDeductionPercent,
