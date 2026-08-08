@@ -47,7 +47,7 @@ interface DashboardSidebarProps {
   isKycApproved: boolean
   hasApprovedDeposit: boolean
   isMembershipActivated: boolean
-  user: { name: string; email: string; memberType?: 'FREE' | 'BASIC' | 'PREMIUM'; isMembershipExpired?: boolean; profileCompleted?: boolean; withdrawEnabled?: boolean }
+  user: { name: string; email: string; memberType?: 'FREE' | 'BASIC' | 'PREMIUM'; isMembershipExpired?: boolean; profileCompleted?: boolean; withdrawEnabled?: boolean; sendMoneyEnabled?: boolean }
   timeWallUrl: string
 }
 
@@ -86,6 +86,10 @@ export function DashboardSidebar({
 
     if (user?.withdrawEnabled === false) {
       baseItems = baseItems.filter((item) => item.label !== 'Withdraw')
+    }
+
+    if (user?.sendMoneyEnabled === false) {
+      baseItems = baseItems.filter((item) => item.label !== 'User Pay')
     }
 
     // Show Daily Task ONLY if they are active members and NOT FREE

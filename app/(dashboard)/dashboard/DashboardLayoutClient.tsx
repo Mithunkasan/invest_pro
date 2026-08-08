@@ -22,6 +22,7 @@ interface DashboardLayoutClientProps {
     profileCompleted?: boolean
     isMembershipExpired?: boolean
     withdrawEnabled?: boolean
+    sendMoneyEnabled?: boolean
   }
   notificationCount: number
   isKycApproved: boolean
