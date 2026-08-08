@@ -39,7 +39,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       membershipPlanActivatedAt: true,
       membershipPlan: {
         select: {
-          withdrawEnabled: true
+          withdrawEnabled: true,
+          sendMoneyEnabled: true
         }
       }
     }
@@ -118,6 +119,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         profileCompleted: isProfileComplete,
         isMembershipExpired,
         withdrawEnabled: dbUser?.membershipPlan?.withdrawEnabled !== false,
+        sendMoneyEnabled: dbUser?.membershipPlan?.sendMoneyEnabled !== false,
       }}
       notificationCount={unreadCount}
       isKycApproved={isKycApproved}
