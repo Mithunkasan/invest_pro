@@ -1187,6 +1187,8 @@ export async function upsertMembershipPlanAction(data: any): Promise<ApiResponse
       features: Array.isArray(payload.features) ? payload.features : [],
       color: payload.color || '#3B82F6',
       isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : true,
+      withdrawEnabled: payload.withdrawEnabled !== undefined ? Boolean(payload.withdrawEnabled) : true,
+      sendMoneyEnabled: payload.sendMoneyEnabled !== undefined ? Boolean(payload.sendMoneyEnabled) : true,
     }
 
     const savedPlan = id
@@ -1243,6 +1245,57 @@ export async function deleteMembershipPlanAction(id: string): Promise<ApiRespons
   } catch (error) {
     console.error('Error deleting membership plan:', error)
     return { success: false, message: 'Failed to delete membership plan' }
+  }
+}
+
+export async function toggleMembershipWithdrawAction(planId: string): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  try {
+    const plan = await prisma.membershipPlan.findUnique({ where: { id: planId } })
+    if (!plan) return { success: false, message: 'Plan not found' }
+
+    const newWithdrawStatus = !plan.withdrawEnabled
+
+    await prisma.membershipPlan.update({
+      where: { id: planId },
+      data: { withdrawEnabled: newWithdrawStatus },
+    })
+
+    revalidatePath('/admin/dashboard/memberships')
+    revalidatePath('/dashboard/membership')
+    revalidatePath('/dashboard/withdraw')
+    revalidatePath('/dashboard/wallet')
+    return { success: true, message: `Withdraw option ${newWithdrawStatus ? 'enabled' : 'disabled'} for ${plan.name}` }
+  } catch (error) {
+    console.error('Error toggling membership withdraw status:', error)
+    return { success: false, message: 'Failed to update membership withdraw status' }
+  }
+}
+
+export async function toggleMembershipSendMoneyAction(planId: string): Promise<ApiResponse> {
+  const admin = await getAdminSession()
+  if (!admin) return { success: false, message: 'Unauthorized' }
+
+  try {
+    const plan = await prisma.membershipPlan.findUnique({ where: { id: planId } })
+    if (!plan) return { success: false, message: 'Plan not found' }
+
+    const newSendMoneyStatus = !plan.sendMoneyEnabled
+
+    await prisma.membershipPlan.update({
+      where: { id: planId },
+      data: { sendMoneyEnabled: newSendMoneyStatus },
+    })
+
+    revalidatePath('/admin/dashboard/memberships')
+    revalidatePath('/dashboard/membership')
+    revalidatePath('/dashboard/user-pay')
+    return { success: true, message: `Send Money option ${newSendMoneyStatus ? 'enabled' : 'disabled'} for ${plan.name}` }
+  } catch (error) {
+    console.error('Error toggling membership send money status:', error)
+    return { success: false, message: 'Failed to update membership send money status' }
   }
 }
 

@@ -30,6 +30,7 @@ interface UserPayClientProps {
   maximumAmount: number
   transferSettings: Record<TransferType, { deductionPercent: number; enabled: boolean }>
   initialRequests: any[]
+  sendMoneyEnabled?: boolean
 }
 
 type TransferType = 'MAIN_TO_DEPOSIT' | 'DEPOSIT_TO_DEPOSIT' | 'DEPOSIT_TO_MAIN'
@@ -58,7 +59,8 @@ export function UserPayClient({
   minimumAmount,
   maximumAmount,
   transferSettings,
-  initialRequests
+  initialRequests,
+  sendMoneyEnabled
 }: UserPayClientProps) {
   const [email, setEmail] = useState('')
   const [recipientId, setRecipientId] = useState('')
@@ -67,7 +69,9 @@ export function UserPayClient({
   const [emailError, setEmailError] = useState('')
 
   const [amount, setAmount] = useState('')
-  const [transferType, setTransferType] = useState<TransferType>('DEPOSIT_TO_DEPOSIT')
+  const [transferType, setTransferType] = useState<TransferType>(
+    sendMoneyEnabled !== false ? 'DEPOSIT_TO_DEPOSIT' : 'MAIN_TO_DEPOSIT'
+  )
   const [isPending, startTransition] = useTransition()
   const [requests, setRequests] = useState(initialRequests)
 
@@ -210,11 +214,14 @@ export function UserPayClient({
                 disabled={isPending}
                 className="flex h-10 w-full rounded-md border border-border bg-background/50 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {transferOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}{transferSettings[option.value].enabled ? '' : ' (Disabled)'}
-                  </option>
-                ))}
+                {transferOptions
+                  .filter((option) => option.value !== 'DEPOSIT_TO_DEPOSIT' || sendMoneyEnabled !== false)
+                  .map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}{transferSettings[option.value].enabled ? '' : ' (Disabled)'}
+                    </option>
+                  ))
+                }
               </select>
             </div>
 

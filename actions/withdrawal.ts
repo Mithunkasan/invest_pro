@@ -13,6 +13,21 @@ export async function requestWithdrawalAction(
   const session = await getSession()
   if (!session) return { success: false, message: 'Unauthorized' }
 
+  // Check if withdrawal is allowed for this user's membership plan
+  const user = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: {
+      membershipPlan: {
+        select: {
+          withdrawEnabled: true
+        }
+      }
+    }
+  })
+  if (user?.membershipPlan?.withdrawEnabled === false) {
+    return { success: false, message: 'Withdrawals are currently disabled for your membership tier.' }
+  }
+
   // Check wallet balance first
   const wallet = await prisma.wallet.findUnique({ where: { userId: session.id } })
   if (!wallet) return { success: false, message: 'Wallet not found' }

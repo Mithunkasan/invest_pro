@@ -21,6 +21,7 @@ interface DashboardLayoutClientProps {
     hasSeenProfilePicturePopup?: boolean
     profileCompleted?: boolean
     isMembershipExpired?: boolean
+    withdrawEnabled?: boolean
   }
   notificationCount: number
   isKycApproved: boolean
@@ -49,6 +50,11 @@ export function DashboardLayoutClient({
       if (!pathname.startsWith('/dashboard/profile')) {
         router.push('/dashboard/profile')
       }
+      return
+    }
+
+    if (user.withdrawEnabled === false && pathname.startsWith('/dashboard/withdraw')) {
+      router.push('/dashboard/wallet')
       return
     }
 
