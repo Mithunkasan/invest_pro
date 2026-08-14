@@ -55,13 +55,21 @@ async function debitSelectedWallet(tx: Prisma.TransactionClient, userId: string,
     return
   }
 
+  const wallet = await tx.wallet.findUnique({
+    where: { userId },
+  })
+  if (!wallet) throw new Error('Wallet not found')
+
+  const EPSILON = 1e-9
+  const isExhausting = Math.abs(amountToDebit - wallet.depositBalance) < EPSILON
+
   const result = await tx.wallet.updateMany({
     where: {
       userId,
-      depositBalance: { gte: amountToDebit },
+      depositBalance: { gte: isExhausting ? amountToDebit - EPSILON : amountToDebit },
     },
     data: {
-      depositBalance: { decrement: amountToDebit },
+      depositBalance: isExhausting ? 0 : { decrement: amountToDebit },
     },
   })
 
