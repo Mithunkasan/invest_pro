@@ -135,7 +135,7 @@ function EditUserModal({ user, plans, onClose }: EditUserModalProps) {
     profileCompleted: !!user.profileCompleted,
     role: user.role || 'USER',
     status: user.status || 'ACTIVE',
-    memberType: initialPlan ? (initialPlan.name === 'Free Membership' ? 'FREE' : initialPlan.name === 'Basic Membership' ? 'BASIC' : 'PREMIUM') : 'FREE',
+    memberType: initialPlan ? ((initialPlan.name === 'Free Membership' || initialPlan.name === 'Standard') ? 'FREE' : (initialPlan.name === 'Basic Membership' || initialPlan.name === 'Basic') ? 'BASIC' : 'PREMIUM') : 'FREE',
     referralCode: user.referralCode || '',
     referredById: user.referredById || '',
     membershipPlanId: initialPlan ? initialPlan.id : '',
@@ -173,9 +173,9 @@ function EditUserModal({ user, plans, onClose }: EditUserModalProps) {
       const next = { ...prev, membershipPlanId: planId, membershipUpgradePaymentType: '' as '' | 'FREE' | 'PAID' }
       if (selectedPlan) {
         next.basicMembershipAmount = selectedPlan.price
-        if (selectedPlan.name === 'Free Membership') {
+        if (selectedPlan.name === 'Free Membership' || selectedPlan.name === 'Standard') {
           next.memberType = 'FREE'
-        } else if (selectedPlan.name === 'Basic Membership') {
+        } else if (selectedPlan.name === 'Basic Membership' || selectedPlan.name === 'Basic') {
           next.memberType = 'BASIC'
         } else {
           next.memberType = 'PREMIUM'
@@ -1579,7 +1579,7 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
   const initialPlan = plans.find(p => p.id === user.membershipPlanId)
 
   const [form, setForm] = useState({
-    memberType: initialPlan ? (initialPlan.name === 'Free Membership' ? 'FREE' : initialPlan.name === 'Basic Membership' ? 'BASIC' : 'PREMIUM') : 'FREE',
+    memberType: initialPlan ? ((initialPlan.name === 'Free Membership' || initialPlan.name === 'Standard') ? 'FREE' : (initialPlan.name === 'Basic Membership' || initialPlan.name === 'Basic') ? 'BASIC' : 'PREMIUM') : 'FREE',
     membershipPlanId: initialPlan ? initialPlan.id : '',
     basicMembershipAmount: initialPlan ? initialPlan.price : 0,
     basicMembershipActivatedAt: user.basicMembershipActivatedAt ? new Date(user.basicMembershipActivatedAt).toISOString().slice(0, 16) : '',
@@ -1596,9 +1596,9 @@ function ManageUserMembershipModal({ user, plans, onClose }: ManageUserMembershi
       const next = { ...prev, membershipPlanId: planId, membershipUpgradePaymentType: '' as '' | 'FREE' | 'PAID' }
       if (selectedPlan) {
         next.basicMembershipAmount = selectedPlan.price
-        if (selectedPlan.name === 'Basic Membership') {
+        if (selectedPlan.name === 'Basic Membership' || selectedPlan.name === 'Basic') {
           next.memberType = 'BASIC'
-        } else if (selectedPlan.name === 'Free Membership') {
+        } else if (selectedPlan.name === 'Free Membership' || selectedPlan.name === 'Standard') {
           next.memberType = 'FREE'
         } else {
           next.memberType = 'PREMIUM'

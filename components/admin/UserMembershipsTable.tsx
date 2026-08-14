@@ -38,7 +38,7 @@ function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps)
   const expiresAt = hasActiveCurrentPlan ? user.membershipPlanExpiresAt : user.basicMembershipExpiresAt
 
   const [form, setForm] = useState({
-    memberType: initialPlan ? (initialPlan.name === 'Free Membership' ? 'FREE' : initialPlan.name === 'Basic Membership' ? 'BASIC' : 'PREMIUM') : 'FREE',
+    memberType: initialPlan ? ((initialPlan.name === 'Free Membership' || initialPlan.name === 'Standard') ? 'FREE' : (initialPlan.name === 'Basic Membership' || initialPlan.name === 'Basic') ? 'BASIC' : 'PREMIUM') : 'FREE',
     membershipPlanId: initialPlan ? initialPlan.id : '',
     basicMembershipAmount: initialPlan ? initialPlan.price : 0,
     basicMembershipActivatedAt: activatedAt ? new Date(activatedAt).toISOString().slice(0, 16) : '',
@@ -57,9 +57,9 @@ function EditMembershipModal({ user, plans, onClose }: EditMembershipModalProps)
       
       if (selectedPlan) {
         next.basicMembershipAmount = selectedPlan.price
-        if (selectedPlan.name === 'Basic Membership') {
+        if (selectedPlan.name === 'Basic Membership' || selectedPlan.name === 'Basic') {
           next.memberType = 'BASIC'
-        } else if (selectedPlan.name === 'Free Membership') {
+        } else if (selectedPlan.name === 'Free Membership' || selectedPlan.name === 'Standard') {
           next.memberType = 'FREE'
         } else {
           next.memberType = 'PREMIUM'

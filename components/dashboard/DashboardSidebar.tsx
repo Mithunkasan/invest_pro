@@ -132,7 +132,7 @@ export function DashboardSidebar({
     } else if (!user?.profileCompleted) {
       filteredItems = baseItems.filter((item) => item.label === 'Profile')
     } else {
-      const adminApproved = hasApprovedDeposit && isMembershipActivated
+      const adminApproved = (hasApprovedDeposit || user?.memberType === 'BASIC') && isMembershipActivated
 
       if (!adminApproved) {
         if (isFree) {
