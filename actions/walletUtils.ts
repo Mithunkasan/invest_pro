@@ -57,53 +57,33 @@ export async function deductFromWallets(tx: any, userId: string, amountToDeduct:
   let remaining = amountToDeduct
   const updates: any = {}
   const deductions: Record<string, number> = {}
+  const EPSILON = 1e-9
 
-  // 1. Reward
-  if (remaining > 0 && wallet.rewardBalance > 0) {
-    const deduct = Math.min(remaining, wallet.rewardBalance)
-    updates.rewardBalance = { decrement: deduct }
-    deductions.rewardBalance = deduct
-    remaining -= deduct
-  }
+  const walletFields = [
+    'rewardBalance',
+    'referralBalance',
+    'levelBalance',
+    'shareBalance',
+    'bonusBalance',
+    'taskBalance',
+  ] as const
 
-  // 2. Referral
-  if (remaining > 0 && wallet.referralBalance > 0) {
-    const deduct = Math.min(remaining, wallet.referralBalance)
-    updates.referralBalance = { decrement: deduct }
-    deductions.referralBalance = deduct
-    remaining -= deduct
-  }
-
-  // 3. Level
-  if (remaining > 0 && wallet.levelBalance > 0) {
-    const deduct = Math.min(remaining, wallet.levelBalance)
-    updates.levelBalance = { decrement: deduct }
-    deductions.levelBalance = deduct
-    remaining -= deduct
-  }
-
-  // 4. Share
-  if (remaining > 0 && wallet.shareBalance > 0) {
-    const deduct = Math.min(remaining, wallet.shareBalance)
-    updates.shareBalance = { decrement: deduct }
-    deductions.shareBalance = deduct
-    remaining -= deduct
-  }
-
-  // 5. Bonus
-  if (remaining > 0 && wallet.bonusBalance > 0) {
-    const deduct = Math.min(remaining, wallet.bonusBalance)
-    updates.bonusBalance = { decrement: deduct }
-    deductions.bonusBalance = deduct
-    remaining -= deduct
-  }
-
-  // 6. Task
-  if (remaining > 0 && wallet.taskBalance > 0) {
-    const deduct = Math.min(remaining, wallet.taskBalance)
-    updates.taskBalance = { decrement: deduct }
-    deductions.taskBalance = deduct
-    remaining -= deduct
+  for (const field of walletFields) {
+    const balance = wallet[field] || 0
+    if (remaining > 0 && balance > 0) {
+      const deduct = Math.min(remaining, balance)
+      
+      // If we are exhausting this sub-wallet (deduct is extremely close to the balance),
+      // we set the balance to 0 directly to avoid floating-point issues or negative values.
+      if (Math.abs(deduct - balance) < EPSILON) {
+        updates[field] = 0
+      } else {
+        updates[field] = { decrement: deduct }
+      }
+      
+      deductions[field] = deduct
+      remaining -= deduct
+    }
   }
 
   if (remaining > 0) {
@@ -111,9 +91,16 @@ export async function deductFromWallets(tx: any, userId: string, amountToDeduct:
   }
 
   if (Object.keys(updates).length > 0) {
-    const balanceGuards = Object.fromEntries(
-      Object.entries(deductions).map(([field, amount]) => [field, { gte: amount }])
-    )
+    const balanceGuards: Record<string, any> = {}
+    for (const [field, amount] of Object.entries(deductions)) {
+      const originalBalance = wallet[field as keyof typeof wallet] as number
+      if (Math.abs(amount - originalBalance) < EPSILON) {
+        balanceGuards[field] = { gte: amount - EPSILON }
+      } else {
+        balanceGuards[field] = { gte: amount }
+      }
+    }
+
     const deduction = await tx.wallet.updateMany({
       where: { userId, ...balanceGuards },
       data: updates,
