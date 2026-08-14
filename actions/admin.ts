@@ -842,9 +842,14 @@ export async function getSystemSettings(): Promise<any> {
     }
 
     // Read the optional Basic Membership plan without recreating a deleted plan.
-    const basicPlan = await prisma.membershipPlan.findUnique({
+    let basicPlan = await prisma.membershipPlan.findUnique({
       where: { name: 'Basic Membership' }
     })
+    if (!basicPlan) {
+      basicPlan = await prisma.membershipPlan.findFirst({
+        where: { name: 'Basic' }
+      })
+    }
     if (basicPlan) {
       settings.basicDailyYieldPercent = basicPlan.depositBonus
     }
@@ -926,9 +931,14 @@ export async function updateSystemSettingsAction(data: any): Promise<ApiResponse
     })
 
     // Sync corresponding membership plan configuration's depositBonus
-    const basicPlan = await prisma.membershipPlan.findUnique({
+    let basicPlan = await prisma.membershipPlan.findUnique({
       where: { name: 'Basic Membership' }
     })
+    if (!basicPlan) {
+      basicPlan = await prisma.membershipPlan.findFirst({
+        where: { name: 'Basic' }
+      })
+    }
     if (basicPlan) {
       await prisma.membershipPlan.update({
         where: { id: basicPlan.id },
@@ -1526,9 +1536,9 @@ export async function processMembershipUpgradeAction(
 
         // Determine memberType based on plan name
         let targetMemberType: 'FREE' | 'BASIC' | 'PREMIUM' = 'PREMIUM'
-        if (request.plan.name === 'Free Membership') {
+        if (request.plan.name === 'Free Membership' || request.plan.name === 'Standard') {
           targetMemberType = 'FREE'
-        } else if (request.plan.name === 'Basic Membership') {
+        } else if (request.plan.name === 'Basic Membership' || request.plan.name === 'Basic') {
           targetMemberType = 'BASIC'
         }
 

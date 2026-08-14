@@ -11,8 +11,12 @@ export function getBasicMembershipExpiry(from: Date) {
 
 export async function findBasicMembershipPlan() {
   // Do not recreate a plan removed by an administrator.
-  return prisma.membershipPlan.findUnique({
+  const plan = await prisma.membershipPlan.findUnique({
     where: { name: 'Basic Membership' },
+  })
+  if (plan) return plan
+  return prisma.membershipPlan.findFirst({
+    where: { name: 'Basic' },
   })
 }
 

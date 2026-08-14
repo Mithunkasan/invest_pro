@@ -79,7 +79,7 @@ export function DashboardLayoutClient({
       return
     }
 
-    const adminApproved = hasApprovedDeposit && isMembershipActivated
+    const adminApproved = (hasApprovedDeposit || user.memberType === 'BASIC') && isMembershipActivated
 
     if (!adminApproved) {
       const isFree = user.memberType === 'FREE'
