@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { AlertCircle } from 'lucide-react'
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
 import { DashboardNavbar } from '@/components/dashboard/DashboardNavbar'
+import { TopUsersBanner } from '@/components/dashboard/TopUsersBanner'
 import { MoneyBackground } from '@/components/dashboard/MoneyBackground'
 import { Button } from '@/components/ui/button'
 import { DailyTaskPopup } from '@/components/dashboard/DailyTaskPopup'
@@ -29,6 +30,14 @@ interface DashboardLayoutClientProps {
   hasApprovedDeposit: boolean
   isMembershipActivated: boolean
   timeWallUrl: string
+  topUsers: {
+    name: string
+    referralCode: string
+    profilePictureUrl: string | null
+    wallet: {
+      mainBalance: number
+    } | null
+  }[]
 }
 
 export function DashboardLayoutClient({
@@ -39,6 +48,7 @@ export function DashboardLayoutClient({
   hasApprovedDeposit,
   isMembershipActivated,
   timeWallUrl,
+  topUsers,
 }: DashboardLayoutClientProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
@@ -184,6 +194,7 @@ export function DashboardLayoutClient({
           user={user}
           notificationCount={notificationCount}
         />
+        <TopUsersBanner topUsers={topUsers} />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
           <MoneyBackground />
           <DailyTaskPopup userId={user.id} />

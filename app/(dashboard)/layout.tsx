@@ -107,6 +107,33 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const timeWallConfig = await getTimeWallConfig()
   const timeWallUrl = buildTimeWallUrl(timeWallConfig, session)
 
+  // Fetch top 50 active users with the highest Main Wallet balance
+  const topUsers = await prisma.user.findMany({
+    where: {
+      role: 'USER',
+      status: 'ACTIVE',
+      wallet: {
+        isNot: null,
+      },
+    },
+    orderBy: {
+      wallet: {
+        mainBalance: 'desc',
+      },
+    },
+    take: 50,
+    select: {
+      name: true,
+      referralCode: true,
+      profilePictureUrl: true,
+      wallet: {
+        select: {
+          mainBalance: true,
+        },
+      },
+    },
+  })
+
   return (
     <DashboardLayoutClient
       user={{ 
@@ -126,6 +153,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       hasApprovedDeposit={hasApprovedDeposit}
       isMembershipActivated={isMembershipActivated}
       timeWallUrl={timeWallUrl}
+      topUsers={topUsers}
     >
       {children}
     </DashboardLayoutClient>
